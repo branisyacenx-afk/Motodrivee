@@ -49,18 +49,36 @@ export function createRoadTexture(): THREE.CanvasTexture {
   return texture;
 }
 
+const SIGN_TRANSLATIONS: Record<string, string> = {
+  'شاورما الحومة': 'CHAWARMA • SNACK',
+  'بيتزا الجزائر': 'PIZZERIA',
+  'مطعم الكسكسي': 'CUISINE TRADITIONNELLE',
+  'مشوي الشارع': 'GRILLADES',
+  'سلطة الواحات': 'SALADES • FRAIS',
+  'مطعم الشرق': 'RESTAURANT ORIENTAL',
+  'فلافل الشباب': 'FALAFEL',
+  'سندويتش بلدي': 'SANDWICHERIE',
+};
+
 export function createSignTexture(text: string, color: string): THREE.CanvasTexture {
-  return canvasTexture(512, 128, (ctx) => {
+  return canvasTexture(512, 160, (ctx) => {
     ctx.fillStyle = color;
-    ctx.fillRect(0, 0, 512, 128);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.lineWidth = 8;
-    ctx.strokeRect(12, 12, 488, 104);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '700 60px Tajawal, system-ui, sans-serif';
+    ctx.fillRect(0, 0, 512, 160);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+    ctx.fillRect(0, 112, 512, 48);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.88)';
+    ctx.lineWidth = 7;
+    ctx.strokeRect(12, 12, 488, 136);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, 256, 66, 440);
+    ctx.direction = 'rtl';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 52px Tajawal, system-ui, sans-serif';
+    ctx.fillText(text, 256, 65, 450);
+    ctx.direction = 'ltr';
+    ctx.font = '700 19px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.94)';
+    ctx.fillText(SIGN_TRANSLATIONS[text] ?? 'RESTAURANT', 256, 128, 450);
   });
 }
 
