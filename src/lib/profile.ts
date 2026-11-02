@@ -1,0 +1,159 @@
+import { UPGRADES, VEHICLES, type PaintId, type UpgradeId, type VehicleId } from '@/game/config';
+import type { ShiftSummary } from '@/game/types';
+import { completedTasks } from '@/lib/tasks';
+
+export interface Profile {
+  name: string;
+  wallet: number;
+  xp: number;
+  dailyStreak: number;
+  lastDailyClaim: string | null;
+  owned: VehicleId[];
+  vehicle: VehicleId;
+  paint: PaintId;
+  upgrades: Record<UpgradeId, number>;
+  bestScore: number;
+}
+
+const STORAGE_KEY = 'swift-drop-profile';
+const STARTING_WALLET = 1000;
+const XP_PER_DELIVERY = 100;
+const XP_PER_LEVEL = 500;
+
+export function levelFor(xp: number): number {
+  return 1 + Math.floor(xp / XP_PER_LEVEL);
+}
+
+export function todayKey(date: Date = new Date()): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function dayBefore(key: string): string {
+  const [year, month, day] = key.split('-').map(Number);
+  return todayKey(new Date(year, month - 1, day - 1));
+}
+
+export function dailyRewardFor(streak: number): number {
+  return Math.min(2500, 500 + streak * 250);
+}
+
+function nextStreak(profile: Profile, today: string): number {
+  return profile.lastDailyClaim === dayBefore(today) ? profile.dailyStreak + 1 : 1;
+}
+
+export function dailyRewardPreview(profile: Profile, today: string): number {
+  return dailyRewardFor(nextStreak(profile, today));
+}
+
+export function claimDaily(profile: Profile, today: string): Profile | null {
+  if (profile.lastDailyClaim === today) return null;
+  const streak = nextStreak(profile, today);
+  return {
+    ...profile,
+    wallet: profile.wallet + dailyRewardFor(streak),
+    dailyStreak: streak,
+    lastDailyClaim: today,
+  };
+}
+
+export function createProfile(): Profile {
+  return {
+    name: 'الراكب',
+    wallet: STARTING_WALLET,
+    xp: 0,
+    dailyStreak: 0,
+    lastDailyClaim: null,
+    owned: ['classic'],
+    vehicle: 'classic',
+    paint: 'swift',
+    upgrades: { engine: 0, handling: 0, helmet: 0 },
+    bestScore: 0,
+  };
+}
+
+function isVehicleId(value: unknown): value is VehicleId {
+  return VEHICLES.some((v) => v.id === value);
+}
+
+function isPaintId(value: unknown): value is PaintId {
+  return value === 'swift' || value === 'ocean' || value === 'graphite';
+}
+
+export function loadProfile(): Profile {
+  const fallback = createProfile();
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw) as Partial<Profile>;
+    const upgrades = parsed.upgrades ?? fallback.upgrades;
+    const owned = Array.isArray(parsed.owned) ? parsed.owned.filter(isVehicleId) : fallback.owned;
+    return {
+      name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.slice(0, 16) : fallback.name,
+      wallet: typeof parsed.wallet === 'number' && parsed.wallet >= 0 ? parsed.wallet : fallback.wallet,
+      xp: typeof parsed.xp === 'number' && parsed.xp >= 0 ? Math.floor(parsed.xp) : 0,
+      dailyStreak: typeof parsed.dailyStreak === 'number' && parsed.dailyStreak >= 0 ? Math.floor(parsed.dailyStreak) : 0,
+      lastDailyClaim: typeof parsed.lastDailyClaim === 'string' ? parsed.lastDailyClaim : null,
+      owned: owned.includes('classic') ? owned : ['classic', ...owned],
+      vehicle: isVehicleId(parsed.vehicle) && owned.includes(parsed.vehicle) ? parsed.vehicle : fallback.vehicle,
+      paint: isPaintId(parsed.paint) ? parsed.paint : fallback.paint,
+      upgrades: {
+        engine: clampLevel(upgrades.engine, 'engine'),
+        handling: clampLevel(upgrades.handling, 'handling'),
+        helmet: clampLevel(upgrades.helmet, 'helmet'),
+      },
+      bestScore: typeof parsed.bestScore === 'number' && parsed.bestScore >= 0 ? parsed.bestScore : 0,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function clampLevel(value: unknown, id: UpgradeId): number {
+  const max = UPGRADES.find((u) => u.id === id)?.costs.length ?? 0;
+  return typeof value === 'number' ? Math.min(max, Math.max(0, Math.floor(value))) : 0;
+}
+
+export function saveProfile(profile: Profile): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+}
+
+export function buyVehicle(profile: Profile, id: VehicleId): Profile | null {
+  const def = VEHICLES.find((v) => v.id === id);
+  if (!def || profile.owned.includes(id) || profile.wallet < def.price) return null;
+  return { ...profile, wallet: profile.wallet - def.price, owned: [...profile.owned, id], vehicle: id };
+}
+
+export function selectVehicle(profile: Profile, id: VehicleId): Profile {
+  return profile.owned.includes(id) ? { ...profile, vehicle: id } : profile;
+}
+
+export function selectPaint(profile: Profile, paint: PaintId): Profile {
+  return { ...profile, paint };
+}
+
+export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
+  const def = UPGRADES.find((u) => u.id === id);
+  const level = profile.upgrades[id];
+  if (!def || level >= def.costs.length) return null;
+  const cost = def.costs[level];
+  if (profile.wallet < cost) return null;
+  return { ...profile, wallet: profile.wallet - cost, upgrades: { ...profile.upgrades, [id]: level + 1 } };
+}
+
+export function creditShift(profile: Profile, summary: ShiftSummary): Profile {
+  const taskReward = completedTasks(summary).reduce((sum, task) => sum + task.reward, 0);
+  return {
+    ...profile,
+    wallet: profile.wallet + Math.round(summary.earnings) + taskReward,
+    xp: profile.xp + summary.deliveries * XP_PER_DELIVERY,
+    bestScore: Math.max(profile.bestScore, summary.score),
+  };
+}
+
+export function nextUpgradeCost(profile: Profile, id: UpgradeId): number | null {
+  const def = UPGRADES.find((u) => u.id === id);
+  if (!def) return null;
+  return def.costs[profile.upgrades[id]] ?? null;
+}
