@@ -108,7 +108,12 @@ export class GameWorld {
   ) {
     const { layout } = options;
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    // Touch-first devices have a tighter GPU budget; cap render resolution and
+    // shadow-map size to keep the game responsive without changing simulation quality.
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    const pixelRatioCap = isTouchDevice ? 1.25 : 1.75;
+    const shadowMapSize = isTouchDevice ? 1024 : 2048;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, pixelRatioCap));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.NoToneMapping;
@@ -123,7 +128,7 @@ export class GameWorld {
     this.scene.add(new THREE.HemisphereLight('#e2f1ff', '#8a8072', 1.15));
     this.sun = new THREE.DirectionalLight('#fff0d4', 2.5);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
+    this.sun.shadow.mapSize.set(shadowMapSize, shadowMapSize);
     const shadowCam = this.sun.shadow.camera;
     shadowCam.left = -80;
     shadowCam.right = 80;
