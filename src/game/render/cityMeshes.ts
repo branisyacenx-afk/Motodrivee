@@ -46,6 +46,56 @@ function roadStrip(rect: Rect, horizontal: boolean, texture: THREE.CanvasTexture
   return mesh;
 }
 
+/**
+ * Add lightweight zebra crossings at alternating intersections. Instancing keeps
+ * the markings to two draw calls instead of thousands of individual meshes.
+ */
+function buildCrosswalks(): THREE.Group {
+  const group = new THREE.Group();
+  const intersectionCount = Math.ceil(CITY.cols / 2) * Math.ceil(CITY.rows / 2);
+  const barsPerApproach = 5;
+  const count = intersectionCount * barsPerApproach * 2;
+  const acrossX = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.72, 0.035, CITY.roadWidth - 2),
+    new THREE.MeshBasicMaterial({ color: '#f5f1e7' }),
+    count,
+  );
+  const acrossZ = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(CITY.roadWidth - 2, 0.035, 0.72),
+    new THREE.MeshBasicMaterial({ color: '#f5f1e7' }),
+    count,
+  );
+  const matrix = new THREE.Matrix4();
+  const offset = CITY.roadWidth / 2 + 1.5;
+  let xIndex = 0;
+  let zIndex = 0;
+
+  for (let i = 0; i < CITY.cols; i += 2) {
+    for (let j = 0; j < CITY.rows; j += 2) {
+      const x = roadX(i);
+      const z = roadZ(j);
+      for (const side of [-1, 1]) {
+        for (let bar = 0; bar < barsPerApproach; bar++) {
+          const shift = (bar - (barsPerApproach - 1) / 2) * 1.15;
+          matrix.makeTranslation(x + side * offset + shift, 0.115, z);
+          acrossX.setMatrixAt(xIndex++, matrix);
+          matrix.makeTranslation(x, 0.115, z + side * offset + shift);
+          acrossZ.setMatrixAt(zIndex++, matrix);
+        }
+      }
+    }
+  }
+
+  acrossX.count = xIndex;
+  acrossZ.count = zIndex;
+  acrossX.instanceMatrix.needsUpdate = true;
+  acrossZ.instanceMatrix.needsUpdate = true;
+  acrossX.computeBoundingSphere();
+  acrossZ.computeBoundingSphere();
+  group.add(acrossX, acrossZ);
+  return group;
+}
+
 function scaleWallUvs(geometry: THREE.BoxGeometry, width: number, depth: number, height: number): void {
   const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
   const sideU = (face: number) => (face < 2 ? depth : width) / 9;
@@ -183,6 +233,7 @@ export function buildCity(layout: Layout): THREE.Group {
     root.add(roadStrip({ minX: x - CITY.roadWidth / 2, maxX: x + CITY.roadWidth / 2, minZ: bounds.minZ, maxZ: bounds.maxZ }, false, roadTexture));
   }
   roadTexture.dispose();
+  root.add(buildCrosswalks());
 
   const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
   const getChunk = (x: number, z: number) => {
