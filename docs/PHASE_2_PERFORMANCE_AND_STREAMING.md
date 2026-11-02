@@ -16,6 +16,13 @@ These are initial device-class defaults, not measured performance guarantees. Va
 - Check visual shadow quality, text/HUD clarity, heat, battery drain, and browser stability.
 - Keep a record of device model, browser, average FPS, 1% low FPS, and approximate session duration.
 
+## Progressive city geometry slice
+
+- Static building/tree geometry is now created one spatial chunk per rendered frame instead of building every chunk synchronously during world construction.
+- Pending chunks are prioritized by distance whenever the rider enters a new chunk, so nearby geometry is generated first.
+- Roads, ground, layout records, collision boxes, traffic lanes, and delivery data remain available up front; this slice reduces the initial geometry-build burst but is not yet full memory-bounded streaming.
+- Distant generated chunks are hidden by the active-radius culling already in place. Geometry unloading/disposal and active collision-region indexing remain future work and must be implemented with explicit memory/lifecycle tests.
+
 ## Open-world architecture plan
 
 1. Separate world generation into deterministic spatial chunks with stable chunk coordinates and seeds.
