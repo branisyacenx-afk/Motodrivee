@@ -97,11 +97,15 @@ function buildingGroup(boxes: readonly Box[], windowTexture: THREE.Texture): THR
 
   const roofMaterial = toon({ color: '#9aa3ad' });
   for (const [color, bucket] of byColor) {
+    const wallGeometry = mergeNonIndexed(bucket.walls);
+    const roofGeometry = mergeNonIndexed(bucket.roofs);
+    bucket.walls.forEach((geometry) => geometry.dispose());
+    bucket.roofs.forEach((geometry) => geometry.dispose());
     const wallMesh = new THREE.Mesh(
-      mergeNonIndexed(bucket.walls),
+      wallGeometry,
       toon({ color, map: windowTexture }),
     );
-    const roofMesh = new THREE.Mesh(mergeNonIndexed(bucket.roofs), roofMaterial);
+    const roofMesh = new THREE.Mesh(roofGeometry, roofMaterial);
     wallMesh.castShadow = true;
     wallMesh.receiveShadow = true;
     roofMesh.castShadow = true;
@@ -128,13 +132,19 @@ function treeGroup(boxes: readonly Box[]): THREE.Group {
   }
 
   const group = new THREE.Group();
+  trunkTemplate.dispose();
+  crownTemplate.dispose();
   if (trunks.length === 0) return group;
+  const trunkGeometry = mergeNonIndexed(trunks);
+  const crownGeometry = mergeNonIndexed(crowns);
+  trunks.forEach((geometry) => geometry.dispose());
+  crowns.forEach((geometry) => geometry.dispose());
   const trunkMesh = new THREE.Mesh(
-    mergeNonIndexed(trunks),
+    trunkGeometry,
     toon({ color: '#8a6040' }),
   );
   const crownMesh = new THREE.Mesh(
-    mergeNonIndexed(crowns),
+    crownGeometry,
     toon({ color: '#5cc04a' }),
   );
   trunkMesh.castShadow = true;
@@ -172,6 +182,7 @@ export function buildCity(layout: Layout): THREE.Group {
     const x = roadX(i);
     root.add(roadStrip({ minX: x - CITY.roadWidth / 2, maxX: x + CITY.roadWidth / 2, minZ: bounds.minZ, maxZ: bounds.maxZ }, false, roadTexture));
   }
+  roadTexture.dispose();
 
   const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
   const getChunk = (x: number, z: number) => {
@@ -193,22 +204,27 @@ export function buildCity(layout: Layout): THREE.Group {
   }
 
   const windowTexture = createWindowTexture();
-  // Keep lightweight layout records now; expensive Three.js geometry is created
-  // gradually by updateCityChunkVisibility instead of blocking the game startup.
-  root.userData.pendingChunks = [...chunks.values()].map((chunk) => ({
-    x: chunk.x,
-    z: chunk.z,
-    buildings: chunk.buildings.map((box) => ({
-      ...box,
-      minX: box.minX - chunk.x, maxX: box.maxX - chunk.x,
-      minZ: box.minZ - chunk.z, maxZ: box.maxZ - chunk.z,
-    })),
-    trees: chunk.trees.map((box) => ({
-      ...box,
-      minX: box.minX - chunk.x, maxX: box.maxX - chunk.x,
-      minZ: box.minZ - chunk.z, maxZ: box.maxZ - chunk.z,
-    })),
-  }));
+  const chunkRecords = new Map<string, PendingCityChunk>();
+  for (const [key, chunk] of chunks) {
+    chunkRecords.set(key, {
+      x: chunk.x,
+      z: chunk.z,
+      buildings: chunk.buildings.map((box) => ({
+        ...box,
+        minX: box.minX - chunk.x, maxX: box.maxX - chunk.x,
+        minZ: box.minZ - chunk.z, maxZ: box.maxZ - chunk.z,
+      })),
+      trees: chunk.trees.map((box) => ({
+        ...box,
+        minX: box.minX - chunk.x, maxX: box.maxX - chunk.x,
+        minZ: box.minZ - chunk.z, maxZ: box.maxZ - chunk.z,
+      })),
+    });
+  }
+
+  root.userData.chunkRecords = chunkRecords;
+  root.userData.builtChunks = new Map<string, THREE.Group>();
+  root.userData.pendingChunkKeys = [...chunkRecords.keys()];
   root.userData.windowTexture = windowTexture;
   root.userData.lastChunkX = Number.NaN;
   root.userData.lastChunkZ = Number.NaN;
@@ -222,6 +238,8 @@ interface PendingCityChunk {
   trees: Box[];
 }
 
+const CITY_CHUNK_UNLOAD_RADIUS = CITY.pitch * 10;
+
 function buildChunk(chunk: PendingCityChunk, windowTexture: THREE.Texture): THREE.Group {
   const group = new THREE.Group();
   group.position.set(chunk.x, 0, chunk.z);
@@ -232,45 +250,102 @@ function buildChunk(chunk: PendingCityChunk, windowTexture: THREE.Texture): THRE
   return group;
 }
 
+/** Dispose only resources owned by this chunk. Shared textures are intentionally retained. */
+function disposeChunk(group: THREE.Group): void {
+  group.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    object.geometry.dispose();
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    materials.forEach((material) => material.dispose());
+  });
+}
+
 /**
- * Reprioritize pending chunks when the rider changes area, then build one chunk
- * per frame. This spreads expensive geometry work across frames and keeps nearby
- * city blocks first. Collision/layout data remains fully available from startup.
+ * Keep nearby chunks resident, unload distant geometry, and rebuild it when the
+ * rider returns. Layout/collision data and the shared window texture stay alive.
  */
 export function updateCityChunkVisibility(city: THREE.Group, x: number, z: number): void {
   const centerX = Math.floor(x / CITY_CHUNK_SIZE);
   const centerZ = Math.floor(z / CITY_CHUNK_SIZE);
   const enteredNewChunk = city.userData.lastChunkX !== centerX || city.userData.lastChunkZ !== centerZ;
-  const radiusSq = CITY_CHUNK_ACTIVE_RADIUS * CITY_CHUNK_ACTIVE_RADIUS;
+  const activeRadiusSq = CITY_CHUNK_ACTIVE_RADIUS * CITY_CHUNK_ACTIVE_RADIUS;
+  const unloadRadiusSq = CITY_CHUNK_UNLOAD_RADIUS * CITY_CHUNK_UNLOAD_RADIUS;
+  const records = city.userData.chunkRecords as Map<string, PendingCityChunk>;
+  const built = city.userData.builtChunks as Map<string, THREE.Group>;
+  let pending = city.userData.pendingChunkKeys as string[];
 
   if (enteredNewChunk) {
     city.userData.lastChunkX = centerX;
     city.userData.lastChunkZ = centerZ;
-    const pending = city.userData.pendingChunks as PendingCityChunk[];
+
+    for (const [key, group] of built) {
+      const dx = group.position.x - x;
+      const dz = group.position.z - z;
+      if (dx * dx + dz * dz <= unloadRadiusSq) {
+        group.visible = dx * dx + dz * dz <= activeRadiusSq;
+        continue;
+      }
+      city.remove(group);
+      disposeChunk(group);
+      built.delete(key);
+    }
+
+    pending = [...records.keys()].filter((key) => !built.has(key));
     pending.sort((a, b) => {
-      const adx = a.x - x;
-      const adz = a.z - z;
-      const bdx = b.x - x;
-      const bdz = b.z - z;
+      const first = records.get(a)!;
+      const second = records.get(b)!;
+      const adx = first.x - x;
+      const adz = first.z - z;
+      const bdx = second.x - x;
+      const bdz = second.z - z;
       return adx * adx + adz * adz - (bdx * bdx + bdz * bdz);
     });
+    city.userData.pendingChunkKeys = pending;
+  }
 
-    for (const child of city.children) {
-      if (child.userData.chunkX === undefined) continue;
-      const dx = child.userData.chunkX - x;
-      const dz = child.userData.chunkZ - z;
-      child.visible = dx * dx + dz * dz <= radiusSq;
+  // Build at most one nearby chunk per frame; do not spend work on distant blocks.
+  const nextKey = pending[0];
+  if (!nextKey) return;
+  const next = records.get(nextKey);
+  if (!next) {
+    pending.shift();
+    return;
+  }
+  const dx = next.x - x;
+  const dz = next.z - z;
+  if (dx * dx + dz * dz > unloadRadiusSq) return;
+
+  pending.shift();
+  const group = buildChunk(next, city.userData.windowTexture as THREE.Texture);
+  group.visible = dx * dx + dz * dz <= activeRadiusSq;
+  city.add(group);
+  built.set(nextKey, group);
+}
+
+
+/** Release city-owned GPU resources when the entire game world is destroyed. */
+export function disposeCity(city: THREE.Group): void {
+  const sharedWindowTexture = city.userData.windowTexture as THREE.Texture | undefined;
+  const ownedTextures = new Set<THREE.Texture>();
+
+  city.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    object.geometry.dispose();
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of materials) {
+      const textured = material as THREE.Material & {
+        map?: THREE.Texture | null;
+        emissiveMap?: THREE.Texture | null;
+      };
+      if (textured.map && textured.map !== sharedWindowTexture) ownedTextures.add(textured.map);
+      if (textured.emissiveMap && textured.emissiveMap !== sharedWindowTexture) ownedTextures.add(textured.emissiveMap);
+      material.dispose();
     }
-  }
+  });
 
-  // A small fixed budget prevents a large burst of geometry work in one frame.
-  const pending = city.userData.pendingChunks as PendingCityChunk[];
-  const next = pending.shift();
-  if (next) {
-    const group = buildChunk(next, city.userData.windowTexture as THREE.Texture);
-    const dx = next.x - x;
-    const dz = next.z - z;
-    group.visible = dx * dx + dz * dz <= radiusSq;
-    city.add(group);
-  }
+  ownedTextures.forEach((texture) => texture.dispose());
+  sharedWindowTexture?.dispose();
+  (city.userData.builtChunks as Map<string, THREE.Group> | undefined)?.clear();
+  (city.userData.chunkRecords as Map<string, PendingCityChunk> | undefined)?.clear();
+  city.userData.pendingChunkKeys = [];
 }
