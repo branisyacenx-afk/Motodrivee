@@ -74,7 +74,8 @@ export class GameWorld {
   private readonly traffic: Traffic;
   private readonly carMeshes: THREE.Group[] = [];
   private readonly pedMeshes: PedestrianModel[] = [];
-  private readonly venueStalls: THREE.Object3D[];\n  private readonly cityGroup: THREE.Group;
+  private readonly venueStalls: THREE.Object3D[];
+  private readonly cityGroup: THREE.Group;
   private readonly generateOffer: () => Offer;
   private readonly resizeObserver: ResizeObserver;
   private readonly hitReadyAt: Record<string, number> = {};
@@ -448,7 +449,8 @@ export class GameWorld {
     const forwardX = Math.sin(bike.heading);
     const forwardZ = Math.cos(bike.heading);
 
-    updateCityChunkVisibility(this.cityGroup, bike.x, bike.z);\n    this.remoteRiders.update(this.options.network.riders(), dt);
+    updateCityChunkVisibility(this.cityGroup, bike.x, bike.z);
+    this.remoteRiders.update(this.options.network.riders(), dt);
     this.broadcastPose(dt);
 
     this.bikeRig.group.position.set(bike.x, 0, bike.z);
