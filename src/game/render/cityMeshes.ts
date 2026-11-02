@@ -182,6 +182,7 @@ export function buildCity(layout: Layout): THREE.Group {
     const x = roadX(i);
     root.add(roadStrip({ minX: x - CITY.roadWidth / 2, maxX: x + CITY.roadWidth / 2, minZ: bounds.minZ, maxZ: bounds.maxZ }, false, roadTexture));
   }
+  roadTexture.dispose();
 
   const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
   const getChunk = (x: number, z: number) => {
@@ -321,3 +322,30 @@ export function updateCityChunkVisibility(city: THREE.Group, x: number, z: numbe
   built.set(nextKey, group);
 }
 
+
+/** Release city-owned GPU resources when the entire game world is destroyed. */
+export function disposeCity(city: THREE.Group): void {
+  const sharedWindowTexture = city.userData.windowTexture as THREE.Texture | undefined;
+  const ownedTextures = new Set<THREE.Texture>();
+
+  city.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    object.geometry.dispose();
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of materials) {
+      const textured = material as THREE.Material & {
+        map?: THREE.Texture | null;
+        emissiveMap?: THREE.Texture | null;
+      };
+      if (textured.map && textured.map !== sharedWindowTexture) ownedTextures.add(textured.map);
+      if (textured.emissiveMap && textured.emissiveMap !== sharedWindowTexture) ownedTextures.add(textured.emissiveMap);
+      material.dispose();
+    }
+  });
+
+  ownedTextures.forEach((texture) => texture.dispose());
+  sharedWindowTexture?.dispose();
+  (city.userData.builtChunks as Map<string, THREE.Group> | undefined)?.clear();
+  (city.userData.chunkRecords as Map<string, PendingCityChunk> | undefined)?.clear();
+  city.userData.pendingChunkKeys = [];
+}
