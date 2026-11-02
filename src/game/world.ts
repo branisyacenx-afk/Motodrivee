@@ -142,7 +142,8 @@ export class GameWorld {
 
     const venueGroup = buildVenues(layout.venues);
     this.venueStalls = [...venueGroup.children];
-    this.scene.add(buildCity(layout), buildZones(layout.zones), venueGroup);
+    this.cityGroup = buildCity(layout);
+    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup);
 
     this.guide = createDeliveryGuide();
     this.scene.add(this.guide.group);
