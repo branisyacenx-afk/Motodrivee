@@ -250,6 +250,75 @@ function buildStreetLamps(): THREE.Group {
   return group;
 }
 
+/**
+ * Add a small set of simple roadside bus shelters along selected avenues.
+ * All shelter parts are instanced; they are decorative and do not affect gameplay.
+ */
+function buildBusShelters(): THREE.Group {
+  const group = new THREE.Group();
+  const selectedRows = 6;
+  const selectedBlocks = 3;
+  const shelterCount = Math.ceil(CITY.rows / selectedRows)
+    * Math.ceil((CITY.cols - 1) / selectedBlocks) * 2;
+  const posts = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.16, 2.8, 0.16),
+    new THREE.MeshStandardMaterial({ color: '#59636a', roughness: 0.78 }),
+    shelterCount * 4,
+  );
+  const roofs = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(5.6, 0.2, 2.7),
+    new THREE.MeshStandardMaterial({ color: '#d6d0c2', roughness: 0.82 }),
+    shelterCount,
+  );
+  const panels = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(5.2, 2.0, 0.08),
+    new THREE.MeshStandardMaterial({ color: '#8fb6bd', roughness: 0.35, metalness: 0.08 }),
+    shelterCount,
+  );
+  const benches = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(4.0, 0.18, 0.62),
+    new THREE.MeshStandardMaterial({ color: '#8a6849', roughness: 0.9 }),
+    shelterCount,
+  );
+  const matrix = new THREE.Matrix4();
+  let index = 0;
+
+  for (let row = 0; row < CITY.rows; row += selectedRows) {
+    const road = roadZ(row);
+    for (let col = 1; col < CITY.cols - 1; col += selectedBlocks) {
+      const x = (roadX(col) + roadX(Math.min(col + 1, CITY.cols - 1))) / 2;
+      for (const side of [-1, 1]) {
+        const z = road + side * (CITY.roadWidth / 2 + CITY.sidewalk * 0.5);
+        matrix.makeTranslation(x, 3.0, z);
+        roofs.setMatrixAt(index, matrix);
+        matrix.makeTranslation(x, 1.65, z + side * 1.0);
+        panels.setMatrixAt(index, matrix);
+        matrix.makeTranslation(x, 0.72, z - side * 0.25);
+        benches.setMatrixAt(index, matrix);
+
+        let postIndex = index * 4;
+        for (const dx of [-2.55, 2.55]) {
+          for (const dz of [-1.18, 1.18]) {
+            matrix.makeTranslation(x + dx, 1.4, z + dz);
+            posts.setMatrixAt(postIndex++, matrix);
+          }
+        }
+        index++;
+      }
+    }
+  }
+
+  for (const mesh of [posts, roofs, panels, benches]) {
+    mesh.count = mesh === posts ? index * 4 : index;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+  }
+  group.add(posts, roofs, panels, benches);
+  return group;
+}
+
 function scaleWallUvs(geometry: THREE.BoxGeometry, width: number, depth: number, height: number): void {
   const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
   const sideU = (face: number) => (face < 2 ? depth : width) / 9;
@@ -390,6 +459,7 @@ export function buildCity(layout: Layout): THREE.Group {
   root.add(buildCrosswalks());
   root.add(buildSidewalkCurbs(bounds));
   root.add(buildStreetLamps());
+  root.add(buildBusShelters());
   root.add(buildParkingBays());
 
   const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
