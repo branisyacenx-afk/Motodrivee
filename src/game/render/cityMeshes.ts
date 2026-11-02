@@ -143,33 +143,95 @@ function treeGroup(boxes: readonly Box[]): THREE.Group {
   return group;
 }
 
+const CITY_CHUNK_SIZE = CITY.pitch * 4;
+const CITY_CHUNK_ACTIVE_RADIUS = CITY.pitch * 7;
+
+/**
+ * Builds static city geometry in spatial chunks. Geometry is still prepared once,
+ * while distant building/tree meshes are excluded from rendering.
+ * Roads and ground remain shared so navigation never develops visual gaps.
+ */
 export function buildCity(layout: Layout): THREE.Group {
-  const group = new THREE.Group();
+  const root = new THREE.Group();
   const { bounds } = layout;
   const span = 600;
 
-  const ground = flatPlane(
+  root.add(flatPlane(
     { minX: bounds.minX - span, maxX: bounds.maxX + span, minZ: bounds.minZ - span, maxZ: bounds.maxZ + span },
     '#d9d0b8',
     0,
-  );
-  group.add(ground);
-  group.add(flatPlane(bounds, '#eee6d2', 0.02));
+  ));
+  root.add(flatPlane(bounds, '#eee6d2', 0.02));
 
   const roadTexture = createRoadTexture();
   for (let j = 0; j < CITY.rows; j++) {
     const z = roadZ(j);
-    group.add(roadStrip({ minX: bounds.minX, maxX: bounds.maxX, minZ: z - CITY.roadWidth / 2, maxZ: z + CITY.roadWidth / 2 }, true, roadTexture));
+    root.add(roadStrip({ minX: bounds.minX, maxX: bounds.maxX, minZ: z - CITY.roadWidth / 2, maxZ: z + CITY.roadWidth / 2 }, true, roadTexture));
   }
   for (let i = 0; i < CITY.cols; i++) {
     const x = roadX(i);
-    group.add(roadStrip({ minX: x - CITY.roadWidth / 2, maxX: x + CITY.roadWidth / 2, minZ: bounds.minZ, maxZ: bounds.maxZ }, false, roadTexture));
+    root.add(roadStrip({ minX: x - CITY.roadWidth / 2, maxX: x + CITY.roadWidth / 2, minZ: bounds.minZ, maxZ: bounds.maxZ }, false, roadTexture));
   }
 
-  const buildings = layout.boxes.filter((box) => box.kind === 'building');
-  const trees = layout.boxes.filter((box) => box.kind === 'tree');
-  group.add(buildingGroup(buildings, createWindowTexture()));
-  group.add(treeGroup(trees));
+  const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
+  const getChunk = (x: number, z: number) => {
+    const cx = Math.floor(x / CITY_CHUNK_SIZE);
+    const cz = Math.floor(z / CITY_CHUNK_SIZE);
+    const key = cx + ':' + cz;
+    let chunk = chunks.get(key);
+    if (!chunk) {
+      chunk = { x: (cx + 0.5) * CITY_CHUNK_SIZE, z: (cz + 0.5) * CITY_CHUNK_SIZE, buildings: [], trees: [] };
+      chunks.set(key, chunk);
+    }
+    return chunk;
+  };
 
-  return group;
+  for (const box of layout.boxes) {
+    if (box.kind !== 'building' && box.kind !== 'tree') continue;
+    const chunk = getChunk((box.minX + box.maxX) / 2, (box.minZ + box.maxZ) / 2);
+    (box.kind === 'building' ? chunk.buildings : chunk.trees).push(box);
+  }
+
+  const windowTexture = createWindowTexture();
+  for (const chunk of chunks.values()) {
+    const group = new THREE.Group();
+    group.position.set(chunk.x, 0, chunk.z);
+    group.userData.chunkX = chunk.x;
+    group.userData.chunkZ = chunk.z;
+    // Geometry is authored in world coordinates; offset the chunk back to the origin.
+    const localBuildings = chunk.buildings.map((box) => ({
+      ...box,
+      minX: box.minX - chunk.x, maxX: box.maxX - chunk.x,
+      minZ: box.minZ - chunk.z, maxZ: box.maxZ - chunk.z,
+    }));
+    const localTrees = chunk.trees.map((box) => ({
+      ...box,
+      minX: box.minX - chunk.x, maxX: box.maxX - chunk.x,
+      minZ: box.minZ - chunk.z, maxZ: box.maxZ - chunk.z,
+    }));
+    if (localBuildings.length) group.add(buildingGroup(localBuildings, windowTexture));
+    if (localTrees.length) group.add(treeGroup(localTrees));
+    root.add(group);
+  }
+
+  root.userData.lastChunkX = Number.NaN;
+  root.userData.lastChunkZ = Number.NaN;
+  return root;
+}
+
+/** Toggle only when the rider enters a different chunk, avoiding per-frame scans. */
+export function updateCityChunkVisibility(city: THREE.Group, x: number, z: number): void {
+  const centerX = Math.floor(x / CITY_CHUNK_SIZE);
+  const centerZ = Math.floor(z / CITY_CHUNK_SIZE);
+  if (city.userData.lastChunkX === centerX && city.userData.lastChunkZ === centerZ) return;
+
+  city.userData.lastChunkX = centerX;
+  city.userData.lastChunkZ = centerZ;
+  const radiusSq = CITY_CHUNK_ACTIVE_RADIUS * CITY_CHUNK_ACTIVE_RADIUS;
+  for (const child of city.children) {
+    if (child.userData.chunkX === undefined) continue;
+    const dx = child.userData.chunkX - x;
+    const dz = child.userData.chunkZ - z;
+    child.visible = dx * dx + dz * dz <= radiusSq;
+  }
 }
