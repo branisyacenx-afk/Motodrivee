@@ -70,6 +70,64 @@ function buildParking(rect: Rect, group: THREE.Group, stripes: THREE.Matrix4[]):
   }
 }
 
+
+/**
+ * Add a pair of simple benches to each park. Three instanced batches keep
+ * the furniture lightweight and purely decorative, with no gameplay collision.
+ */
+function buildParkBenches(zones: readonly Zone[]): THREE.Group {
+  const parks = zones.filter((zone) => zone.kind === 'park');
+  const group = new THREE.Group();
+  if (parks.length === 0) return group;
+
+  const count = parks.length * 2;
+  const seat = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(3.2, 0.18, 0.72),
+    new THREE.MeshStandardMaterial({ color: '#9a6844', roughness: 0.86 }),
+    count,
+  );
+  const back = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(3.2, 1.05, 0.16),
+    new THREE.MeshStandardMaterial({ color: '#805538', roughness: 0.88 }),
+    count,
+  );
+  const legs = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.16, 0.78, 0.16),
+    new THREE.MeshStandardMaterial({ color: '#555b60', roughness: 0.82 }),
+    count * 2,
+  );
+  const matrix = new THREE.Matrix4();
+  let index = 0;
+  let legIndex = 0;
+
+  for (const zone of parks) {
+    const centerX = (zone.rect.minX + zone.rect.maxX) / 2;
+    const centerZ = (zone.rect.minZ + zone.rect.maxZ) / 2;
+    const offset = Math.min(12, (zone.rect.maxX - zone.rect.minX) * 0.18);
+    for (const side of [-1, 1]) {
+      const x = centerX + side * offset;
+      matrix.makeTranslation(x, 0.82, centerZ);
+      seat.setMatrixAt(index, matrix);
+      matrix.makeTranslation(x, 1.38, centerZ - 0.28);
+      back.setMatrixAt(index, matrix);
+      for (const legSide of [-1, 1]) {
+        matrix.makeTranslation(x + legSide * 1.25, 0.39, centerZ);
+        legs.setMatrixAt(legIndex++, matrix);
+      }
+      index++;
+    }
+  }
+
+  for (const mesh of [seat, back, legs]) {
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+  }
+  group.add(seat, back, legs);
+  return group;
+}
+
 export function buildZones(zones: readonly Zone[]): THREE.Group {
   const group = new THREE.Group();
   const palmTrunks: THREE.BufferGeometry[] = [];
@@ -82,6 +140,8 @@ export function buildZones(zones: readonly Zone[]): THREE.Group {
     else if (zone.kind === 'oasis') buildOasis(zone.rect, group, palmTrunks, palmCrowns);
     else buildParking(zone.rect, group, stripes);
   }
+
+  group.add(buildParkBenches(zones));
 
   if (palmTrunks.length > 0) {
     const trunkMesh = new THREE.Mesh(mergeNonIndexed(palmTrunks), new THREE.MeshStandardMaterial({ color: '#7a5a3c', roughness: 1 }));
