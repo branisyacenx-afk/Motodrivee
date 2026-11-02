@@ -16,7 +16,7 @@ import {
   type Offer,
 } from '@/game/sim/orders';
 import { createActorAssets, type BikeModel, type PedestrianModel } from '@/game/render/vehicleMeshes';
-import { buildCity } from '@/game/render/cityMeshes';
+import { buildCity, updateCityChunkVisibility } from '@/game/render/cityMeshes';
 import { buildZones } from '@/game/render/zoneMeshes';
 import { buildVenues } from '@/game/render/venueMeshes';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
@@ -75,6 +75,7 @@ export class GameWorld {
   private readonly carMeshes: THREE.Group[] = [];
   private readonly pedMeshes: PedestrianModel[] = [];
   private readonly venueStalls: THREE.Object3D[];
+  private readonly cityGroup: THREE.Group;
   private readonly generateOffer: () => Offer;
   private readonly resizeObserver: ResizeObserver;
   private readonly hitReadyAt: Record<string, number> = {};
@@ -141,7 +142,8 @@ export class GameWorld {
 
     const venueGroup = buildVenues(layout.venues);
     this.venueStalls = [...venueGroup.children];
-    this.scene.add(buildCity(layout), buildZones(layout.zones), venueGroup);
+    this.cityGroup = buildCity(layout);
+    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup);
 
     this.guide = createDeliveryGuide();
     this.scene.add(this.guide.group);
@@ -448,6 +450,7 @@ export class GameWorld {
     const forwardX = Math.sin(bike.heading);
     const forwardZ = Math.cos(bike.heading);
 
+    updateCityChunkVisibility(this.cityGroup, bike.x, bike.z);
     this.remoteRiders.update(this.options.network.riders(), dt);
     this.broadcastPose(dt);
 
