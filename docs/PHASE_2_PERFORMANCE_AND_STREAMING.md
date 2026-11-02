@@ -33,3 +33,19 @@ These are initial device-class defaults, not measured performance guarantees. Va
 6. Stream district metadata and delivery points separately from render meshes so mission generation remains stable.
 
 Do not increase the world dimensions until chunk loading, unloading, collision bounds, and memory limits are tested in a small prototype area.
+
+
+## Bounded city geometry residency
+
+- Building/tree geometry is retained only within a 10-chunk-radius unload boundary around the rider; the 7-chunk active radius controls visibility, leaving a hysteresis band to avoid rapid unload/rebuild while moving near the edge.
+- Chunks beyond the unload boundary are removed from the scene and their owned geometries/materials are disposed. Their lightweight layout records remain available so the geometry can be rebuilt when the rider returns.
+- At most one nearby chunk is rebuilt per rendered frame, ordered by distance. This avoids a single large rebuild burst after entering a new area.
+- The shared window texture is owned by the city root and is never disposed when an individual chunk unloads. It is disposed once when the full GameWorld is disposed. Road strip textures are cloned per mesh; the source texture is released after the clones are created, and clone textures are released with the city.
+- This bounds resident building/tree render geometry, not all world memory: layout/collision/traffic/venue records and the full road/ground layer are still retained. Full procedural world streaming and collision-region indexing remain future work.
+
+### Validation still required on devices
+
+- Traverse far enough to cross multiple chunk boundaries, then return to an unloaded area and confirm buildings/trees rebuild without missing blocks.
+- Check for visual popping at the 7-chunk visibility and 10-chunk unload boundaries.
+- Repeat game sessions and watch memory/GPU stability; confirm no WebGL warnings or crashes.
+- Compare mobile frame pacing during initial nearby chunk construction and after several unload/rebuild cycles.
