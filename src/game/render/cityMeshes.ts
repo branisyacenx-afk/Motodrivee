@@ -193,6 +193,63 @@ function buildSidewalkCurbs(bounds: Rect): THREE.InstancedMesh {
   return curbs;
 }
 
+
+/**
+ * Add restrained decorative street lamps along selected avenue sidewalks.
+ * Three instanced meshes keep the entire set to a small, fixed draw-call cost.
+ * Lamps are visual only: they do not add collision or real-time light sources.
+ */
+function buildStreetLamps(): THREE.Group {
+  const group = new THREE.Group();
+  const selectedRows = 3;
+  const count = Math.ceil(CITY.rows / selectedRows) * (CITY.cols - 1) * 2;
+  const pole = new THREE.InstancedMesh(
+    new THREE.CylinderGeometry(0.11, 0.16, 7, 6),
+    new THREE.MeshStandardMaterial({ color: '#59636a', roughness: 0.82 }),
+    count,
+  );
+  const arms = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.12, 0.12, 0.72),
+    new THREE.MeshStandardMaterial({ color: '#59636a', roughness: 0.82 }),
+    count,
+  );
+  const heads = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.48, 0.16, 0.62),
+    new THREE.MeshStandardMaterial({ color: '#e5dfc8', roughness: 0.68 }),
+    count,
+  );
+  const matrix = new THREE.Matrix4();
+  const edgeOffset = CITY.roadWidth / 2 + CITY.sidewalk * 0.72;
+  let index = 0;
+
+  for (let row = 0; row < CITY.rows; row += selectedRows) {
+    const road = roadZ(row);
+    for (let col = 0; col < CITY.cols - 1; col++) {
+      const x = (roadX(col) + roadX(col + 1)) / 2;
+      for (const side of [-1, 1]) {
+        const z = road + side * edgeOffset;
+        matrix.makeTranslation(x, 3.5, z);
+        pole.setMatrixAt(index, matrix);
+        matrix.makeTranslation(x, 6.88, z - side * 0.28);
+        arms.setMatrixAt(index, matrix);
+        matrix.makeTranslation(x, 7.02, z - side * 0.68);
+        heads.setMatrixAt(index, matrix);
+        index++;
+      }
+    }
+  }
+
+  for (const mesh of [pole, arms, heads]) {
+    mesh.count = index;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+  }
+  group.add(pole, arms, heads);
+  return group;
+}
+
 function scaleWallUvs(geometry: THREE.BoxGeometry, width: number, depth: number, height: number): void {
   const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
   const sideU = (face: number) => (face < 2 ? depth : width) / 9;
@@ -332,6 +389,7 @@ export function buildCity(layout: Layout): THREE.Group {
   roadTexture.dispose();
   root.add(buildCrosswalks());
   root.add(buildSidewalkCurbs(bounds));
+  root.add(buildStreetLamps());
   root.add(buildParkingBays());
 
   const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
