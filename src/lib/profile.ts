@@ -81,19 +81,26 @@ function isPaintId(value: unknown): value is PaintId {
   return value === 'swift' || value === 'ocean' || value === 'graphite';
 }
 
+function finiteNonNegative(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
 export function loadProfile(): Profile {
   const fallback = createProfile();
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return fallback;
+
   try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return fallback;
+
     const parsed = JSON.parse(raw) as Partial<Profile>;
     const upgrades = parsed.upgrades ?? fallback.upgrades;
     const owned = Array.isArray(parsed.owned) ? parsed.owned.filter(isVehicleId) : fallback.owned;
+
     return {
-      name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.slice(0, 16) : fallback.name,
-      wallet: typeof parsed.wallet === 'number' && parsed.wallet >= 0 ? parsed.wallet : fallback.wallet,
-      xp: typeof parsed.xp === 'number' && parsed.xp >= 0 ? Math.floor(parsed.xp) : 0,
-      dailyStreak: typeof parsed.dailyStreak === 'number' && parsed.dailyStreak >= 0 ? Math.floor(parsed.dailyStreak) : 0,
+      name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim().slice(0, 16) : fallback.name,
+      wallet: finiteNonNegative(parsed.wallet, fallback.wallet),
+      xp: Math.floor(finiteNonNegative(parsed.xp, 0)),
+      dailyStreak: Math.floor(finiteNonNegative(parsed.dailyStreak, 0)),
       lastDailyClaim: typeof parsed.lastDailyClaim === 'string' ? parsed.lastDailyClaim : null,
       owned: owned.includes('classic') ? owned : ['classic', ...owned],
       vehicle: isVehicleId(parsed.vehicle) && owned.includes(parsed.vehicle) ? parsed.vehicle : fallback.vehicle,
@@ -103,20 +110,25 @@ export function loadProfile(): Profile {
         handling: clampLevel(upgrades.handling, 'handling'),
         helmet: clampLevel(upgrades.helmet, 'helmet'),
       },
-      bestScore: typeof parsed.bestScore === 'number' && parsed.bestScore >= 0 ? parsed.bestScore : 0,
+      bestScore: finiteNonNegative(parsed.bestScore, 0),
     };
-  } catch {
+  } catch (error) {
+    console.warn('Could not read the Swift Drop profile from local storage.', error);
     return fallback;
   }
 }
 
 function clampLevel(value: unknown, id: UpgradeId): number {
   const max = UPGRADES.find((u) => u.id === id)?.costs.length ?? 0;
-  return typeof value === 'number' ? Math.min(max, Math.max(0, Math.floor(value))) : 0;
+  return typeof value === 'number' && Number.isFinite(value) ? Math.min(max, Math.max(0, Math.floor(value))) : 0;
 }
 
 export function saveProfile(profile: Profile): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+  } catch (error) {
+    console.warn('Could not save the Swift Drop profile to local storage.', error);
+  }
 }
 
 export function buyVehicle(profile: Profile, id: VehicleId): Profile | null {

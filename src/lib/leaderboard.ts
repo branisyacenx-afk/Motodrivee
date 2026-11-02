@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export interface LeaderboardRow {
   id: string;
@@ -29,7 +29,14 @@ function isLeaderboardRow(value: unknown): value is LeaderboardRow {
   );
 }
 
+function requireSupabase(): void {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  }
+}
+
 export async function fetchLeaderboard(limit = 20): Promise<LeaderboardRow[]> {
+  requireSupabase();
   const { data, error } = await supabase
     .from(TABLE)
     .select('id, name, score, deliveries, vehicle')
@@ -41,6 +48,7 @@ export async function fetchLeaderboard(limit = 20): Promise<LeaderboardRow[]> {
 }
 
 export async function submitScore(entry: NewLeaderboardEntry): Promise<void> {
+  requireSupabase();
   const { error } = await supabase.from(TABLE).insert(entry);
   if (error) throw new Error(error.message);
 }

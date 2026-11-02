@@ -1,5 +1,5 @@
 import { REALTIME_SUBSCRIBE_STATES } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import type { LinkStatus } from '@/game/types';
 
 const CITY_CHANNEL = 'swift-drop-city';
@@ -45,7 +45,22 @@ function parseRider(payload: unknown): (RiderPose & { id: string }) | null {
   return { id, name, x, z, heading, paintHex };
 }
 
+function offlineCity(): SharedCity {
+  return {
+    send() {},
+    riders() {
+      return [];
+    },
+    status() {
+      return 'offline';
+    },
+    close() {},
+  };
+}
+
 export function connectSharedCity(selfId: string): SharedCity {
+  if (!isSupabaseConfigured) return offlineCity();
+
   const remotes = new Map<string, RemoteRider>();
   let status: LinkStatus = 'connecting';
 
@@ -60,7 +75,11 @@ export function connectSharedCity(selfId: string): SharedCity {
       status = 'live';
       return;
     }
-    if (state === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR || state === REALTIME_SUBSCRIBE_STATES.TIMED_OUT) {
+    if (
+      state === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
+      state === REALTIME_SUBSCRIBE_STATES.TIMED_OUT ||
+      state === REALTIME_SUBSCRIBE_STATES.CLOSED
+    ) {
       status = 'offline';
       remotes.clear();
     }
