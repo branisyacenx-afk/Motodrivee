@@ -16,7 +16,7 @@ import {
   type Offer,
 } from '@/game/sim/orders';
 import { createActorAssets, type BikeModel, type PedestrianModel } from '@/game/render/vehicleMeshes';
-import { buildCity, updateCityChunkVisibility } from '@/game/render/cityMeshes';
+import { buildCity, disposeCity, updateCityChunkVisibility } from '@/game/render/cityMeshes';
 import { buildZones } from '@/game/render/zoneMeshes';
 import { buildVenues } from '@/game/render/venueMeshes';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
@@ -221,6 +221,7 @@ export class GameWorld {
     this.resizeObserver.disconnect();
     this.sound.dispose();
     this.remoteRiders.dispose();
+    disposeCity(this.cityGroup);
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.renderer.domElement.remove();
