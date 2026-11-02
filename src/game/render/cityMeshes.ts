@@ -150,6 +150,49 @@ function buildParkingBays(): THREE.Group {
   return group;
 }
 
+/**
+ * Define the sidewalk edge with continuous low curb strips. One instanced mesh
+ * keeps the city-wide detail to a single draw call without changing collision.
+ */
+function buildSidewalkCurbs(bounds: Rect): THREE.InstancedMesh {
+  const count = CITY.rows * 2 + CITY.cols * 2;
+  const geometry = new THREE.BoxGeometry(1, 0.18, 0.34);
+  const material = new THREE.MeshStandardMaterial({ color: '#b8b6ae', roughness: 0.92 });
+  const curbs = new THREE.InstancedMesh(geometry, material, count);
+  const dummy = new THREE.Object3D();
+  let index = 0;
+  const edgeOffset = CITY.roadWidth / 2 + CITY.sidewalk;
+  const horizontalLength = bounds.maxX - bounds.minX;
+  const verticalLength = bounds.maxZ - bounds.minZ;
+
+  for (let j = 0; j < CITY.rows; j++) {
+    const z = roadZ(j);
+    for (const side of [-1, 1]) {
+      dummy.position.set((bounds.minX + bounds.maxX) / 2, 0.12, z + side * edgeOffset);
+      dummy.scale.set(horizontalLength, 1, 1);
+      dummy.updateMatrix();
+      curbs.setMatrixAt(index++, dummy.matrix);
+    }
+  }
+
+  for (let i = 0; i < CITY.cols; i++) {
+    const x = roadX(i);
+    for (const side of [-1, 1]) {
+      dummy.position.set(x + side * edgeOffset, 0.12, (bounds.minZ + bounds.maxZ) / 2);
+      dummy.scale.set(verticalLength, 1, 1);
+      dummy.rotation.y = Math.PI / 2;
+      dummy.updateMatrix();
+      curbs.setMatrixAt(index++, dummy.matrix);
+      dummy.rotation.y = 0;
+    }
+  }
+
+  curbs.instanceMatrix.needsUpdate = true;
+  curbs.computeBoundingSphere();
+  curbs.receiveShadow = true;
+  return curbs;
+}
+
 function scaleWallUvs(geometry: THREE.BoxGeometry, width: number, depth: number, height: number): void {
   const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
   const sideU = (face: number) => (face < 2 ? depth : width) / 9;
@@ -288,6 +331,7 @@ export function buildCity(layout: Layout): THREE.Group {
   }
   roadTexture.dispose();
   root.add(buildCrosswalks());
+  root.add(buildSidewalkCurbs(bounds));
   root.add(buildParkingBays());
 
   const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
