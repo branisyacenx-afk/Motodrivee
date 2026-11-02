@@ -114,7 +114,6 @@ function buildParkingBays(): THREE.Group {
     new THREE.MeshBasicMaterial({ color: '#e9e5d9' }),
     totalSlots * 3,
   );
-  const matrix = new THREE.Matrix4();
   const dummy = new THREE.Object3D();
   let index = 0;
 
