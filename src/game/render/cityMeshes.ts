@@ -96,6 +96,60 @@ function buildCrosswalks(): THREE.Group {
   return group;
 }
 
+/**
+ * Add a small number of marked curbside parking bays on selected streets.
+ * A single InstancedMesh keeps the decoration inexpensive and does not affect traffic.
+ */
+function buildParkingBays(): THREE.Group {
+  const group = new THREE.Group();
+  const baysPerBlock = 2;
+  const selectedRows = 4;
+  const slotsPerSide = baysPerBlock;
+  const slotLength = 5.5;
+  const slotDepth = 2.4;
+  const lineWidth = 0.12;
+  const totalSlots = Math.floor(CITY.rows / selectedRows) * (CITY.cols - 1) * slotsPerSide * 2;
+  const marks = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1, 0.035, 1),
+    new THREE.MeshBasicMaterial({ color: '#e9e5d9' }),
+    totalSlots * 3,
+  );
+  const dummy = new THREE.Object3D();
+  let index = 0;
+
+  for (let row = 0; row < CITY.rows; row += selectedRows) {
+    const z = roadZ(row);
+    for (let col = 0; col < CITY.cols - 1; col++) {
+      const left = roadX(col) + CITY.roadWidth / 2 + 2.5;
+      const right = roadX(col + 1) - CITY.roadWidth / 2 - 2.5;
+      const segmentLength = right - left;
+      if (segmentLength < slotLength * baysPerBlock + 4) continue;
+      for (const side of [-1, 1]) {
+        for (let slot = 0; slot < slotsPerSide; slot++) {
+          const x = left + segmentLength * (slot + 0.5) / slotsPerSide;
+          const edgeZ = z + side * (CITY.roadWidth / 2 - 1.1);
+          dummy.position.set(x, 0.13, edgeZ);
+          dummy.scale.set(slotLength, 1, lineWidth);
+          dummy.updateMatrix();
+          marks.setMatrixAt(index++, dummy.matrix);
+          for (const end of [-1, 1]) {
+            dummy.position.set(x + end * slotLength / 2, 0.13, z + side * (CITY.roadWidth / 2 - 1.1 - slotDepth / 2));
+            dummy.scale.set(lineWidth, 1, slotDepth);
+            dummy.updateMatrix();
+            marks.setMatrixAt(index++, dummy.matrix);
+          }
+        }
+      }
+    }
+  }
+
+  marks.count = index;
+  marks.instanceMatrix.needsUpdate = true;
+  marks.computeBoundingSphere();
+  group.add(marks);
+  return group;
+}
+
 function scaleWallUvs(geometry: THREE.BoxGeometry, width: number, depth: number, height: number): void {
   const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
   const sideU = (face: number) => (face < 2 ? depth : width) / 9;
@@ -234,6 +288,7 @@ export function buildCity(layout: Layout): THREE.Group {
   }
   roadTexture.dispose();
   root.add(buildCrosswalks());
+  root.add(buildParkingBays());
 
   const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
   const getChunk = (x: number, z: number) => {
