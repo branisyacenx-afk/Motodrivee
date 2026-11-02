@@ -193,45 +193,84 @@ export function buildCity(layout: Layout): THREE.Group {
   }
 
   const windowTexture = createWindowTexture();
-  for (const chunk of chunks.values()) {
-    const group = new THREE.Group();
-    group.position.set(chunk.x, 0, chunk.z);
-    group.userData.chunkX = chunk.x;
-    group.userData.chunkZ = chunk.z;
-    // Geometry is authored in world coordinates; offset the chunk back to the origin.
-    const localBuildings = chunk.buildings.map((box) => ({
+  // Keep lightweight layout records now; expensive Three.js geometry is created
+  // gradually by updateCityChunkVisibility instead of blocking the game startup.
+  root.userData.pendingChunks = [...chunks.values()].map((chunk) => ({
+    x: chunk.x,
+    z: chunk.z,
+    buildings: chunk.buildings.map((box) => ({
       ...box,
       minX: box.minX - chunk.x, maxX: box.maxX - chunk.x,
       minZ: box.minZ - chunk.z, maxZ: box.maxZ - chunk.z,
-    }));
-    const localTrees = chunk.trees.map((box) => ({
+    })),
+    trees: chunk.trees.map((box) => ({
       ...box,
       minX: box.minX - chunk.x, maxX: box.maxX - chunk.x,
       minZ: box.minZ - chunk.z, maxZ: box.maxZ - chunk.z,
-    }));
-    if (localBuildings.length) group.add(buildingGroup(localBuildings, windowTexture));
-    if (localTrees.length) group.add(treeGroup(localTrees));
-    root.add(group);
-  }
-
+    })),
+  }));
+  root.userData.windowTexture = windowTexture;
   root.userData.lastChunkX = Number.NaN;
   root.userData.lastChunkZ = Number.NaN;
   return root;
 }
 
-/** Toggle only when the rider enters a different chunk, avoiding per-frame scans. */
+interface PendingCityChunk {
+  x: number;
+  z: number;
+  buildings: Box[];
+  trees: Box[];
+}
+
+function buildChunk(chunk: PendingCityChunk, windowTexture: THREE.Texture): THREE.Group {
+  const group = new THREE.Group();
+  group.position.set(chunk.x, 0, chunk.z);
+  group.userData.chunkX = chunk.x;
+  group.userData.chunkZ = chunk.z;
+  if (chunk.buildings.length) group.add(buildingGroup(chunk.buildings, windowTexture));
+  if (chunk.trees.length) group.add(treeGroup(chunk.trees));
+  return group;
+}
+
+/**
+ * Reprioritize pending chunks when the rider changes area, then build one chunk
+ * per frame. This spreads expensive geometry work across frames and keeps nearby
+ * city blocks first. Collision/layout data remains fully available from startup.
+ */
 export function updateCityChunkVisibility(city: THREE.Group, x: number, z: number): void {
   const centerX = Math.floor(x / CITY_CHUNK_SIZE);
   const centerZ = Math.floor(z / CITY_CHUNK_SIZE);
-  if (city.userData.lastChunkX === centerX && city.userData.lastChunkZ === centerZ) return;
-
-  city.userData.lastChunkX = centerX;
-  city.userData.lastChunkZ = centerZ;
+  const enteredNewChunk = city.userData.lastChunkX !== centerX || city.userData.lastChunkZ !== centerZ;
   const radiusSq = CITY_CHUNK_ACTIVE_RADIUS * CITY_CHUNK_ACTIVE_RADIUS;
-  for (const child of city.children) {
-    if (child.userData.chunkX === undefined) continue;
-    const dx = child.userData.chunkX - x;
-    const dz = child.userData.chunkZ - z;
-    child.visible = dx * dx + dz * dz <= radiusSq;
+
+  if (enteredNewChunk) {
+    city.userData.lastChunkX = centerX;
+    city.userData.lastChunkZ = centerZ;
+    const pending = city.userData.pendingChunks as PendingCityChunk[];
+    pending.sort((a, b) => {
+      const adx = a.x - x;
+      const adz = a.z - z;
+      const bdx = b.x - x;
+      const bdz = b.z - z;
+      return adx * adx + adz * adz - (bdx * bdx + bdz * bdz);
+    });
+
+    for (const child of city.children) {
+      if (child.userData.chunkX === undefined) continue;
+      const dx = child.userData.chunkX - x;
+      const dz = child.userData.chunkZ - z;
+      child.visible = dx * dx + dz * dz <= radiusSq;
+    }
+  }
+
+  // A small fixed budget prevents a large burst of geometry work in one frame.
+  const pending = city.userData.pendingChunks as PendingCityChunk[];
+  const next = pending.shift();
+  if (next) {
+    const group = buildChunk(next, city.userData.windowTexture as THREE.Texture);
+    const dx = next.x - x;
+    const dz = next.z - z;
+    group.visible = dx * dx + dz * dz <= radiusSq;
+    city.add(group);
   }
 }
