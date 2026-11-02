@@ -8,7 +8,15 @@ const HALF_ROAD = CITY.roadWidth / 2;
 const BLOCK_INSET = HALF_ROAD + CITY.sidewalk;
 const SIDEWALK_WALK = HALF_ROAD + 0.9;
 const SIDEWALK_TREE = HALF_ROAD + 2.3;
-const BUILDING_COLORS = ['#dcd6c8', '#c7b59a', '#9ba6b2', '#e8e3d8', '#b3a287', '#7d8a98', '#f2eee6', '#a9b4a0'];
+// Each district has a restrained architectural palette to make the city easier to read.
+const DISTRICT_BUILDING_PALETTES: readonly (readonly string[])[] = [
+  ['#e8d8c2', '#c9ad8e', '#f0e6d7'], // Bab El Oued: warm coastal plaster
+  ['#d8d2c5', '#aeb9bd', '#eee9df'], // Hussein Dey: neutral urban tones
+  ['#e6dfcf', '#b8aa91', '#d0c5b3'], // Kouba: limestone and sand
+  ['#d9c8b5', '#b7a08a', '#eee0cf'], // El Harrach: earthy tones
+  ['#e8e4dc', '#c5c9c5', '#b4c0b5'], // Bir Mourad Rais: pale stone and sage
+  ['#eee8df', '#c8c0b4', '#aeb8b0'], // Hydra: light stone and muted green
+];
 const VENUE_COLORS = ['#c2410c', '#0f766e', '#1d4ed8', '#b45309', '#be123c', '#15803d'];
 const SIDE_NORMALS: readonly Vec2[] = [
   { x: -1, z: 0 },
@@ -67,7 +75,9 @@ export function createCityLayout(): Layout {
         minZ: roadZ(bj) + BLOCK_INSET,
         maxZ: roadZ(bj + 1) - BLOCK_INSET,
       };
-      const district = ALGIERS_DISTRICTS[(bi + bj) % ALGIERS_DISTRICTS.length];
+      const districtIndex = Math.min(ALGIERS_DISTRICTS.length - 1, Math.floor((bi / (cols - 1)) * ALGIERS_DISTRICTS.length));
+      const district = ALGIERS_DISTRICTS[districtIndex];
+      const buildingColors = DISTRICT_BUILDING_PALETTES[districtIndex];
       blocks.push({ ...block, district });
 
       for (let z = block.minZ + 8; z < block.maxZ - 4; z += 22) {
@@ -118,7 +128,7 @@ export function createCityLayout(): Layout {
             minZ: cellMinZ + inset,
             maxZ: cellMinZ + cellD - inset,
             height: tall ? range(55, 92, rand) : range(12, 48, rand),
-            color: pick(BUILDING_COLORS, rand),
+            color: pick(buildingColors, rand),
             kind: 'building',
             seed: rand(),
           });
