@@ -47,11 +47,16 @@ export function createTraffic(layout: Layout): Traffic {
   const cars: Car[] = [];
   for (const lane of layout.carLanes) {
     const count = 2 + Math.floor(rand() * 2);
+    const spacing = lane.length / count;
+    // Spread vehicles around the loop so a new shift never starts with a
+    // traffic jam caused by several cars being randomly placed nose-to-tail.
+    const offset = rand() * spacing;
     for (let k = 0; k < count; k++) {
       const cruise = range(9, 14, rand);
+      const jitter = (rand() - 0.5) * spacing * 0.18;
       cars.push({
         lane,
-        pos: lane.min + rand() * lane.length,
+        pos: lane.min + ((offset + k * spacing + jitter + lane.length) % lane.length),
         speed: cruise,
         cruise,
         color: CAR_COLORS[Math.floor(rand() * CAR_COLORS.length)],
@@ -62,10 +67,14 @@ export function createTraffic(layout: Layout): Traffic {
 
   const pedestrians: Pedestrian[] = [];
   for (const lane of layout.walkLanes) {
-    for (let k = 0; k < 2; k++) {
+    const count = 2;
+    const spacing = lane.length / count;
+    const offset = rand() * spacing;
+    for (let k = 0; k < count; k++) {
+      const jitter = (rand() - 0.5) * spacing * 0.2;
       pedestrians.push({
         lane,
-        pos: lane.min + rand() * lane.length,
+        pos: lane.min + ((offset + k * spacing + jitter + lane.length) % lane.length),
         speed: range(1.1, 1.8, rand),
         shirt: WALK_COLORS[Math.floor(rand() * WALK_COLORS.length)],
         skin: SKIN_COLORS[Math.floor(rand() * SKIN_COLORS.length)],
