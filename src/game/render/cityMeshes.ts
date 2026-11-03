@@ -473,6 +473,73 @@ function buildingGroup(boxes: readonly Box[], windowTexture: THREE.Texture): THR
     }
   }
 
+  // Ten restrained rooftop-life details make residential blocks feel lived-in.
+  // Each category is a single instanced batch per streamed city chunk.
+  type RoofTransform = { x: number; y: number; z: number; sx?: number; sy?: number; sz?: number; ry?: number };
+  const roofItems: RoofTransform[][] = Array.from({ length: 10 }, () => []);
+  const eligibleRoofs = boxes.filter((box) => box.height >= 20 && box.maxX - box.minX >= 13 && box.maxZ - box.minZ >= 13);
+  for (const box of eligibleRoofs) {
+    const width = box.maxX - box.minX;
+    const depth = box.maxZ - box.minZ;
+    const x = (box.minX + box.maxX) / 2;
+    const z = (box.minZ + box.maxZ) / 2;
+    const roofY = box.height + 0.18;
+    const insetX = Math.min(3.5, width * 0.18);
+    const insetZ = Math.min(3.5, depth * 0.18);
+    const slot = Math.floor(box.seed * 1000) % 10;
+    // 1. Solar water-heating panels.
+    if (slot === 0 || slot === 5) roofItems[0].push({ x: x - insetX, y: roofY + 0.45, z: z - insetZ, sx: 3.2, sy: 0.12, sz: 1.8, ry: box.seed });
+    // 2. Satellite dishes.
+    if (slot === 1 || slot === 6) roofItems[1].push({ x: x + insetX, y: roofY + 0.8, z: z + insetZ, sx: 0.9, sy: 0.22, sz: 0.9, ry: box.seed * Math.PI * 2 });
+    // 3. Television antennas.
+    if (slot === 2 || slot === 7) roofItems[2].push({ x: x - insetX, y: roofY + 1.8, z: z + insetZ, sx: 0.08, sy: 3.2, sz: 0.08 });
+    // 4. Air-conditioning condenser units.
+    if (slot === 3 || slot === 8) roofItems[3].push({ x: x + insetX, y: roofY + 0.55, z: z - insetZ, sx: 1.25, sy: 1.0, sz: 0.8 });
+    // 5. Ventilation stacks.
+    if (slot === 4 || slot === 9) roofItems[4].push({ x: x - insetX, y: roofY + 0.65, z: z - insetZ, sx: 0.38, sy: 1.3, sz: 0.38 });
+    // 6. Small roof skylights.
+    if (box.seed > 0.42 && width > 18) roofItems[5].push({ x: x + insetX, y: roofY + 0.3, z: z - insetZ, sx: 2.0, sy: 0.28, sz: 1.5, ry: box.seed });
+    // 7. Roof access rooms.
+    if (box.seed > 0.68 && depth > 17) roofItems[6].push({ x: x - insetX, y: roofY + 1.0, z: z + insetZ, sx: 2.2, sy: 2.0, sz: 2.0 });
+    // 8. Rainwater pipe outlets.
+    if (box.seed < 0.24) roofItems[7].push({ x: x + insetX, y: roofY + 0.75, z: z + insetZ, sx: 0.16, sy: 1.5, sz: 0.16 });
+    // 9. Clothesline posts.
+    if (box.seed > 0.76 && width > 18) roofItems[8].push({ x: x, y: roofY + 0.8, z: z + insetZ, sx: 0.12, sy: 1.6, sz: 0.12 });
+    // 10. Roof safety rails on selected taller residential buildings.
+    if (box.height > 34 && box.seed > 0.84) roofItems[9].push({ x, y: roofY + 0.55, z: z, sx: Math.min(8, width * 0.35), sy: 0.12, sz: 0.12 });
+  }
+
+  const roofBatchDefs: { geometry: THREE.BufferGeometry; material: THREE.Material }[] = [
+    { geometry: new THREE.BoxGeometry(1, 1, 1), material: new THREE.MeshStandardMaterial({ color: '#315d70', roughness: 0.48, metalness: 0.18 }) },
+    { geometry: new THREE.CylinderGeometry(0.8, 0.8, 0.12, 10), material: new THREE.MeshStandardMaterial({ color: '#a9afb2', roughness: 0.62, metalness: 0.25 }) },
+    { geometry: new THREE.CylinderGeometry(0.07, 0.09, 1, 6), material: new THREE.MeshStandardMaterial({ color: '#68747a', roughness: 0.7, metalness: 0.35 }) },
+    { geometry: new THREE.BoxGeometry(1, 1, 1), material: new THREE.MeshStandardMaterial({ color: '#d5d4ce', roughness: 0.82 }) },
+    { geometry: new THREE.CylinderGeometry(0.5, 0.42, 1, 8), material: new THREE.MeshStandardMaterial({ color: '#8d9697', roughness: 0.82 }) },
+    { geometry: new THREE.BoxGeometry(1, 1, 1), material: new THREE.MeshStandardMaterial({ color: '#7c9aa2', roughness: 0.38, metalness: 0.08 }) },
+    { geometry: new THREE.BoxGeometry(1, 1, 1), material: new THREE.MeshStandardMaterial({ color: '#c9bda9', roughness: 0.9 }) },
+    { geometry: new THREE.CylinderGeometry(0.08, 0.08, 1, 6), material: new THREE.MeshStandardMaterial({ color: '#477f91', roughness: 0.7 }) },
+    { geometry: new THREE.CylinderGeometry(0.06, 0.06, 1, 6), material: new THREE.MeshStandardMaterial({ color: '#e1ded5', roughness: 0.8 }) },
+    { geometry: new THREE.BoxGeometry(1, 1, 1), material: new THREE.MeshStandardMaterial({ color: '#6e777a', roughness: 0.78, metalness: 0.18 }) },
+  ];
+  roofItems.forEach((items, batchIndex) => {
+    if (items.length === 0) return;
+    const def = roofBatchDefs[batchIndex];
+    const mesh = new THREE.InstancedMesh(def.geometry, def.material, items.length);
+    const dummy = new THREE.Object3D();
+    items.forEach((item, index) => {
+      dummy.position.set(item.x, item.y, item.z);
+      dummy.rotation.set(0, item.ry ?? 0, 0);
+      dummy.scale.set(item.sx ?? 1, item.sy ?? 1, item.sz ?? 1);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(index, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  });
+
   return group;
 }
 
