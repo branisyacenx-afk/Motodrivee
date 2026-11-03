@@ -403,6 +403,84 @@ function buildingGroup(boxes: readonly Box[], windowTexture: THREE.Texture): THR
     roofMesh.receiveShadow = true;
     group.add(wallMesh, roofMesh);
   }
+  // Ten facade details are batched per streamed city chunk. They sit on the
+  // front (negative-Z) face and remain visual-only.
+  type FacadeItem = { x: number; y: number; z: number; sx: number; sy: number; sz: number };
+  const facadeItems: FacadeItem[][] = Array.from({ length: 10 }, () => []);
+  const facadeBoxes = boxes.filter((box) =>
+    box.kind === 'building' && box.height >= 9 && box.maxX - box.minX >= 10 && box.maxZ - box.minZ >= 8
+  );
+  for (const box of facadeBoxes) {
+    const width = box.maxX - box.minX;
+    const depth = box.maxZ - box.minZ;
+    const centerX = (box.minX + box.maxX) / 2;
+    const frontZ = box.minZ - 0.09;
+    const doorWidth = Math.min(2.1, width * 0.18);
+    const doorHeight = Math.min(3.2, box.height * 0.28);
+    const seed = Math.floor(box.seed * 1000) % 10;
+    // 1. Recessed-looking entrance door panel.
+    facadeItems[0].push({ x: centerX, y: doorHeight / 2, z: frontZ, sx: doorWidth, sy: doorHeight, sz: 0.12 });
+    // 2. Entrance canopy.
+    facadeItems[1].push({ x: centerX, y: doorHeight + 0.22, z: frontZ - 0.48, sx: doorWidth + 0.9, sy: 0.22, sz: 0.95 });
+    // 3. Door lintel / sign band.
+    facadeItems[2].push({ x: centerX, y: doorHeight + 0.52, z: frontZ - 0.12, sx: doorWidth + 0.45, sy: 0.18, sz: 0.16 });
+    // 4. Window sills on a deterministic selection of buildings.
+    if (seed < 7 && box.height > 13) {
+      const y = Math.min(5.4, box.height * 0.42);
+      facadeItems[3].push({ x: centerX, y, z: frontZ - 0.16, sx: Math.min(5.2, width * 0.5), sy: 0.16, sz: 0.32 });
+    }
+    // 5. Slim window sunshade.
+    if (seed === 1 || seed === 4 || seed === 8) {
+      facadeItems[4].push({ x: centerX, y: Math.min(7.2, box.height * 0.58), z: frontZ - 0.34, sx: Math.min(5.6, width * 0.56), sy: 0.14, sz: 0.72 });
+    }
+    // 6–7. Vertical facade pilasters at both front corners.
+    for (const side of [-1, 1]) {
+      facadeItems[5].push({ x: centerX + side * (width / 2 - 0.22), y: box.height / 2, z: frontZ - 0.08, sx: 0.28, sy: box.height, sz: 0.2 });
+    }
+    // 8. Ground-floor stone/plaster plinth.
+    facadeItems[6].push({ x: centerX, y: 0.48, z: frontZ - 0.08, sx: width, sy: 0.96, sz: 0.18 });
+    // 9. Corner accent blocks at the entrance level.
+    if (seed % 2 === 0) {
+      for (const side of [-1, 1]) {
+        facadeItems[7].push({ x: centerX + side * (width / 2 - 0.42), y: 1.25, z: frontZ - 0.2, sx: 0.62, sy: 1.25, sz: 0.28 });
+      }
+    }
+    // 10. Narrow horizontal floor-band trim on taller buildings.
+    if (box.height >= 24 && depth > 10) {
+      facadeItems[8].push({ x: centerX, y: Math.min(8.5, box.height * 0.32), z: frontZ - 0.1, sx: width, sy: 0.12, sz: 0.16 });
+      if (box.height >= 38) facadeItems[9].push({ x: centerX, y: Math.min(15, box.height * 0.58), z: frontZ - 0.1, sx: width, sy: 0.12, sz: 0.16 });
+    }
+  }
+
+  const facadeMaterials = [
+    new THREE.MeshStandardMaterial({ color: '#51463f', roughness: 0.82 }),
+    new THREE.MeshStandardMaterial({ color: '#a98a68', roughness: 0.82 }),
+    new THREE.MeshStandardMaterial({ color: '#d6c8b5', roughness: 0.88 }),
+    new THREE.MeshStandardMaterial({ color: '#b8b0a2', roughness: 0.86 }),
+    new THREE.MeshStandardMaterial({ color: '#8b9a9b', roughness: 0.72 }),
+    new THREE.MeshStandardMaterial({ color: '#d5c9b8', roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: '#a99a86', roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: '#c5b59e', roughness: 0.88 }),
+    new THREE.MeshStandardMaterial({ color: '#e2d7c7', roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: '#e2d7c7', roughness: 0.9 }),
+  ];
+  facadeItems.forEach((items, index) => {
+    if (!items.length) return;
+    const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), facadeMaterials[index], items.length);
+    const dummy = new THREE.Object3D();
+    items.forEach((item, itemIndex) => {
+      dummy.position.set(item.x, item.y, item.z);
+      dummy.scale.set(item.sx, item.sy, item.sz);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(itemIndex, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  });
+
   // Selected residential buildings receive lightweight facade balconies.
   const balconyBoxes = boxes.filter((box) => box.height >= 20 && box.maxX - box.minX >= 12 && box.seed > 0.36);
   if (balconyBoxes.length > 0) {
