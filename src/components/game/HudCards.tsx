@@ -66,6 +66,7 @@ export function OrderCard({ order }: OrderCardProps) {
   }
   const lateRed = order.timeLeft === 0;
   const lowTime = order.timeLeft > 0 && order.timeLeft <= 15;
+  const timeRatio = Math.max(0, Math.min(1, order.timeLeft / Math.max(1, order.timeLimit)));
   return (
     <div className={`${GLASS_CARD} min-w-0 px-3.5 py-2.5`}>
       <p className="text-[11px] font-semibold text-slate-500">
@@ -85,6 +86,9 @@ export function OrderCard({ order }: OrderCardProps) {
           {lateRed ? 'متأخر' : `${order.timeLeft} ث`}
         </span>
       </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-label={`الوقت المتبقي ${order.timeLeft} ثانية`}>
+        <div className={`h-full rounded-full transition-[width] duration-300 ${lateRed ? 'bg-brand-500' : lowTime ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${timeRatio * 100}%` }} />
+      </div>
       {order.progress > 0 && (
         <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-slate-200">
           <div className="h-full rounded-full bg-emerald-500 transition-[width] duration-100" style={{ width: `${Math.round(order.progress * 100)}%` }} />
@@ -101,6 +105,8 @@ interface OfferCardProps {
 }
 
 export function OfferCard({ offer, onAccept, onDecline }: OfferCardProps) {
+  const urgency = offer.expiresIn <= 5;
+  const expiryRatio = Math.max(0, Math.min(1, offer.expiresIn / 20));
   return (
     <div className={`${GLASS_CARD} w-full border-s-4 border-brand-500 p-3.5 animate-toast-in`} role="dialog" aria-label="طلبية جديدة">
       <div className="flex items-start justify-between gap-3">
@@ -115,6 +121,9 @@ export function OfferCard({ offer, onAccept, onDecline }: OfferCardProps) {
           <p className="text-base font-bold tabular-nums text-emerald-700">{formatMoney(offer.pay)}</p>
           <p className="text-[11px] font-semibold text-slate-500">{offer.expiresIn} ث</p>
         </div>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-label={`تنتهي الطلبية بعد ${offer.expiresIn} ثانية`}>
+        <div className={`h-full rounded-full transition-[width] duration-200 ${urgency ? 'bg-brand-500' : 'bg-amber-400'}`} style={{ width: `${expiryRatio * 100}%` }} />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button
