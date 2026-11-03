@@ -154,7 +154,7 @@ function buildParkingBays(): THREE.Group {
  * Define the sidewalk edge with continuous low curb strips. One instanced mesh
  * keeps the city-wide detail to a single draw call without changing collision.
  */
-function buildSidewalkCurbs(bounds: Rect): THREE.InstancedMesh {
+function buildSidewalkCurbs(): THREE.InstancedMesh {
   // Split each curb at every perpendicular road so the sidewalk edge never
   // continues across an intersection or appears as a barrier in the roadway.
   const segmentsPerAxis = Math.max(0, CITY.cols - 1) * CITY.rows * 2;
@@ -543,7 +543,7 @@ export function buildCity(layout: Layout): THREE.Group {
   }
   roadTexture.dispose();
   root.add(buildCrosswalks());
-  root.add(buildSidewalkCurbs(bounds));
+  root.add(buildSidewalkCurbs());
   root.add(buildStreetLamps());
   root.add(buildBusShelters());
   root.add(buildParkingBays());
