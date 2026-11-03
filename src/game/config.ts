@@ -31,14 +31,15 @@ export interface VehicleDef {
   name: string;
   tagline: string;
   price: number;
+  requiredLevel: number;
   speed: number;
   accel: number;
 }
 
 export const VEHICLES: readonly VehicleDef[] = [
-  { id: 'classic', name: 'كلاسيك 125', tagline: 'دراجة عملية لشوارع المدينة', price: 0, speed: 1, accel: 1 },
-  { id: 'sport', name: 'سبورت 200', tagline: 'توازن أفضل وسرعة أعلى', price: 12000, speed: 1.1, accel: 1.15 },
-  { id: 'beast', name: 'تورينغ 250', tagline: 'دراجة قوية للرحلات الطويلة', price: 35000, speed: 1.2, accel: 1.22 },
+  { id: 'classic', name: 'كلاسيك 125', tagline: 'دراجة عملية لشوارع المدينة', price: 0, requiredLevel: 1, speed: 1, accel: 1 },
+  { id: 'sport', name: 'سبورت 200', tagline: 'توازن أفضل وسرعة أعلى', price: 12000, requiredLevel: 3, speed: 1.1, accel: 1.15 },
+  { id: 'beast', name: 'تورينغ 250', tagline: 'دراجة قوية للرحلات الطويلة', price: 35000, requiredLevel: 6, speed: 1.2, accel: 1.22 },
 ];
 
 export const PAINTS: readonly { id: PaintId; name: string; hex: string }[] = [
