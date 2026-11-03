@@ -1,5 +1,5 @@
-import { ChevronLeft, Coins, Flag, Gift, Store, Trophy, Target, CheckCircle2 } from 'lucide-react';
-import { careerRank, dailyRewardPreview, DAILY_CHALLENGE_REWARD, DAILY_DELIVERY_GOAL, levelFor, levelProgress, todayKey, type Profile } from '@/lib/profile';
+import { ChevronLeft, Coins, Flag, Gift, Store, Trophy, Target, CheckCircle2, CalendarDays } from 'lucide-react';
+import { careerRank, dailyRewardPreview, DAILY_CHALLENGE_REWARD, DAILY_DELIVERY_GOAL, WEEKLY_CHALLENGE_REWARD, WEEKLY_DELIVERY_GOAL, levelFor, levelProgress, todayKey, weekKey, type Profile } from '@/lib/profile';
 import { formatMoney } from '@/lib/money';
 
 interface MenuScreenProps {
@@ -9,12 +9,17 @@ interface MenuScreenProps {
   onLeaderboard: () => void;
   onClaimDaily: () => void;
   onClaimChallenge: () => void;
+  onClaimWeekly: () => void;
 }
 
 const HERO_IMAGE = 'https://images.pexels.com/photos/16750771/pexels-photo-16750771.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
 
-export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimDaily, onClaimChallenge }: MenuScreenProps) {
+export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimDaily, onClaimChallenge, onClaimWeekly }: MenuScreenProps) {
   const today = todayKey();
+  const week = weekKey();
+  const weeklyDeliveries = profile.weeklyChallengeWeek === week ? profile.weeklyDeliveries : 0;
+  const weeklyClaimed = profile.weeklyChallengeWeek === week && profile.weeklyChallengeClaimed;
+  const weeklyComplete = weeklyDeliveries >= WEEKLY_DELIVERY_GOAL;
   const dailyClaimable = profile.lastDailyClaim !== today;
   const dailyReward = dailyRewardPreview(profile, today);
   const dailyDeliveries = profile.dailyChallengeDate === today ? profile.dailyDeliveries : 0;
@@ -64,6 +69,12 @@ export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimD
           </div>
           {challengeComplete && !challengeClaimed && <button type="button" onClick={onClaimChallenge} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-2.5 text-sm font-extrabold text-slate-950"><CheckCircle2 className="h-4 w-4" />استلم مكافأة التحدي</button>}
           {challengeClaimed && <p className="mt-3 text-center text-xs font-bold text-emerald-300">اكتمل التحدي واستلمت المكافأة</p>}
+        </section>
+        <section aria-label="التحدي الأسبوعي" className="mt-3 max-w-xl rounded-2xl bg-slate-950/80 p-4 ring-1 ring-sky-300/25">
+          <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-sky-300" /><div><p className="text-sm font-extrabold">تحدي الأسبوع</p><p className="text-xs text-slate-300">أكمل ${WEEKLY_DELIVERY_GOAL} توصيلة من الاثنين إلى الأحد</p></div></div><span className="text-sm font-extrabold text-sky-200">+${formatMoney(WEEKLY_CHALLENGE_REWARD)}</span></div>
+          <div className="mt-3 flex items-center gap-3"><div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-sky-300" style={{ width: `${Math.min(100, weeklyDeliveries / WEEKLY_DELIVERY_GOAL * 100)}%` }} /></div><span className="text-xs font-bold tabular-nums">{Math.min(weeklyDeliveries, WEEKLY_DELIVERY_GOAL)}/{WEEKLY_DELIVERY_GOAL}</span></div>
+          {weeklyComplete && !weeklyClaimed && <button type="button" onClick={onClaimWeekly} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-300 px-4 py-2.5 text-sm font-extrabold text-slate-950"><CheckCircle2 className="h-4 w-4" />استلم مكافأة الأسبوع</button>}
+          {weeklyClaimed && <p className="mt-3 text-center text-xs font-bold text-emerald-300">اكتمل التحدي واستلمت المكافأة</p>}
         </section>
         {dailyClaimable && <button type="button" onClick={onClaimDaily} className="mt-4 flex max-w-md items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 py-3.5 text-sm font-bold text-slate-900 shadow-lg shadow-amber-400/30"><Gift className="h-4 w-4" />استلم مكافأتك اليومية: {formatMoney(dailyReward)}</button>}
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
