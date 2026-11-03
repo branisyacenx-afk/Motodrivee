@@ -89,11 +89,25 @@ export function OrderCard({ order }: OrderCardProps) {
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-label={`الوقت المتبقي ${order.timeLeft} ثانية`}>
         <div className={`h-full rounded-full transition-[width] duration-300 ${lateRed ? 'bg-brand-500' : lowTime ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${timeRatio * 100}%` }} />
       </div>
-      {order.progress > 0 && (
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full rounded-full bg-emerald-500 transition-[width] duration-100" style={{ width: `${Math.round(order.progress * 100)}%` }} />
-        </div>
-      )}
+      <div className="mt-2 rounded-lg bg-slate-100 px-2.5 py-1.5">
+        <p className="text-[11px] font-semibold text-slate-600">
+          {order.progress > 0
+            ? order.phase === 'pickup' ? 'راك تستلم الطلبية… خليك ثابت' : 'راك تسلّم الطلبية… خليك ثابت'
+            : order.phase === 'pickup' ? 'قرّب للمطعم واحبس الدراجة للاستلام' : 'قرّب للزبون واحبس الدراجة للتسليم'}
+        </p>
+        {order.progress > 0 && (
+          <div
+            className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-300"
+            role="progressbar"
+            aria-label={order.phase === 'pickup' ? 'تقدم استلام الطلبية' : 'تقدم تسليم الطلبية'}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(order.progress * 100)}
+          >
+            <div className="h-full rounded-full bg-emerald-600 transition-[width] duration-100" style={{ width: `${Math.round(order.progress * 100)}%` }} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
