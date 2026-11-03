@@ -21,8 +21,9 @@ export interface ActiveOrder extends Omit<Offer, 'expiresIn'> {
 }
 
 export const OFFER_LIFETIME = 20;
-const MIN_TRIP_STRAIGHT = 120;
-const MAX_TRIP_STRAIGHT = 260;
+const MIN_TRIP_STRAIGHT = 85;
+const MAX_TRIP_STRAIGHT = 175;
+const MAX_PICKUP_APPROACH = 220;
 const ARRIVAL_RADIUS = 9;
 const STOP_SPEED = 4;
 
@@ -45,7 +46,7 @@ function randomPointOnBlock(block: Block, rand: Random): Vec2 {
 
 function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: Random, origin: Vec2): Offer {
   const rankedVenues = [...venues].sort((a, b) => Math.hypot(a.x - origin.x, a.z - origin.z) - Math.hypot(b.x - origin.x, b.z - origin.z));
-  const nearbyVenues = rankedVenues.filter((venue) => Math.hypot(venue.x - origin.x, venue.z - origin.z) <= 360);
+  const nearbyVenues = rankedVenues.filter((venue) => Math.hypot(venue.x - origin.x, venue.z - origin.z) <= MAX_PICKUP_APPROACH);
   const venue = pick((nearbyVenues.length ? nearbyVenues : rankedVenues.slice(0, 8)), rand);
   const pickup = { x: venue.x, z: venue.z };
   const nearby = blocks.filter((block) => {
@@ -55,7 +56,7 @@ function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: R
   const dropBlock = pick(nearby.length > 0 ? nearby : blocks, rand);
   const dropoff = randomPointOnBlock(dropBlock, rand);
   const straight = Math.hypot(dropoff.x - pickup.x, dropoff.z - pickup.z);
-  const distance = straight * 1.25;
+  const distance = straight * 1.12;
   const approachDistance = Math.hypot(pickup.x - origin.x, pickup.z - origin.z);
   return {
     restaurant: venue.name,
@@ -64,8 +65,8 @@ function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: R
     pickupDistrict: venue.district,
     dropoffDistrict: dropBlock.district,
     distance,
-    pay: Math.round(500 + distance / 1.15 + approachDistance * 0.25),
-    timeLimit: Math.round((approachDistance + distance) / 10 + 75),
+    pay: Math.round(450 + distance * 0.9 + approachDistance * 0.35),
+    timeLimit: Math.max(90, Math.min(210, Math.round((approachDistance + distance) / 5 + 55))),
     expiresIn: OFFER_LIFETIME,
   };
 }
