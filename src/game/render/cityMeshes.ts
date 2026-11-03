@@ -385,6 +385,32 @@ function buildingGroup(boxes: readonly Box[], windowTexture: THREE.Texture): THR
     roofMesh.receiveShadow = true;
     group.add(wallMesh, roofMesh);
   }
+  // Selected residential buildings receive lightweight facade balconies.
+  const balconyBoxes = boxes.filter((box) => box.height >= 20 && box.maxX - box.minX >= 12 && box.seed > 0.36);
+  if (balconyBoxes.length > 0) {
+    const balconyGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const platforms = new THREE.InstancedMesh(balconyGeometry, new THREE.MeshStandardMaterial({ color: '#c9c2b5', roughness: 0.88 }), balconyBoxes.length * 2);
+    const rails = new THREE.InstancedMesh(balconyGeometry, new THREE.MeshStandardMaterial({ color: '#596b70', roughness: 0.7, metalness: 0.18 }), balconyBoxes.length * 6);
+    const dummy = new THREE.Object3D();
+    let p = 0;
+    let r = 0;
+    for (const box of balconyBoxes) {
+      const width = Math.min(4.2, (box.maxX - box.minX) * 0.42);
+      const centerX = (box.minX + box.maxX) / 2;
+      const frontZ = box.minZ - 0.62;
+      const levels = box.height >= 38 && box.seed > 0.62 ? [5.2, 10.4] : [5.2];
+      for (const level of levels) {
+        if (level + 2 > box.height) continue;
+        dummy.position.set(centerX, level, frontZ); dummy.scale.set(width, 0.22, 1.15); dummy.updateMatrix(); platforms.setMatrixAt(p++, dummy.matrix);
+        dummy.position.set(centerX, level + 0.55, frontZ - 0.52); dummy.scale.set(width, 1.1, 0.12); dummy.updateMatrix(); rails.setMatrixAt(r++, dummy.matrix);
+        for (const side of [-1, 1]) {
+          dummy.position.set(centerX + side * (width / 2 - 0.06), level + 0.55, frontZ); dummy.scale.set(0.12, 1.1, 1.05); dummy.updateMatrix(); rails.setMatrixAt(r++, dummy.matrix);
+        }
+      }
+    }
+    platforms.count = p; rails.count = r;
+    for (const mesh of [platforms, rails]) { mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere(); mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); }
+  }
   // A restrained number of rooftop water tanks adds a familiar Algerian
   // residential detail without creating one mesh per building.
   const tankBoxes = boxes.filter((box) => box.height >= 24 && box.seed > 0.58);
