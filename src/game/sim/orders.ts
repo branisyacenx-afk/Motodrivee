@@ -30,9 +30,9 @@ export function requiredWait(phase: ActiveOrder['phase']): number {
   return phase === 'pickup' ? 3 : 1.5;
 }
 
-export function createOfferGenerator(blocks: readonly Block[], venues: readonly Venue[], seed: number): () => Offer {
+export function createOfferGenerator(blocks: readonly Block[], venues: readonly Venue[], seed: number): (origin: Vec2) => Offer {
   const rand = createRandom(seed);
-  return () => createOffer(blocks, venues, rand);
+  return (origin) => createOffer(blocks, venues, rand, origin);
 }
 
 function randomPointOnBlock(block: Block, rand: Random): Vec2 {
@@ -43,8 +43,10 @@ function randomPointOnBlock(block: Block, rand: Random): Vec2 {
   return { x: range(block.minX, block.maxX, rand), z: block.maxZ + 1.5 };
 }
 
-function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: Random): Offer {
-  const venue = pick(venues, rand);
+function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: Random, origin: Vec2): Offer {
+  const rankedVenues = [...venues].sort((a, b) => Math.hypot(a.x - origin.x, a.z - origin.z) - Math.hypot(b.x - origin.x, b.z - origin.z));
+  const nearbyVenues = rankedVenues.filter((venue) => Math.hypot(venue.x - origin.x, venue.z - origin.z) <= 360);
+  const venue = pick((nearbyVenues.length ? nearbyVenues : rankedVenues.slice(0, 8)), rand);
   const pickup = { x: venue.x, z: venue.z };
   const nearby = blocks.filter((block) => {
     const straight = Math.hypot((block.minX + block.maxX) / 2 - pickup.x, (block.minZ + block.maxZ) / 2 - pickup.z);
@@ -54,6 +56,7 @@ function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: R
   const dropoff = randomPointOnBlock(dropBlock, rand);
   const straight = Math.hypot(dropoff.x - pickup.x, dropoff.z - pickup.z);
   const distance = straight * 1.25;
+  const approachDistance = Math.hypot(pickup.x - origin.x, pickup.z - origin.z);
   return {
     restaurant: venue.name,
     pickup,
@@ -61,8 +64,8 @@ function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: R
     pickupDistrict: venue.district,
     dropoffDistrict: dropBlock.district,
     distance,
-    pay: Math.round(600 + distance / 0.9),
-    timeLimit: Math.round(distance / 10 + 45),
+    pay: Math.round(500 + distance / 1.15 + approachDistance * 0.25),
+    timeLimit: Math.round((approachDistance + distance) / 10 + 75),
     expiresIn: OFFER_LIFETIME,
   };
 }
