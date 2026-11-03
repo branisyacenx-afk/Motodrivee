@@ -57,7 +57,7 @@ export function buildVenues(venues: readonly Venue[]): THREE.Group {
 
 
   for (const [index, venue] of venues.entries()) {
-    const indexForVenue = index;
+    indexForVenue = index;
     // 1–2. Side framing posts, 3. menu board, 4. trim, 5. warm lamps,
     // 6. planter, 7. waste bin, 8. foot rail, 9. display stand, 10. entrance mat.
     setShop(0, venue, -2.85, 1.3, 0.05);
