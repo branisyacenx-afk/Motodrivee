@@ -13,8 +13,20 @@ export function buildVenues(venues: readonly Venue[]): THREE.Group {
   const postGeometry = new THREE.BoxGeometry(0.22, POST_HEIGHT, 0.22);
   const signGeometry = new THREE.PlaneGeometry(SIGN_WIDTH, SIGN_HEIGHT);
   const awningGeometry = new THREE.BoxGeometry(SIGN_WIDTH + 0.4, 0.14, 1.4);
+  // Shared instanced details keep the new counter fronts to one additional draw call.
+  const counterFronts = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(4.8, 1.05, 0.22),
+    new THREE.MeshStandardMaterial({ color: '#8b6848', roughness: 0.88 }),
+    venues.length,
+  );
+  const counterTops = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(5.0, 0.12, 0.42),
+    new THREE.MeshStandardMaterial({ color: '#d9d0bf', roughness: 0.72 }),
+    venues.length,
+  );
+  const dummy = new THREE.Object3D();
 
-  for (const venue of venues) {
+  for (const [index, venue] of venues.entries()) {
     const stall = new THREE.Group();
     stall.position.set(venue.x, 0, venue.z);
     stall.rotation.y = Math.atan2(venue.normal.x, venue.normal.z);
@@ -46,8 +58,32 @@ export function buildVenues(venues: readonly Venue[]): THREE.Group {
     awning.castShadow = true;
     stall.add(awning);
 
+    // A compact service counter makes each restaurant stall read as a usable shop.
+    const counterY = 0.62;
+    const counterZ = 1.38;
+    dummy.position.set(venue.x, counterY, venue.z);
+    dummy.rotation.y = stall.rotation.y;
+    dummy.updateMatrix();
+    counterFronts.setMatrixAt(index, dummy.matrix);
+    dummy.position.set(
+      venue.x + Math.sin(stall.rotation.y) * counterZ,
+      1.18,
+      venue.z + Math.cos(stall.rotation.y) * counterZ,
+    );
+    dummy.rotation.y = stall.rotation.y;
+    dummy.updateMatrix();
+    counterTops.setMatrixAt(index, dummy.matrix);
+
     group.add(stall);
   }
 
+  for (const mesh of [counterFronts, counterTops]) {
+    mesh.count = venues.length;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+  }
+  group.add(counterFronts, counterTops);
   return group;
 }
