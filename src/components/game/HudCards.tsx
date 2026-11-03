@@ -23,8 +23,8 @@ interface TurnCardProps {
 export function TurnCard({ turn, order }: TurnCardProps) {
   if (!turn) {
     return (
-      <div className={`${GLASS_CARD} flex items-center gap-3 px-4 py-2.5`}>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+      <div className={`${GLASS_CARD} flex items-center gap-2 px-3 py-1.5 sm:gap-3 sm:px-4 sm:py-2.5`}>
+        <span className="flex h-7 w-7 shrink-0 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
           <MapPin className="h-5 w-5" />
         </span>
         <div className="min-w-0">
@@ -71,7 +71,7 @@ export function OrderCard({ order }: OrderCardProps) {
   const lowTime = order.timeLeft > 0 && order.timeLeft <= 15;
   const timeRatio = Math.max(0, Math.min(1, order.timeLeft / Math.max(1, order.timeLimit)));
   return (
-    <div className={`${GLASS_CARD} min-w-0 px-3.5 py-2.5`}>
+    <div className={`${GLASS_CARD} min-w-0 px-2.5 py-1.5 sm:px-3.5 sm:py-2.5`}>
       <p className="text-[11px] font-semibold text-slate-500">
         {order.phase === 'pickup' ? 'امشي خذ الطلبية' : 'وصّل للزبون'}
       </p>
@@ -92,7 +92,7 @@ export function OrderCard({ order }: OrderCardProps) {
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-label={`الوقت المتبقي ${order.timeLeft} ثانية`}>
         <div className={`h-full rounded-full transition-[width] duration-300 ${lateRed ? 'bg-brand-500' : lowTime ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${timeRatio * 100}%` }} />
       </div>
-      <div className="mt-2 rounded-lg bg-slate-100 px-2.5 py-1.5">
+      <div className="mt-1 rounded-lg bg-slate-100 px-2 py-1 sm:mt-2 sm:px-2.5 sm:py-1.5">
         <p className="text-[11px] font-semibold text-slate-600">
           {order.progress > 0
             ? order.phase === 'pickup' ? 'راك تستلم الطلبية… خليك ثابت' : 'راك تسلّم الطلبية… خليك ثابت'
@@ -125,7 +125,7 @@ export function OfferCard({ offer, onAccept, onDecline }: OfferCardProps) {
   const urgency = offer.expiresIn <= 5;
   const expiryRatio = Math.max(0, Math.min(1, offer.expiresIn / 20));
   return (
-    <div className={`${GLASS_CARD} w-full border-s-4 border-brand-500 p-3.5 animate-toast-in`} role="dialog" aria-label="طلبية جديدة">
+    <div className={`${GLASS_CARD} w-full border-s-4 border-brand-500 p-2.5 sm:p-3.5 animate-toast-in`} role="dialog" aria-label="طلبية جديدة">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-bold text-brand-600">طلبية جديدة</p>
@@ -142,11 +142,11 @@ export function OfferCard({ offer, onAccept, onDecline }: OfferCardProps) {
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-label={`تنتهي الطلبية بعد ${offer.expiresIn} ثانية`}>
         <div className={`h-full rounded-full transition-[width] duration-200 ${urgency ? 'bg-brand-500' : 'bg-amber-400'}`} style={{ width: `${expiryRatio * 100}%` }} />
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3">
         <button
           type="button"
           onClick={onDecline}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-800 transition hover:bg-slate-100 active:scale-[0.98]"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 sm:py-2 sm:text-sm transition hover:bg-slate-100 active:scale-[0.98]"
         >
           <X className="h-4 w-4" />
           تخطي
@@ -154,7 +154,7 @@ export function OfferCard({ offer, onAccept, onDecline }: OfferCardProps) {
         <button
           type="button"
           onClick={onAccept}
-          className="flex items-center justify-center gap-1.5 rounded-xl bg-brand-500 px-3 py-2 text-sm font-bold text-white shadow-md transition hover:bg-brand-600 active:scale-[0.98]"
+          className="flex items-center justify-center gap-1.5 rounded-xl bg-brand-500 px-3 py-1.5 text-xs font-bold text-white shadow-md sm:py-2 sm:text-sm transition hover:bg-brand-600 active:scale-[0.98]"
         >
           <Check className="h-4 w-4" />
           قبول
@@ -172,9 +172,9 @@ interface EarningsCardProps {
 
 export function EarningsCard({ earnings, score, deliveries }: EarningsCardProps) {
   return (
-    <div className={`${GLASS_CARD} min-w-0 px-3.5 py-2.5 text-end`}>
+    <div className={`${GLASS_CARD} min-w-0 px-2.5 py-1.5 text-end sm:px-3.5 sm:py-2.5`}>
       <p className="text-[11px] font-semibold text-slate-500">مداخيل الوردية</p>
-      <p className="text-lg font-bold tabular-nums leading-tight">{formatMoney(earnings)}</p>
+      <p className="text-base font-bold tabular-nums leading-tight sm:text-lg">{formatMoney(earnings)}</p>
       <p className="text-[11px] text-slate-500">
         {score} نقطة · {deliveries} توصيلة
       </p>
