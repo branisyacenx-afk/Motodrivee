@@ -385,6 +385,50 @@ function buildingGroup(boxes: readonly Box[], windowTexture: THREE.Texture): THR
     roofMesh.receiveShadow = true;
     group.add(wallMesh, roofMesh);
   }
+  // A restrained number of rooftop water tanks adds a familiar Algerian
+  // residential detail without creating one mesh per building.
+  const tankBoxes = boxes.filter((box) => box.height >= 24 && box.seed > 0.58);
+  if (tankBoxes.length > 0) {
+    const tankBodies = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(1.05, 1.2, 2.2, 8),
+      new THREE.MeshStandardMaterial({ color: '#477f91', roughness: 0.72, metalness: 0.08 }),
+      tankBoxes.length,
+    );
+    const tankLids = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(1.22, 1.22, 0.16, 8),
+      new THREE.MeshStandardMaterial({ color: '#8ca6a8', roughness: 0.68 }),
+      tankBoxes.length,
+    );
+    const position = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    const matrix = new THREE.Matrix4();
+
+    tankBoxes.forEach((box, index) => {
+      const width = box.maxX - box.minX;
+      const depth = box.maxZ - box.minZ;
+      const x = (box.minX + box.maxX) / 2 + (box.seed - 0.5) * Math.min(4, width * 0.12);
+      const z = (box.minZ + box.maxZ) / 2 + (0.5 - box.seed) * Math.min(4, depth * 0.12);
+      const tankScale = 0.82 + box.seed * 0.3;
+      rotation.setFromAxisAngle(new THREE.Vector3(0, 1, 0), box.seed * Math.PI * 2);
+      scale.setScalar(tankScale);
+      position.set(x, box.height + 1.1 * tankScale, z);
+      matrix.compose(position, rotation, scale);
+      tankBodies.setMatrixAt(index, matrix);
+      position.y = box.height + 2.22 * tankScale;
+      matrix.compose(position, rotation, scale);
+      tankLids.setMatrixAt(index, matrix);
+    });
+
+    for (const tank of [tankBodies, tankLids]) {
+      tank.instanceMatrix.needsUpdate = true;
+      tank.computeBoundingSphere();
+      tank.castShadow = true;
+      tank.receiveShadow = true;
+      group.add(tank);
+    }
+  }
+
   return group;
 }
 
