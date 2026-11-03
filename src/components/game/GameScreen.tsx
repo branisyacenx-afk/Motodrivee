@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Map as MapIcon, X } from 'lucide-react';
 import { Hud, type ToastItem } from '@/components/game/Hud';
 import { Minimap } from '@/components/game/Minimap';
 import { PauseMenu } from '@/components/game/PauseMenu';
@@ -33,6 +34,7 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
   const [hud, setHud] = useState<HudSnapshot | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [paused, setPaused] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
   const [muted, setMuted] = useState(false);
   const [gameError, setGameError] = useState<string | null>(null);
   const [isTouch] = useState(() => window.matchMedia('(pointer: coarse)').matches);
@@ -66,25 +68,25 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
 
     try {
       world = new GameWorld(
-      container,
-      {
-        layout,
-        stats: loadout.stats,
-        paintHex: loadout.paintHex,
-        playerName: loadout.playerName,
-        network,
-        readInput: input.read,
-      },
-      {
-        onHud: setHud,
-        onEvent: (event: GameEvent) => {
-          const id = ++nextToastId;
-          setToasts((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { ...event, id }]);
-          window.setTimeout(() => setToasts((prev) => prev.filter((toast) => toast.id !== id)), TOAST_LIFE_MS);
+        container,
+        {
+          layout,
+          stats: loadout.stats,
+          paintHex: loadout.paintHex,
+          playerName: loadout.playerName,
+          network,
+          readInput: input.read,
         },
-        onEnd: (summary) => onFinishRef.current(summary),
-        onError: reportGameError,
-      },
+        {
+          onHud: setHud,
+          onEvent: (event: GameEvent) => {
+            const id = ++nextToastId;
+            setToasts((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { ...event, id }]);
+            window.setTimeout(() => setToasts((prev) => prev.filter((toast) => toast.id !== id)), TOAST_LIFE_MS);
+          },
+          onEnd: (summary) => onFinishRef.current(summary),
+          onError: reportGameError,
+        },
       );
       worldRef.current = world;
       world.start();
@@ -106,8 +108,8 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
   }, [layout, loadout]);
 
   useEffect(() => {
-    worldRef.current?.setPaused(paused);
-  }, [paused]);
+    worldRef.current?.setPaused(paused || mapOpen);
+  }, [paused, mapOpen]);
 
   useEffect(() => {
     worldRef.current?.setMuted(muted);
@@ -145,6 +147,18 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
         </div>
       )}
 
+      {hud && !paused && (
+        <button
+          type="button"
+          onClick={() => setMapOpen(true)}
+          aria-label="فتح خريطة المدينة"
+          className="pointer-events-auto absolute left-4 top-20 z-20 flex h-12 items-center gap-2 rounded-2xl border border-white/70 bg-slate-950/85 px-4 text-sm font-extrabold text-white shadow-xl backdrop-blur-md transition active:scale-95"
+        >
+          <MapIcon className="h-5 w-5" />
+          الخريطة
+        </button>
+      )}
+
       {hud && (
         <>
           <Hud
@@ -157,7 +171,7 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
             muted={muted}
             onToggleMute={() => setMuted((value) => !value)}
           />
-          {!isTouch && (
+          {!isTouch && !mapOpen && (
             <Minimap
               layout={layout}
               state={hud.minimap}
@@ -167,7 +181,29 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
         </>
       )}
 
-      {isTouch && !paused && <TouchControls onControl={handleTouch} />}
+      {mapOpen && hud && !paused && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+          <section role="dialog" aria-modal="true" aria-label="خريطة المدينة" className="w-full max-w-xl rounded-3xl border border-white/15 bg-slate-900 p-4 text-white shadow-2xl">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-black">خريطة المدينة</h2>
+                <p className="text-xs text-slate-300">موقعك الحالي والوجهة المحددة للتوصيل</p>
+              </div>
+              <button type="button" onClick={() => setMapOpen(false)} aria-label="إغلاق الخريطة واستئناف اللعب" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <Minimap layout={layout} state={hud.minimap} className="mx-auto w-full max-w-[min(76vw,440px)]" />
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-slate-200">
+              <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-blue-500 ring-2 ring-white" /> موقع دراجتك</span>
+              <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-red-500 ring-2 ring-white" /> وجهة التوصيل</span>
+            </div>
+            <button type="button" onClick={() => setMapOpen(false)} className="mt-4 w-full rounded-xl bg-brand-500 px-4 py-3 font-extrabold text-white shadow-lg transition hover:brightness-110 active:scale-[0.99]">العودة إلى القيادة</button>
+          </section>
+        </div>
+      )}
+
+      {isTouch && !paused && !mapOpen && <TouchControls onControl={handleTouch} />}
 
       {paused && (
         <PauseMenu onResume={() => setPaused(false)} onEndShift={() => worldRef.current?.finishShift()} />
