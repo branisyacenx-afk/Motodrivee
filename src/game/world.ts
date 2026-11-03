@@ -23,7 +23,7 @@ import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryG
 import { createRemoteRiders, type RemoteRiders } from '@/game/render/remoteRiders';
 import type { SharedCity } from '@/lib/sharedCity';
 import { createSoundBoard, type Cue, type SoundBoard } from '@/game/audio';
-import type { GameEvent, HudSnapshot, Layout, ShiftSummary } from '@/game/types';
+import type { GameEvent, HudSnapshot, Layout, ShiftSummary, Vec2 } from '@/game/types';
 import { formatMoney } from '@/lib/money';
 
 export interface WorldOptions {
@@ -78,7 +78,7 @@ export class GameWorld {
   private readonly pedMeshes: PedestrianModel[] = [];
   private readonly venueStalls: THREE.Object3D[];
   private readonly cityGroup: THREE.Group;
-  private readonly generateOffer: () => Offer;
+  private readonly generateOffer: (origin: Vec2) => Offer;
   private readonly resizeObserver: ResizeObserver;
   private readonly hitReadyAt: Record<string, number> = {};
   private readonly guide: DeliveryGuide;
