@@ -159,12 +159,13 @@ function buildSidewalkCurbs(): THREE.InstancedMesh {
   // continues across an intersection or appears as a barrier in the roadway.
   const segmentsPerAxis = Math.max(0, CITY.cols - 1) * CITY.rows * 2;
   const count = segmentsPerAxis * 2;
-  const geometry = new THREE.BoxGeometry(1, 0.18, 0.34);
+  const curbDepth = 0.34;
+  const geometry = new THREE.BoxGeometry(1, 0.18, curbDepth);
   const material = new THREE.MeshStandardMaterial({ color: '#b8b6ae', roughness: 0.92 });
   const curbs = new THREE.InstancedMesh(geometry, material, count);
   const dummy = new THREE.Object3D();
   let index = 0;
-  const edgeOffset = CITY.roadWidth / 2 + CITY.sidewalk;
+  // Center the curb directly on the asphalt/sidewalk boundary, not the outer sidewalk edge.\n  const edgeOffset = roadHalf + curbDepth / 2;
   const roadHalf = CITY.roadWidth / 2;
 
   // East-west curb runs: leave the full width of every north-south road open.
