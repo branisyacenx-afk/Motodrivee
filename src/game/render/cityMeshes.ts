@@ -154,45 +154,61 @@ function buildParkingBays(): THREE.Group {
  * Define the sidewalk edge with continuous low curb strips. One instanced mesh
  * keeps the city-wide detail to a single draw call without changing collision.
  */
-function buildSidewalkCurbs(bounds: Rect): THREE.InstancedMesh {
-  const count = CITY.rows * 2 + CITY.cols * 2;
+function buildSidewalkCurbs(): THREE.InstancedMesh {
+  // Split each curb at every perpendicular road so the sidewalk edge never
+  // continues across an intersection or appears as a barrier in the roadway.
+  const segmentsPerAxis = Math.max(0, CITY.cols - 1) * CITY.rows * 2;
+  const count = segmentsPerAxis * 2;
   const geometry = new THREE.BoxGeometry(1, 0.18, 0.34);
   const material = new THREE.MeshStandardMaterial({ color: '#b8b6ae', roughness: 0.92 });
   const curbs = new THREE.InstancedMesh(geometry, material, count);
   const dummy = new THREE.Object3D();
   let index = 0;
   const edgeOffset = CITY.roadWidth / 2 + CITY.sidewalk;
-  const horizontalLength = bounds.maxX - bounds.minX;
-  const verticalLength = bounds.maxZ - bounds.minZ;
+  const roadHalf = CITY.roadWidth / 2;
 
-  for (let j = 0; j < CITY.rows; j++) {
-    const z = roadZ(j);
+  // East-west curb runs: leave the full width of every north-south road open.
+  for (let row = 0; row < CITY.rows; row++) {
+    const z = roadZ(row);
     for (const side of [-1, 1]) {
-      dummy.position.set((bounds.minX + bounds.maxX) / 2, 0.12, z + side * edgeOffset);
-      dummy.scale.set(horizontalLength, 1, 1);
-      dummy.updateMatrix();
-      curbs.setMatrixAt(index++, dummy.matrix);
+      for (let col = 0; col < CITY.cols - 1; col++) {
+        const startX = roadX(col) + roadHalf;
+        const endX = roadX(col + 1) - roadHalf;
+        const length = endX - startX;
+        if (length <= 0) continue;
+        dummy.position.set((startX + endX) / 2, 0.12, z + side * edgeOffset);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(length, 1, 1);
+        dummy.updateMatrix();
+        curbs.setMatrixAt(index++, dummy.matrix);
+      }
     }
   }
 
-  for (let i = 0; i < CITY.cols; i++) {
-    const x = roadX(i);
+  // North-south curb runs: leave the full width of every east-west road open.
+  for (let col = 0; col < CITY.cols; col++) {
+    const x = roadX(col);
     for (const side of [-1, 1]) {
-      dummy.position.set(x + side * edgeOffset, 0.12, (bounds.minZ + bounds.maxZ) / 2);
-      dummy.scale.set(verticalLength, 1, 1);
-      dummy.rotation.y = Math.PI / 2;
-      dummy.updateMatrix();
-      curbs.setMatrixAt(index++, dummy.matrix);
-      dummy.rotation.y = 0;
+      for (let row = 0; row < CITY.rows - 1; row++) {
+        const startZ = roadZ(row) + roadHalf;
+        const endZ = roadZ(row + 1) - roadHalf;
+        const length = endZ - startZ;
+        if (length <= 0) continue;
+        dummy.position.set(x + side * edgeOffset, 0.12, (startZ + endZ) / 2);
+        dummy.rotation.set(0, Math.PI / 2, 0);
+        dummy.scale.set(length, 1, 1);
+        dummy.updateMatrix();
+        curbs.setMatrixAt(index++, dummy.matrix);
+      }
     }
   }
 
+  curbs.count = index;
   curbs.instanceMatrix.needsUpdate = true;
   curbs.computeBoundingSphere();
   curbs.receiveShadow = true;
   return curbs;
 }
-
 
 /**
  * Add restrained decorative street lamps along selected avenue sidewalks.
@@ -527,7 +543,7 @@ export function buildCity(layout: Layout): THREE.Group {
   }
   roadTexture.dispose();
   root.add(buildCrosswalks());
-  root.add(buildSidewalkCurbs(bounds));
+  root.add(buildSidewalkCurbs());
   root.add(buildStreetLamps());
   root.add(buildBusShelters());
   root.add(buildParkingBays());
