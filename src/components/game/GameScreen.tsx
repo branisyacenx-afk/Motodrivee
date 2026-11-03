@@ -83,6 +83,7 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
           window.setTimeout(() => setToasts((prev) => prev.filter((toast) => toast.id !== id)), TOAST_LIFE_MS);
         },
         onEnd: (summary) => onFinishRef.current(summary),
+        onError: reportGameError,
       },
       );
       worldRef.current = world;

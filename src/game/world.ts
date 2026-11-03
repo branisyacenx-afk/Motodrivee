@@ -39,6 +39,7 @@ export interface WorldCallbacks {
   onHud: (hud: HudSnapshot) => void;
   onEvent: (event: GameEvent) => void;
   onEnd: (summary: ShiftSummary) => void;
+  onError?: (message: string) => void;
 }
 
 const HUD_INTERVAL = 0.1;
@@ -83,6 +84,10 @@ export class GameWorld {
   private readonly remoteRiders: RemoteRiders;
   private poseClock = 0;
   private readonly sound: SoundBoard;
+  private readonly onContextLost = (event: Event) => {
+    event.preventDefault();
+    this.callbacks.onError?.('فُقد اتصال WebGL بالرسم ثلاثي الأبعاد على الجهاز.');
+  };
 
   private offer: Offer | null = null;
   private order: ActiveOrder | null = null;
@@ -122,6 +127,7 @@ export class GameWorld {
     this.renderer.domElement.style.width = '100%';
     this.renderer.domElement.style.height = '100%';
     container.appendChild(this.renderer.domElement);
+    this.renderer.domElement.addEventListener('webglcontextlost', this.onContextLost, false);
 
     this.scene.background = new THREE.Color('#bfdcec');
     this.scene.fog = new THREE.Fog('#cfe3ee', 260, 980);
@@ -222,6 +228,7 @@ export class GameWorld {
     this.sound.dispose();
     this.remoteRiders.dispose();
     disposeCity(this.cityGroup);
+    this.renderer.domElement.removeEventListener('webglcontextlost', this.onContextLost);
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.renderer.domElement.remove();
@@ -231,9 +238,15 @@ export class GameWorld {
     this.frameId = requestAnimationFrame(this.loop);
     const dt = Math.min(0.05, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
-    if (!this.paused && !this.ended) this.step(dt);
-    this.syncScene(dt);
-    this.renderer.render(this.scene, this.camera);
+    try {
+      if (!this.paused && !this.ended) this.step(dt);
+      this.syncScene(dt);
+      this.renderer.render(this.scene, this.camera);
+    } catch (error) {
+      cancelAnimationFrame(this.frameId);
+      const message = error instanceof Error ? error.message : 'خطأ غير معروف داخل حلقة رسم اللعبة.';
+      this.callbacks.onError?.(`خطأ في محرك الرسم: ${message}`);
+    }
   };
 
   private step(dt: number): void {
