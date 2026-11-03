@@ -37,8 +37,8 @@ export interface VehicleDef {
 
 export const VEHICLES: readonly VehicleDef[] = [
   { id: 'classic', name: 'كلاسيك 125', tagline: 'دراجة عملية لشوارع المدينة', price: 0, speed: 1, accel: 1 },
-  { id: 'sport', name: 'سبورت سويفت', tagline: 'انطلاقة أسرع من الصفر', price: 60000, speed: 1.1, accel: 1.15 },
-  { id: 'beast', name: 'توربو وحش', tagline: 'أسرع دراجة في البلاد', price: 180000, speed: 1.25, accel: 1.3 },
+  { id: 'sport', name: 'سبورت 200', tagline: 'توازن أفضل وسرعة أعلى', price: 12000, speed: 1.1, accel: 1.15 },
+  { id: 'beast', name: 'تورينغ 250', tagline: 'دراجة قوية للرحلات الطويلة', price: 35000, speed: 1.2, accel: 1.22 },
 ];
 
 export const PAINTS: readonly { id: PaintId; name: string; hex: string }[] = [
@@ -55,9 +55,9 @@ export interface UpgradeDef {
 }
 
 export const UPGRADES: readonly UpgradeDef[] = [
-  { id: 'engine', name: 'تعديل المحرك', description: '+8% في السرعة القصوى وتسارع أحسن في كل مستوى', costs: [20000, 50000, 90000] },
-  { id: 'handling', name: 'تحسين التوجيه', description: '+12% في سرعة الاستجابة للمنعطفات في كل مستوى', costs: [15000, 40000, 70000] },
-  { id: 'helmet', name: 'خوذة محترفة', description: '15% أقل من الضرر عند الاصطدام في كل مستوى', costs: [12000, 30000, 60000] },
+  { id: 'engine', name: 'تعديل المحرك', description: '+8% في السرعة القصوى وتسارع أحسن في كل مستوى', costs: [2500, 5000, 9000] },
+  { id: 'handling', name: 'تحسين التوجيه', description: '+12% في سرعة الاستجابة للمنعطفات في كل مستوى', costs: [2000, 4500, 8000] },
+  { id: 'helmet', name: 'خوذة محترفة', description: '15% أقل من الضرر عند الاصطدام في كل مستوى', costs: [1500, 3500, 6500] },
 ];
 
 export const RESTAURANTS = [
