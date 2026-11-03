@@ -11,6 +11,9 @@ export interface Profile {
   dailyDeliveries: number;
   dailyChallengeDate: string;
   dailyChallengeClaimed: boolean;
+  weeklyDeliveries: number;
+  weeklyChallengeWeek: string;
+  weeklyChallengeClaimed: boolean;
   dailyStreak: number;
   lastDailyClaim: string | null;
   owned: VehicleId[];
@@ -26,6 +29,8 @@ const XP_PER_DELIVERY = 100;
 const XP_PER_LEVEL = 500;
 export const DAILY_DELIVERY_GOAL = 3;
 export const DAILY_CHALLENGE_REWARD = 1200;
+export const WEEKLY_DELIVERY_GOAL = 15;
+export const WEEKLY_CHALLENGE_REWARD = 6000;
 
 export function levelFor(xp: number): number {
   return 1 + Math.floor(xp / XP_PER_LEVEL);
@@ -50,6 +55,13 @@ export function todayKey(date: Date = new Date()): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
+export function weekKey(date: Date = new Date()): string {
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = (monday.getDay() + 6) % 7;
+  monday.setDate(monday.getDate() - day);
+  return todayKey(monday);
+}
+
 function dayBefore(key: string): string {
   const [year, month, day] = key.split('-').map(Number);
   return todayKey(new Date(year, month - 1, day - 1));
@@ -70,43 +82,30 @@ export function dailyRewardPreview(profile: Profile, today: string): number {
 export function claimDaily(profile: Profile, today: string): Profile | null {
   if (profile.lastDailyClaim === today) return null;
   const streak = nextStreak(profile, today);
-  return {
-    ...profile,
-    wallet: profile.wallet + dailyRewardFor(streak),
-    dailyStreak: streak,
-    lastDailyClaim: today,
-  };
+  return { ...profile, wallet: profile.wallet + dailyRewardFor(streak), dailyStreak: streak, lastDailyClaim: today };
 }
 
 export function claimDailyChallenge(profile: Profile, today: string): Profile | null {
   const deliveries = profile.dailyChallengeDate === today ? profile.dailyDeliveries : 0;
   const alreadyClaimed = profile.dailyChallengeDate === today && profile.dailyChallengeClaimed;
   if (deliveries < DAILY_DELIVERY_GOAL || alreadyClaimed) return null;
-  return {
-    ...profile,
-    wallet: profile.wallet + DAILY_CHALLENGE_REWARD,
-    dailyChallengeDate: today,
-    dailyChallengeClaimed: true,
-  };
+  return { ...profile, wallet: profile.wallet + DAILY_CHALLENGE_REWARD, dailyChallengeDate: today, dailyChallengeClaimed: true };
+}
+
+export function claimWeeklyChallenge(profile: Profile, week: string): Profile | null {
+  const deliveries = profile.weeklyChallengeWeek === week ? profile.weeklyDeliveries : 0;
+  const alreadyClaimed = profile.weeklyChallengeWeek === week && profile.weeklyChallengeClaimed;
+  if (deliveries < WEEKLY_DELIVERY_GOAL || alreadyClaimed) return null;
+  return { ...profile, wallet: profile.wallet + WEEKLY_CHALLENGE_REWARD, weeklyChallengeWeek: week, weeklyChallengeClaimed: true };
 }
 
 export function createProfile(): Profile {
   return {
-    name: 'الراكب',
-    wallet: STARTING_WALLET,
-    xp: 0,
-    totalDeliveries: 0,
-    totalEarned: 0,
-    dailyDeliveries: 0,
-    dailyChallengeDate: todayKey(),
-    dailyChallengeClaimed: false,
-    dailyStreak: 0,
-    lastDailyClaim: null,
-    owned: ['classic'],
-    vehicle: 'classic',
-    paint: 'swift',
-    upgrades: { engine: 0, handling: 0, helmet: 0 },
-    bestScore: 0,
+    name: 'الراكب', wallet: STARTING_WALLET, xp: 0, totalDeliveries: 0, totalEarned: 0,
+    dailyDeliveries: 0, dailyChallengeDate: todayKey(), dailyChallengeClaimed: false,
+    weeklyDeliveries: 0, weeklyChallengeWeek: weekKey(), weeklyChallengeClaimed: false,
+    dailyStreak: 0, lastDailyClaim: null, owned: ['classic'], vehicle: 'classic', paint: 'swift',
+    upgrades: { engine: 0, handling: 0, helmet: 0 }, bestScore: 0,
   };
 }
 
@@ -132,6 +131,8 @@ export function loadProfile(): Profile {
     const owned = Array.isArray(parsed.owned) ? parsed.owned.filter(isVehicleId) : fallback.owned;
     const today = todayKey();
     const challengeDate = typeof parsed.dailyChallengeDate === 'string' ? parsed.dailyChallengeDate : today;
+    const week = weekKey();
+    const challengeWeek = typeof parsed.weeklyChallengeWeek === 'string' ? parsed.weeklyChallengeWeek : week;
     return {
       name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim().slice(0, 16) : fallback.name,
       wallet: finiteNonNegative(parsed.wallet, fallback.wallet),
@@ -141,16 +142,15 @@ export function loadProfile(): Profile {
       dailyDeliveries: challengeDate === today ? Math.floor(finiteNonNegative(parsed.dailyDeliveries, 0)) : 0,
       dailyChallengeDate: challengeDate === today ? challengeDate : today,
       dailyChallengeClaimed: challengeDate === today && parsed.dailyChallengeClaimed === true,
+      weeklyDeliveries: challengeWeek === week ? Math.floor(finiteNonNegative(parsed.weeklyDeliveries, 0)) : 0,
+      weeklyChallengeWeek: challengeWeek === week ? challengeWeek : week,
+      weeklyChallengeClaimed: challengeWeek === week && parsed.weeklyChallengeClaimed === true,
       dailyStreak: Math.floor(finiteNonNegative(parsed.dailyStreak, 0)),
       lastDailyClaim: typeof parsed.lastDailyClaim === 'string' ? parsed.lastDailyClaim : null,
       owned: owned.includes('classic') ? owned : ['classic', ...owned],
       vehicle: isVehicleId(parsed.vehicle) && owned.includes(parsed.vehicle) ? parsed.vehicle : fallback.vehicle,
       paint: isPaintId(parsed.paint) ? parsed.paint : fallback.paint,
-      upgrades: {
-        engine: clampLevel(upgrades.engine, 'engine'),
-        handling: clampLevel(upgrades.handling, 'handling'),
-        helmet: clampLevel(upgrades.helmet, 'helmet'),
-      },
+      upgrades: { engine: clampLevel(upgrades.engine, 'engine'), handling: clampLevel(upgrades.handling, 'handling'), helmet: clampLevel(upgrades.helmet, 'helmet') },
       bestScore: finiteNonNegative(parsed.bestScore, 0),
     };
   } catch (error) {
@@ -165,11 +165,8 @@ function clampLevel(value: unknown, id: UpgradeId): number {
 }
 
 export function saveProfile(profile: Profile): void {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-  } catch (error) {
-    console.warn('Could not save the Swift Drop profile to local storage.', error);
-  }
+  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); }
+  catch (error) { console.warn('Could not save the Swift Drop profile to local storage.', error); }
 }
 
 export function buyVehicle(profile: Profile, id: VehicleId): Profile | null {
@@ -198,16 +195,16 @@ export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
 export function creditDelivery(profile: Profile, pay: number): Profile {
   const reward = Math.max(0, Math.round(pay));
   const today = todayKey();
+  const week = weekKey();
   const dailyDeliveries = profile.dailyChallengeDate === today ? profile.dailyDeliveries : 0;
+  const weeklyDeliveries = profile.weeklyChallengeWeek === week ? profile.weeklyDeliveries : 0;
   return {
-    ...profile,
-    wallet: profile.wallet + reward,
-    xp: profile.xp + XP_PER_DELIVERY,
-    totalDeliveries: profile.totalDeliveries + 1,
-    totalEarned: profile.totalEarned + reward,
-    dailyDeliveries: dailyDeliveries + 1,
-    dailyChallengeDate: today,
+    ...profile, wallet: profile.wallet + reward, xp: profile.xp + XP_PER_DELIVERY,
+    totalDeliveries: profile.totalDeliveries + 1, totalEarned: profile.totalEarned + reward,
+    dailyDeliveries: dailyDeliveries + 1, dailyChallengeDate: today,
     dailyChallengeClaimed: profile.dailyChallengeDate === today && profile.dailyChallengeClaimed,
+    weeklyDeliveries: weeklyDeliveries + 1, weeklyChallengeWeek: week,
+    weeklyChallengeClaimed: profile.weeklyChallengeWeek === week && profile.weeklyChallengeClaimed,
   };
 }
 
@@ -218,6 +215,5 @@ export function creditShift(profile: Profile, summary: ShiftSummary): Profile {
 
 export function nextUpgradeCost(profile: Profile, id: UpgradeId): number | null {
   const def = UPGRADES.find((u) => u.id === id);
-  if (!def) return null;
-  return def.costs[profile.upgrades[id]] ?? null;
+  return def?.costs[profile.upgrades[id]] ?? null;
 }
