@@ -35,7 +35,7 @@ function App() {
       />}
       {screen === 'garage' && <GarageScreen profile={profile} onUpdate={setProfile} onBack={() => setScreen('menu')} />}
       {screen === 'leaderboard' && <LeaderboardScreen onBack={() => setScreen('menu')} />}
-      {screen === 'play' && <GameScreen profile={profile} onFinish={handleFinish} onDelivery={(pay) => setProfile((prev) => creditDelivery(prev, pay))} />}
+      {screen === 'play' && <GameScreen profile={profile} onFinish={handleFinish} onDelivery={(pay, onTime) => setProfile((prev) => creditDelivery(prev, pay, onTime))} />}
       {screen === 'summary' && summary && <SummaryScreen summary={summary} profile={profile} onPlayAgain={() => setScreen('play')} onLeaderboard={() => setScreen('leaderboard')} onMenu={() => setScreen('menu')} />}
     </div>
   );

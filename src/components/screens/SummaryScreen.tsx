@@ -93,7 +93,7 @@ export function SummaryScreen({ summary, profile, onPlayAgain, onLeaderboard, on
           <p className="mt-4 flex items-center gap-2 text-sm text-slate-300">
             <Coins className="h-4 w-4 shrink-0 text-amber-300" />
             <span>
-              تزادو {formatMoney(summary.earnings)} لمحفظتك. راكب {vehicle}.
+              تزادو {formatMoney(summary.earnings)} لمحفظتك. راكب {vehicle}. تقييمك {profile.reputation}/100 · توصيلات نظيفة {profile.cleanDeliveries}.
             </span>
           </p>
 
