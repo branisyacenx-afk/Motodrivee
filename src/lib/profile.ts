@@ -171,7 +171,7 @@ export function saveProfile(profile: Profile): void {
 
 export function buyVehicle(profile: Profile, id: VehicleId): Profile | null {
   const def = VEHICLES.find((v) => v.id === id);
-  if (!def || profile.owned.includes(id) || profile.wallet < def.price) return null;
+  if (!def || profile.owned.includes(id) || profile.wallet < def.price || levelFor(profile.xp) < def.requiredLevel) return null;
   return { ...profile, wallet: profile.wallet - def.price, owned: [...profile.owned, id], vehicle: id };
 }
 
