@@ -5,7 +5,7 @@ import { LeaderboardScreen } from '@/components/screens/LeaderboardScreen';
 import { MenuScreen } from '@/components/screens/MenuScreen';
 import { SummaryScreen } from '@/components/screens/SummaryScreen';
 import type { ShiftSummary } from '@/game/types';
-import { claimDaily, claimDailyChallenge, creditDelivery, creditShift, loadProfile, saveProfile, todayKey, type Profile } from '@/lib/profile';
+import { claimDaily, claimDailyChallenge, claimWeeklyChallenge, creditDelivery, creditShift, loadProfile, saveProfile, todayKey, weekKey, type Profile } from '@/lib/profile';
 
 type Screen = 'menu' | 'garage' | 'leaderboard' | 'play' | 'summary';
 
@@ -14,9 +14,7 @@ function App() {
   const [screen, setScreen] = useState<Screen>('menu');
   const [summary, setSummary] = useState<ShiftSummary | null>(null);
 
-  useEffect(() => {
-    saveProfile(profile);
-  }, [profile]);
+  useEffect(() => { saveProfile(profile); }, [profile]);
 
   const handleFinish = (result: ShiftSummary) => {
     setProfile((prev) => creditShift(prev, result));
@@ -26,24 +24,19 @@ function App() {
 
   return (
     <div className="min-h-full bg-slate-950">
-      {screen === 'menu' && (
-        <MenuScreen
-          profile={profile}
-          onStart={() => setScreen('play')}
-          onGarage={() => setScreen('garage')}
-          onLeaderboard={() => setScreen('leaderboard')}
-          onClaimDaily={() => setProfile((prev) => claimDaily(prev, todayKey()) ?? prev)}
-          onClaimChallenge={() => setProfile((prev) => claimDailyChallenge(prev, todayKey()) ?? prev)}
-        />
-      )}
-      {screen === 'garage' && (
-        <GarageScreen profile={profile} onUpdate={setProfile} onBack={() => setScreen('menu')} />
-      )}
+      {screen === 'menu' && <MenuScreen
+        profile={profile}
+        onStart={() => setScreen('play')}
+        onGarage={() => setScreen('garage')}
+        onLeaderboard={() => setScreen('leaderboard')}
+        onClaimDaily={() => setProfile((prev) => claimDaily(prev, todayKey()) ?? prev)}
+        onClaimChallenge={() => setProfile((prev) => claimDailyChallenge(prev, todayKey()) ?? prev)}
+        onClaimWeekly={() => setProfile((prev) => claimWeeklyChallenge(prev, weekKey()) ?? prev)}
+      />}
+      {screen === 'garage' && <GarageScreen profile={profile} onUpdate={setProfile} onBack={() => setScreen('menu')} />}
       {screen === 'leaderboard' && <LeaderboardScreen onBack={() => setScreen('menu')} />}
       {screen === 'play' && <GameScreen profile={profile} onFinish={handleFinish} onDelivery={(pay) => setProfile((prev) => creditDelivery(prev, pay))} />}
-      {screen === 'summary' && summary && (
-        <SummaryScreen summary={summary} profile={profile} onPlayAgain={() => setScreen('play')} onLeaderboard={() => setScreen('leaderboard')} onMenu={() => setScreen('menu')} />
-      )}
+      {screen === 'summary' && summary && <SummaryScreen summary={summary} profile={profile} onPlayAgain={() => setScreen('play')} onLeaderboard={() => setScreen('leaderboard')} onMenu={() => setScreen('menu')} />}
     </div>
   );
 }
