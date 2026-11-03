@@ -522,6 +522,97 @@ const CITY_CHUNK_ACTIVE_RADIUS = CITY.pitch * 7;
  * while distant building/tree meshes are excluded from rendering.
  * Roads and ground remain shared so navigation never develops visual gaps.
  */
+/**
+ * Ten lightweight street-detail batches add recognizable urban furniture without
+ * introducing collision objects or changing the driving simulation.
+ */
+function buildStreetDetailPack(): THREE.Group {
+  const group = new THREE.Group();
+  const selectedStep = 4;
+  const addBatch = (
+    geometry: THREE.BufferGeometry,
+    material: THREE.Material,
+    transforms: { x: number; y: number; z: number; sx?: number; sy?: number; sz?: number; ry?: number }[],
+  ) => {
+    if (!transforms.length) return;
+    const mesh = new THREE.InstancedMesh(geometry, material, transforms.length);
+    const dummy = new THREE.Object3D();
+    transforms.forEach((item, index) => {
+      dummy.position.set(item.x, item.y, item.z);
+      dummy.rotation.set(0, item.ry ?? 0, 0);
+      dummy.scale.set(item.sx ?? 1, item.sy ?? 1, item.sz ?? 1);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(index, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  };
+
+  const stopLines: Parameters<typeof addBatch>[2] = [];
+  const manholes: Parameters<typeof addBatch>[2] = [];
+  const drains: Parameters<typeof addBatch>[2] = [];
+  const bollards: Parameters<typeof addBatch>[2] = [];
+  const bins: Parameters<typeof addBatch>[2] = [];
+  const planters: Parameters<typeof addBatch>[2] = [];
+  const cabinets: Parameters<typeof addBatch>[2] = [];
+  const signalPoles: Parameters<typeof addBatch>[2] = [];
+  const reflectors: Parameters<typeof addBatch>[2] = [];
+  const warningMarks: Parameters<typeof addBatch>[2] = [];
+
+  for (let row = 2; row < CITY.rows - 1; row += selectedStep) {
+    for (let col = 2; col < CITY.cols - 1; col += selectedStep) {
+      const x = roadX(col);
+      const z = roadZ(row);
+      const half = CITY.roadWidth / 2;
+      // 1. Stop bars before selected zebra crossings.
+      stopLines.push({ x, y: 0.12, z: z - half - 2.8, sx: CITY.roadWidth - 2, sy: 1, sz: 0.16 });
+      stopLines.push({ x, y: 0.12, z: z + half + 2.8, sx: CITY.roadWidth - 2, sy: 1, sz: 0.16 });
+      stopLines.push({ x: x - half - 2.8, y: 0.12, z, sx: 0.16, sy: 1, sz: CITY.roadWidth - 2 });
+      stopLines.push({ x: x + half + 2.8, y: 0.12, z, sx: 0.16, sy: 1, sz: CITY.roadWidth - 2 });
+
+      // 2. Manhole covers, placed on the road center at sparse intervals.
+      if ((row + col) % 8 === 0) manholes.push({ x: x + 18, y: 0.105, z: z + 18 });
+
+      // 3. Drain grates at the asphalt/sidewalk boundary.
+      for (const side of [-1, 1]) {
+        drains.push({ x: x + 22, y: 0.14, z: z + side * (half + 0.55), sx: 1.5, sy: 1, sz: 0.38 });
+      }
+
+      // 4. Short pedestrian bollards at selected sidewalk corners.
+      for (const dx of [-1, 1]) for (const dz of [-1, 1]) {
+        bollards.push({ x: x + dx * (half + 2.2), y: 0.65, z: z + dz * (half + 2.2) });
+      }
+
+      // 5–8. Street bins, planters, utility cabinets, and pedestrian signal poles.
+      bins.push({ x: x + 27, y: 0.58, z: z + half + 2.5 });
+      planters.push({ x: x - 25, y: 0.35, z: z - half - 2.6, sx: 2.2, sy: 0.7, sz: 1.4 });
+      cabinets.push({ x: x + half + 2.7, y: 0.85, z: z - 25, sx: 0.9, sy: 1.7, sz: 0.8 });
+      signalPoles.push({ x: x - half - 2.6, y: 2.0, z: z + half + 2.4, sx: 0.16, sy: 4, sz: 0.16 });
+
+      // 9. Small reflective lane studs along the approach.
+      for (let n = 0; n < 3; n++) reflectors.push({ x: x + (n - 1) * 1.8, y: 0.13, z: z - half - 7.5, sx: 0.24, sy: 1, sz: 0.18 });
+
+      // 10. Raised visual warning tiles on the sidewalk corner.
+      warningMarks.push({ x: x + half + 2.4, y: 0.12, z: z - half - 2.4, sx: 0.85, sy: 1, sz: 0.85, ry: Math.PI / 4 });
+    }
+  }
+
+  addBatch(new THREE.BoxGeometry(1, 0.035, 1), new THREE.MeshBasicMaterial({ color: '#f5f2e9' }), stopLines);
+  addBatch(new THREE.CylinderGeometry(0.72, 0.72, 0.08, 12), new THREE.MeshStandardMaterial({ color: '#777b7d', roughness: 0.86 }), manholes);
+  addBatch(new THREE.BoxGeometry(1, 0.06, 1), new THREE.MeshStandardMaterial({ color: '#454b50', roughness: 0.9 }), drains);
+  addBatch(new THREE.CylinderGeometry(0.16, 0.2, 1.3, 7), new THREE.MeshStandardMaterial({ color: '#e6e0d1', roughness: 0.82 }), bollards);
+  addBatch(new THREE.BoxGeometry(0.9, 1.1, 0.8), new THREE.MeshStandardMaterial({ color: '#347d68', roughness: 0.88 }), bins);
+  addBatch(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: '#a78b68', roughness: 0.95 }), planters);
+  addBatch(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: '#7c8589', roughness: 0.8 }), cabinets);
+  addBatch(new THREE.CylinderGeometry(0.08, 0.1, 4, 6), new THREE.MeshStandardMaterial({ color: '#4e5960', roughness: 0.82 }), signalPoles);
+  addBatch(new THREE.BoxGeometry(1, 0.035, 1), new THREE.MeshStandardMaterial({ color: '#d5b34e', metalness: 0.2, roughness: 0.65 }), reflectors);
+  addBatch(new THREE.BoxGeometry(1, 0.035, 1), new THREE.MeshBasicMaterial({ color: '#e6c75c' }), warningMarks);
+  return group;
+}
+
 export function buildCity(layout: Layout): THREE.Group {
   const root = new THREE.Group();
   const { bounds } = layout;
@@ -549,6 +640,7 @@ export function buildCity(layout: Layout): THREE.Group {
   root.add(buildStreetLamps());
   root.add(buildBusShelters());
   root.add(buildParkingBays());
+  root.add(buildStreetDetailPack());
 
   const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
   const getChunk = (x: number, z: number) => {
