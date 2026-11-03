@@ -34,6 +34,7 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [gameError, setGameError] = useState<string | null>(null);
   const [isTouch] = useState(() => window.matchMedia('(pointer: coarse)').matches);
 
   useEffect(() => {
@@ -48,8 +49,23 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
     inputRef.current = input;
     const network = connectSharedCity(createRiderId());
     let nextToastId = 0;
+    let world: GameWorld;
 
-    const world = new GameWorld(
+    const reportGameError = (message: string) => {
+      setGameError(message.slice(0, 220));
+    };
+    const onWindowError = (event: ErrorEvent) => {
+      reportGameError(event.message || 'حدث خطأ أثناء تشغيل محرك اللعبة.');
+    };
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      reportGameError(reason instanceof Error ? reason.message : 'حدث خطأ غير متوقع أثناء تحميل اللعبة.');
+    };
+    window.addEventListener('error', onWindowError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+
+    try {
+      world = new GameWorld(
       container,
       {
         layout,
@@ -68,12 +84,19 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
         },
         onEnd: (summary) => onFinishRef.current(summary),
       },
-    );
-    worldRef.current = world;
-    world.start();
+      );
+      worldRef.current = world;
+      world.start();
+    } catch (error) {
+      reportGameError(error instanceof Error ? error.message : 'تعذر إنشاء عالم اللعبة.');
+      network.close();
+      input.dispose();
+    }
 
     return () => {
-      world.dispose();
+      window.removeEventListener('error', onWindowError);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+      worldRef.current?.dispose();
       network.close();
       input.dispose();
       worldRef.current = null;
@@ -111,6 +134,15 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
   return (
     <div className="fixed inset-0 overflow-hidden bg-sky-200 select-none">
       <div ref={containerRef} className="absolute inset-0" />
+
+      {gameError && (
+        <div className="absolute inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-2xl border border-red-300/30 bg-slate-950/95 p-5 text-center text-white shadow-2xl">
+          <h2 className="mb-2 text-lg font-extrabold">تعذر تشغيل اللعبة</h2>
+          <p className="mb-3 text-sm text-slate-300">تم رصد خطأ أثناء بدء الوردية. أرسل لنا نص الخطأ التالي حتى نصلح السبب:</p>
+          <p dir="ltr" className="max-h-28 overflow-auto rounded-lg bg-black/40 p-3 text-left text-xs text-rose-200">{gameError}</p>
+          <button type="button" onClick={() => window.location.reload()} className="mt-4 rounded-xl bg-white px-5 py-2 font-bold text-slate-900">إعادة تحميل اللعبة</button>
+        </div>
+      )}
 
       {hud && (
         <>
