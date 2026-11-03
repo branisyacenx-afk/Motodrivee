@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Map as MapIcon, X } from 'lucide-react';
+import { Map as MapIcon } from 'lucide-react';
 import { Hud, type ToastItem } from '@/components/game/Hud';
 import { Minimap } from '@/components/game/Minimap';
 import { AlgiersMap } from '@/components/game/AlgiersMap';
