@@ -93,6 +93,8 @@ function wrap(pos: number, lane: Lane): number {
 }
 
 export function updateTraffic(traffic: Traffic, t: number, dt: number): void {
+  // Read every vehicle from the same frame snapshot. Updating positions in
+  // place while scanning made later cars react to a different traffic state.
   const carsByLane = new Map<Lane, Car[]>();
   for (const car of traffic.cars) {
     const list = carsByLane.get(car.lane);
@@ -100,6 +102,7 @@ export function updateTraffic(traffic: Traffic, t: number, dt: number): void {
     else carsByLane.set(car.lane, [car]);
   }
 
+  const nextCars: Array<{ car: Car; pos: number; speed: number }> = [];
   for (const car of traffic.cars) {
     const { lane } = car;
     let desired = car.cruise;
@@ -114,24 +117,43 @@ export function updateTraffic(traffic: Traffic, t: number, dt: number): void {
         lead = other;
       }
     }
+
     if (lead) {
       const gap = leadGap - CAR_HALF_LENGTH * 2;
-      if (gap < 16) desired = Math.min(desired, Math.max(0, lead.speed + (gap - 8) * 0.8));
+      // Follow the leader smoothly and preserve a small safety buffer.
+      if (gap < 22) {
+        const followSpeed = Math.max(0, lead.speed + (gap - 7) * 1.05);
+        desired = Math.min(desired, followSpeed);
+      }
     }
 
     for (const stop of lane.stops) {
       const ahead = aheadDistance(car.pos, stop.pos, lane.dir, lane.length);
       const isRed = greenAxis(stop.i, stop.j, t) !== lane.axis;
-      if (isRed && ahead > 9 && ahead < 30) {
-        desired = Math.min(desired, Math.sqrt(2 * 6 * (ahead - 9)));
+      // Begin braking early enough to stop before the line, including when
+      // the vehicle is already inside the previous narrow braking window.
+      if (isRed && ahead > 0 && ahead < 36) {
+        const stoppingDistance = Math.max(0, ahead - 5.5);
+        const signalSpeed = Math.sqrt(2 * 8 * stoppingDistance);
+        desired = Math.min(desired, signalSpeed);
       }
     }
 
-    if (car.speed < desired) car.speed = Math.min(desired, car.speed + 3.5 * dt);
-    else car.speed = Math.max(desired, car.speed - 9 * dt);
+    const speed = car.speed < desired
+      ? Math.min(desired, car.speed + 3.5 * dt)
+      : Math.max(desired, car.speed - 9 * dt);
+    nextCars.push({
+      car,
+      speed,
+      pos: wrap(car.pos + lane.dir * speed * dt, lane),
+    });
+  }
 
-    car.pos = wrap(car.pos + lane.dir * car.speed * dt, lane);
-    car.nearCooldown = Math.max(0, car.nearCooldown - dt);
+  // Commit together so car order in the array cannot affect the simulation.
+  for (const next of nextCars) {
+    next.car.speed = next.speed;
+    next.car.pos = next.pos;
+    next.car.nearCooldown = Math.max(0, next.car.nearCooldown - dt);
   }
 
   for (const ped of traffic.pedestrians) {
