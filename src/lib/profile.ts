@@ -8,6 +8,8 @@ export interface Profile {
   xp: number;
   totalDeliveries: number;
   totalEarned: number;
+  reputation: number;
+  cleanDeliveries: number;
   dailyDeliveries: number;
   dailyChallengeDate: string;
   dailyChallengeClaimed: boolean;
@@ -101,7 +103,7 @@ export function claimWeeklyChallenge(profile: Profile, week: string): Profile | 
 
 export function createProfile(): Profile {
   return {
-    name: 'الراكب', wallet: STARTING_WALLET, xp: 0, totalDeliveries: 0, totalEarned: 0,
+    name: 'الراكب', wallet: STARTING_WALLET, xp: 0, totalDeliveries: 0, totalEarned: 0, reputation: 80, cleanDeliveries: 0,
     dailyDeliveries: 0, dailyChallengeDate: todayKey(), dailyChallengeClaimed: false,
     weeklyDeliveries: 0, weeklyChallengeWeek: weekKey(), weeklyChallengeClaimed: false,
     dailyStreak: 0, lastDailyClaim: null, owned: ['classic'], vehicle: 'classic', paint: 'swift',
@@ -139,6 +141,8 @@ export function loadProfile(): Profile {
       xp: Math.floor(finiteNonNegative(parsed.xp, 0)),
       totalDeliveries: Math.floor(finiteNonNegative(parsed.totalDeliveries, 0)),
       totalEarned: Math.floor(finiteNonNegative(parsed.totalEarned, 0)),
+      reputation: Math.min(100, Math.floor(finiteNonNegative(parsed.reputation, 80))),
+      cleanDeliveries: Math.floor(finiteNonNegative(parsed.cleanDeliveries, 0)),
       dailyDeliveries: challengeDate === today ? Math.floor(finiteNonNegative(parsed.dailyDeliveries, 0)) : 0,
       dailyChallengeDate: challengeDate === today ? challengeDate : today,
       dailyChallengeClaimed: challengeDate === today && parsed.dailyChallengeClaimed === true,
@@ -192,7 +196,7 @@ export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
   return { ...profile, wallet: profile.wallet - cost, upgrades: { ...profile.upgrades, [id]: level + 1 } };
 }
 
-export function creditDelivery(profile: Profile, pay: number): Profile {
+export function creditDelivery(profile: Profile, pay: number, onTime = true): Profile {
   const reward = Math.max(0, Math.round(pay));
   const today = todayKey();
   const week = weekKey();
@@ -200,6 +204,8 @@ export function creditDelivery(profile: Profile, pay: number): Profile {
   const weeklyDeliveries = profile.weeklyChallengeWeek === week ? profile.weeklyDeliveries : 0;
   return {
     ...profile, wallet: profile.wallet + reward, xp: profile.xp + XP_PER_DELIVERY,
+    reputation: Math.max(0, Math.min(100, profile.reputation + (onTime ? 2 : -4))),
+    cleanDeliveries: profile.cleanDeliveries + (onTime ? 1 : 0),
     totalDeliveries: profile.totalDeliveries + 1, totalEarned: profile.totalEarned + reward,
     dailyDeliveries: dailyDeliveries + 1, dailyChallengeDate: today,
     dailyChallengeClaimed: profile.dailyChallengeDate === today && profile.dailyChallengeClaimed,
