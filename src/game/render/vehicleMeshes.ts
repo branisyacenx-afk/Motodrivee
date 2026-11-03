@@ -123,11 +123,30 @@ function buildCarParts() {
     rim(1.0, 0.33, -1.45),
   ];
   const trim = [
+    // Front and rear bumper lips.
     box(1.9, 0.22, 0.12, 0, 0.42, 2.34),
     box(1.9, 0.22, 0.12, 0, 0.42, -2.34),
+    // Front grille and lower air intake.
     box(0.9, 0.16, 0.05, 0, 0.7, 2.31),
+    box(0.72, 0.08, 0.05, 0, 0.53, 2.32),
+    // Side mirrors with short mounting stems.
     box(0.12, 0.1, 0.2, -1.02, 1.0, 0.6),
     box(0.12, 0.1, 0.2, 1.02, 1.0, 0.6),
+    box(0.08, 0.06, 0.24, -1.0, 0.96, 0.48),
+    box(0.08, 0.06, 0.24, 1.0, 0.96, 0.48),
+    // Door protection strips and handles on both sides.
+    box(0.08, 0.1, 1.45, -0.98, 0.62, -0.05),
+    box(0.08, 0.1, 1.45, 0.98, 0.62, -0.05),
+    box(0.05, 0.045, 0.22, -1.0, 0.82, 0.12),
+    box(0.05, 0.045, 0.22, 1.0, 0.82, 0.12),
+    // Subtle lower side skirts and rear diffuser.
+    box(0.1, 0.08, 1.8, -0.96, 0.34, 0),
+    box(0.1, 0.08, 1.8, 0.96, 0.34, 0),
+    box(1.2, 0.08, 0.12, 0, 0.34, -2.35),
+    // Front and rear registration plate surrounds.
+    box(0.62, 0.18, 0.035, 0, 0.55, 2.37),
+    box(0.62, 0.18, 0.035, 0, 0.55, -2.37),
+    // Underbody cross-member.
     box(1.9, 0.08, 0.2, 0, 0.34, 0.9),
   ];
   return {
