@@ -100,6 +100,76 @@ function buildCrosswalks(): THREE.Group {
  * Add a small number of marked curbside parking bays on selected streets.
  * A single InstancedMesh keeps the decoration inexpensive and does not affect traffic.
  */
+/**
+ * Add a restrained set of three-aspect traffic signals at selected intersections.
+ * All parts are instanced; lights are decorative and do not control traffic AI.
+ */
+function buildTrafficSignals(): THREE.Group {
+  const group = new THREE.Group();
+  const count = Math.ceil(CITY.rows / 4) * Math.ceil(CITY.cols / 4);
+  const pole = new THREE.InstancedMesh(
+    new THREE.CylinderGeometry(0.12, 0.16, 5.6, 8),
+    new THREE.MeshStandardMaterial({ color: '#59636a', roughness: 0.82 }),
+    count,
+  );
+  const housings = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.82, 1.95, 0.62),
+    new THREE.MeshStandardMaterial({ color: '#30383b', roughness: 0.72 }),
+    count,
+  );
+  const red = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.19, 8, 6),
+    new THREE.MeshBasicMaterial({ color: '#e5483f' }),
+    count,
+  );
+  const amber = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.19, 8, 6),
+    new THREE.MeshBasicMaterial({ color: '#f2b544' }),
+    count,
+  );
+  const green = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.19, 8, 6),
+    new THREE.MeshBasicMaterial({ color: '#48ad70' }),
+    count,
+  );
+  const dummy = new THREE.Object3D();
+  const offset = CITY.roadWidth / 2 + CITY.sidewalk * 0.55;
+  let index = 0;
+
+  for (let row = 0; row < CITY.rows; row += 4) {
+    for (let col = 0; col < CITY.cols; col += 4) {
+      const x = roadX(col) + offset;
+      const z = roadZ(row) + offset;
+      dummy.position.set(x, 2.8, z);
+      dummy.rotation.set(0, -Math.PI / 4, 0);
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+      pole.setMatrixAt(index, dummy.matrix);
+
+      dummy.position.set(x, 5.05, z);
+      dummy.updateMatrix();
+      housings.setMatrixAt(index, dummy.matrix);
+
+      for (const [mesh, y] of [[red, 5.62], [amber, 5.05], [green, 4.48]] as const) {
+        dummy.position.set(x, y, z - 0.34);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(index, dummy.matrix);
+      }
+      index++;
+    }
+  }
+
+  for (const mesh of [pole, housings, red, amber, green]) {
+    mesh.count = index;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+  return group;
+}
+
 function buildParkingBays(): THREE.Group {
   const group = new THREE.Group();
   const baysPerBlock = 2;
@@ -529,6 +599,7 @@ export function buildCity(layout: Layout): THREE.Group {
   root.add(buildCrosswalks());
   root.add(buildSidewalkCurbs(bounds));
   root.add(buildStreetLamps());
+  root.add(buildTrafficSignals());
   root.add(buildBusShelters());
   root.add(buildParkingBays());
 
