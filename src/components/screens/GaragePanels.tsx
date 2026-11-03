@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { PAINTS, UPGRADES, VEHICLES } from '@/game/config';
 import { formatMoney } from '@/lib/money';
-import { buyUpgrade, buyVehicle, nextUpgradeCost, selectPaint, selectVehicle, type Profile } from '@/lib/profile';
+import { buyUpgrade, buyVehicle, levelFor, nextUpgradeCost, selectPaint, selectVehicle, type Profile } from '@/lib/profile';
 
 interface PanelProps {
   profile: Profile;
@@ -20,12 +20,14 @@ function bonusLabel(multiplier: number): string {
 }
 
 export function BikesPanel({ profile, onUpdate }: PanelProps) {
+  const currentLevel = levelFor(profile.xp);
   return (
     <ul className="grid gap-3">
       {VEHICLES.map((vehicle) => {
         const owned = profile.owned.includes(vehicle.id);
         const selected = profile.vehicle === vehicle.id;
-        const canAfford = profile.wallet >= vehicle.price;
+        const levelLocked = currentLevel < vehicle.requiredLevel;
+        const canAfford = profile.wallet >= vehicle.price && !levelLocked;
         return (
           <li
             key={vehicle.id}
@@ -38,6 +40,9 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
               <p className="mt-0.5 text-sm text-slate-400">{vehicle.tagline}</p>
               <p className="mt-2 text-xs font-semibold text-slate-300">
                 السرعة القصوى {bonusLabel(vehicle.speed)} · التسارع {bonusLabel(vehicle.accel)}
+              </p>
+              <p className={`mt-2 text-xs font-bold ${levelLocked ? 'text-amber-300' : 'text-emerald-300'}`}>
+                {levelLocked ? `تُفتح في المستوى ${vehicle.requiredLevel} · مستواك ${currentLevel}` : `متاحة للشراء · المستوى ${vehicle.requiredLevel}+`}
               </p>
             </div>
             {selected ? (
@@ -59,7 +64,7 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
                 }}
                 className={PRIMARY_BUTTON}
               >
-                اشريها بـ {formatMoney(vehicle.price)}
+                {levelLocked ? `مقفولة حتى المستوى ${vehicle.requiredLevel}` : `اشريها بـ ${formatMoney(vehicle.price)}`}
               </button>
             )}
           </li>
