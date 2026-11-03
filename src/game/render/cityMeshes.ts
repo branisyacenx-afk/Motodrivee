@@ -165,8 +165,9 @@ function buildSidewalkCurbs(): THREE.InstancedMesh {
   const curbs = new THREE.InstancedMesh(geometry, material, count);
   const dummy = new THREE.Object3D();
   let index = 0;
-  // Center the curb directly on the asphalt/sidewalk boundary, not the outer sidewalk edge.\n  const edgeOffset = roadHalf + curbDepth / 2;
   const roadHalf = CITY.roadWidth / 2;
+  // Center the curb directly on the asphalt/sidewalk boundary.
+  const edgeOffset = roadHalf + curbDepth / 2;
 
   // East-west curb runs: leave the full width of every north-south road open.
   for (let row = 0; row < CITY.rows; row++) {
