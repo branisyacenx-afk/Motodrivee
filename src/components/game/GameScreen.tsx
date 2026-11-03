@@ -68,25 +68,25 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
 
     try {
       world = new GameWorld(
-      container,
-      {
-        layout,
-        stats: loadout.stats,
-        paintHex: loadout.paintHex,
-        playerName: loadout.playerName,
-        network,
-        readInput: input.read,
-      },
-      {
-        onHud: setHud,
-        onEvent: (event: GameEvent) => {
-          const id = ++nextToastId;
-          setToasts((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { ...event, id }]);
-          window.setTimeout(() => setToasts((prev) => prev.filter((toast) => toast.id !== id)), TOAST_LIFE_MS);
+        container,
+        {
+          layout,
+          stats: loadout.stats,
+          paintHex: loadout.paintHex,
+          playerName: loadout.playerName,
+          network,
+          readInput: input.read,
         },
-        onEnd: (summary) => onFinishRef.current(summary),
-        onError: reportGameError,
-      },
+        {
+          onHud: setHud,
+          onEvent: (event: GameEvent) => {
+            const id = ++nextToastId;
+            setToasts((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { ...event, id }]);
+            window.setTimeout(() => setToasts((prev) => prev.filter((toast) => toast.id !== id)), TOAST_LIFE_MS);
+          },
+          onEnd: (summary) => onFinishRef.current(summary),
+          onError: reportGameError,
+        },
       );
       worldRef.current = world;
       world.start();
@@ -203,7 +203,7 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
         </div>
       )}
 
-      {isTouch && !paused && !mapOpen && <TouchControls onControl={handleTouch} />
+      {isTouch && !paused && !mapOpen && <TouchControls onControl={handleTouch} />}
 
       {paused && (
         <PauseMenu onResume={() => setPaused(false)} onEndShift={() => worldRef.current?.finishShift()} />
