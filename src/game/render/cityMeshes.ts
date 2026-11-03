@@ -438,7 +438,9 @@ function buildingGroup(boxes: readonly Box[], windowTexture: THREE.Texture): THR
       facadeItems[5].push({ x: centerX + side * (width / 2 - 0.22), y: box.height / 2, z: frontZ - 0.08, sx: 0.28, sy: box.height, sz: 0.2 });
     }
     // 8. Ground-floor stone/plaster plinth.
-    facadeItems[6].push({ x: centerX, y: 0.48, z: frontZ - 0.08, sx: width, sy: 0.96, sz: 0.18 });
+    for (const side of [-1, 1]) {
+      facadeItems[6].push({ x: centerX + side * (doorWidth / 2 + (width - doorWidth) / 4), y: 0.48, z: frontZ - 0.08, sx: (width - doorWidth) / 2, sy: 0.96, sz: 0.18 });
+    }
     // 9. Corner accent blocks at the entrance level.
     if (seed % 2 === 0) {
       for (const side of [-1, 1]) {
