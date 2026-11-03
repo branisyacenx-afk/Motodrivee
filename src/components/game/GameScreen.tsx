@@ -15,7 +15,7 @@ import type { Profile } from '@/lib/profile';
 interface GameScreenProps {
   profile: Profile;
   onFinish: (summary: ShiftSummary) => void;
-  onDelivery: (pay: number) => void;
+  onDelivery: (pay: number, onTime: boolean) => void;
 }
 
 const TOAST_LIFE_MS = 2600;
@@ -82,7 +82,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
         },
         {
           onHud: setHud,
-          onDelivery: (pay) => onDeliveryRef.current(pay),
+          onDelivery: (pay, onTime) => onDeliveryRef.current(pay, onTime),
           onEvent: (event: GameEvent) => {
             const id = ++nextToastId;
             setToasts((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { ...event, id }]);
