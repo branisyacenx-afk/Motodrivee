@@ -40,7 +40,7 @@ export function TurnCard({ turn, order }: TurnCardProps) {
     ? order ? `مطعم ${order.restaurant} · ${order.pickupDistrict}` : 'المطعم'
     : order ? `الزبون · ${order.dropoffDistrict}` : 'الزبون';
   return (
-    <div className={`${GLASS_CARD} flex items-center gap-3 px-4 py-2.5`}>
+    <div className={`${GLASS_CARD} flex items-center gap-2 px-2.5 py-1.5 sm:gap-3 sm:px-3 sm:py-2`}>
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white shadow-md">
         <Icon className="h-5 w-5" strokeWidth={2.5} />
       </span>
@@ -71,7 +71,7 @@ export function OrderCard({ order }: OrderCardProps) {
   const lowTime = order.timeLeft > 0 && order.timeLeft <= 15;
   const timeRatio = Math.max(0, Math.min(1, order.timeLeft / Math.max(1, order.timeLimit)));
   return (
-    <div className={`${GLASS_CARD} min-w-0 px-2.5 py-1.5 sm:px-3.5 sm:py-2.5`}>
+    <div className={`${GLASS_CARD} min-w-0 px-2 py-1 sm:px-2.5 sm:py-1.5`}>
       <p className="text-[11px] font-semibold text-slate-500">
         {order.phase === 'pickup' ? 'امشي خذ الطلبية' : 'وصّل للزبون'}
       </p>
@@ -79,7 +79,7 @@ export function OrderCard({ order }: OrderCardProps) {
       <p className="truncate text-[11px] text-slate-500">
         من {order.pickupDistrict} إلى {order.dropoffDistrict}
       </p>
-      <div className="mt-1.5 flex items-center gap-3 text-xs font-semibold text-slate-700">
+      <div className="mt-1 flex items-center gap-2 text-[11px] font-semibold text-slate-700">
         <span className="flex items-center gap-1">
           <MapPin className="h-3.5 w-3.5 text-brand-500" />
           {formatDistance(order.distance)}
@@ -89,10 +89,10 @@ export function OrderCard({ order }: OrderCardProps) {
           {lateRed ? 'متأخر' : `${order.timeLeft} ث`}
         </span>
       </div>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-label={`الوقت المتبقي ${order.timeLeft} ثانية`}>
+      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-slate-200" aria-label={`الوقت المتبقي ${order.timeLeft} ثانية`}>
         <div className={`h-full rounded-full transition-[width] duration-300 ${lateRed ? 'bg-brand-500' : lowTime ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${timeRatio * 100}%` }} />
       </div>
-      <div className="mt-1 rounded-lg bg-slate-100 px-2 py-1 sm:mt-2 sm:px-2.5 sm:py-1.5">
+      <div className="mt-1 rounded-md bg-slate-100 px-1.5 py-1">
         <p className="text-[11px] font-semibold text-slate-600">
           {order.progress > 0
             ? order.phase === 'pickup' ? 'راك تستلم الطلبية… خليك ثابت' : 'راك تسلّم الطلبية… خليك ثابت'
@@ -100,7 +100,7 @@ export function OrderCard({ order }: OrderCardProps) {
         </p>
         {order.progress > 0 && (
           <div
-            className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-300"
+            className="mt-1 h-1 overflow-hidden rounded-full bg-slate-300"
             role="progressbar"
             aria-label={order.phase === 'pickup' ? 'تقدم استلام الطلبية' : 'تقدم تسليم الطلبية'}
             aria-valuemin={0}
@@ -125,7 +125,7 @@ export function OfferCard({ offer, onAccept, onDecline }: OfferCardProps) {
   const urgency = offer.expiresIn <= 5;
   const expiryRatio = Math.max(0, Math.min(1, offer.expiresIn / 20));
   return (
-    <div className={`${GLASS_CARD} w-full border-s-4 border-brand-500 p-2.5 sm:p-3.5 animate-toast-in`} role="dialog" aria-label="طلبية جديدة">
+    <div className={`${GLASS_CARD} w-full border-s-4 border-brand-500 p-2 sm:p-2.5 animate-toast-in`} role="dialog" aria-label="طلبية جديدة">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-bold text-brand-600">طلبية جديدة</p>
@@ -142,7 +142,7 @@ export function OfferCard({ offer, onAccept, onDecline }: OfferCardProps) {
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-label={`تنتهي الطلبية بعد ${offer.expiresIn} ثانية`}>
         <div className={`h-full rounded-full transition-[width] duration-200 ${urgency ? 'bg-brand-500' : 'bg-amber-400'}`} style={{ width: `${expiryRatio * 100}%` }} />
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3">
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:mt-2">
         <button
           type="button"
           onClick={onDecline}
@@ -199,7 +199,7 @@ export function Toasts({ items, onDismiss }: ToastsProps) {
       {items.map((item) => (
         <div
           key={item.id}
-          className={`${TOAST_TONE[item.kind]} pointer-events-auto flex animate-toast-in items-center gap-2 rounded-xl py-2 ps-4 pe-2 text-sm font-bold shadow-xl ring-1 ring-black/10`}
+          className={`${TOAST_TONE[item.kind]} pointer-events-auto flex animate-toast-in items-center gap-2 rounded-lg py-1.5 ps-3 pe-1.5 text-xs font-bold shadow-xl ring-1 ring-black/10`}
         >
           <span className="flex-1">{item.text}</span>
           <button
