@@ -6,6 +6,8 @@ export interface Profile {
   name: string;
   wallet: number;
   xp: number;
+  totalDeliveries: number;
+  totalEarned: number;
   dailyStreak: number;
   lastDailyClaim: string | null;
   owned: VehicleId[];
@@ -22,6 +24,19 @@ const XP_PER_LEVEL = 500;
 
 export function levelFor(xp: number): number {
   return 1 + Math.floor(xp / XP_PER_LEVEL);
+}
+
+export function careerRank(level: number): string {
+  if (level >= 20) return 'أسطورة التوصيل';
+  if (level >= 12) return 'محترف المدينة';
+  if (level >= 7) return 'سائق خبير';
+  if (level >= 4) return 'سائق نشيط';
+  if (level >= 2) return 'مبتدئ متقدم';
+  return 'متدرّب جديد';
+}
+
+export function levelProgress(xp: number): number {
+  return Math.floor(((xp % XP_PER_LEVEL) / XP_PER_LEVEL) * 100);
 }
 
 export function todayKey(date: Date = new Date()): string {
@@ -63,6 +78,8 @@ export function createProfile(): Profile {
     name: 'الراكب',
     wallet: STARTING_WALLET,
     xp: 0,
+    totalDeliveries: 0,
+    totalEarned: 0,
     dailyStreak: 0,
     lastDailyClaim: null,
     owned: ['classic'],
@@ -100,6 +117,8 @@ export function loadProfile(): Profile {
       name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim().slice(0, 16) : fallback.name,
       wallet: finiteNonNegative(parsed.wallet, fallback.wallet),
       xp: Math.floor(finiteNonNegative(parsed.xp, 0)),
+      totalDeliveries: Math.floor(finiteNonNegative(parsed.totalDeliveries, 0)),
+      totalEarned: Math.floor(finiteNonNegative(parsed.totalEarned, 0)),
       dailyStreak: Math.floor(finiteNonNegative(parsed.dailyStreak, 0)),
       lastDailyClaim: typeof parsed.lastDailyClaim === 'string' ? parsed.lastDailyClaim : null,
       owned: owned.includes('classic') ? owned : ['classic', ...owned],
@@ -155,7 +174,14 @@ export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
 }
 
 export function creditDelivery(profile: Profile, pay: number): Profile {
-  return { ...profile, wallet: profile.wallet + Math.max(0, Math.round(pay)), xp: profile.xp + XP_PER_DELIVERY };
+  const reward = Math.max(0, Math.round(pay));
+  return {
+    ...profile,
+    wallet: profile.wallet + reward,
+    xp: profile.xp + XP_PER_DELIVERY,
+    totalDeliveries: profile.totalDeliveries + 1,
+    totalEarned: profile.totalEarned + reward,
+  };
 }
 
 export function creditShift(profile: Profile, summary: ShiftSummary): Profile {
