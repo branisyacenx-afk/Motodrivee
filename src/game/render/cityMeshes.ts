@@ -529,13 +529,6 @@ const CITY_CHUNK_ACTIVE_RADIUS = CITY.pitch * 7;
 function buildStreetDetailPack(): THREE.Group {
   const group = new THREE.Group();
   const selectedStep = 4;
-  const points: { x: number; z: number; side: number }[] = [];
-  for (let row = 2; row < CITY.rows - 1; row += selectedStep) {
-    for (let col = 2; col < CITY.cols - 1; col += selectedStep) {
-      for (const side of [-1, 1]) points.push({ x: roadX(col), z: roadZ(row), side });
-    }
-  }
-
   const addBatch = (
     geometry: THREE.BufferGeometry,
     material: THREE.Material,
