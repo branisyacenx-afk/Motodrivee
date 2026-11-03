@@ -1,5 +1,5 @@
 import { ChevronLeft, Coins, Flag, Gift, Store, Trophy } from 'lucide-react';
-import { dailyRewardPreview, levelFor, todayKey, type Profile } from '@/lib/profile';
+import { careerRank, dailyRewardPreview, levelFor, levelProgress, todayKey, type Profile } from '@/lib/profile';
 import { formatMoney } from '@/lib/money';
 
 interface MenuScreenProps {
@@ -16,6 +16,9 @@ export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimD
   const today = todayKey();
   const dailyClaimable = profile.lastDailyClaim !== today;
   const dailyReward = dailyRewardPreview(profile, today);
+  const level = levelFor(profile.xp);
+  const progress = levelProgress(profile.xp);
+  const rank = careerRank(level);
 
   return (
     <div className="relative flex min-h-full flex-col overflow-hidden bg-slate-900 text-white">
@@ -50,11 +53,32 @@ export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimD
           </p>
         </div>
 
+        <section aria-label="تقدم المسيرة" className="mt-6 max-w-xl rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-md">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold text-slate-300">المسيرة المهنية · المستوى {level}</p>
+              <p className="mt-1 text-lg font-extrabold">{rank}</p>
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold tabular-nums">{profile.xp} XP</p>
+              <p className="text-xs text-slate-300">{500 - (profile.xp % 500)} XP للمستوى التالي</p>
+            </div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/30">
+            <div className="h-full rounded-full bg-emerald-400 transition-[width]" style={{ width: `${progress}%` }} />
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-200 sm:grid-cols-3">
+            <span>توصيلات: <b className="text-white">{profile.totalDeliveries}</b></span>
+            <span>إجمالي الأرباح: <b className="text-white">{formatMoney(profile.totalEarned)}</b></span>
+            <span>الدراجات: <b className="text-white">{profile.owned.length}/3</b></span>
+          </div>
+        </section>
+
         {dailyClaimable && (
           <button
             type="button"
             onClick={onClaimDaily}
-            className="mt-8 flex max-w-md items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 py-4 text-sm font-bold text-slate-900 shadow-lg shadow-amber-400/30 transition hover:bg-amber-300 active:scale-[0.98]"
+            className="mt-5 flex max-w-md items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 py-4 text-sm font-bold text-slate-900 shadow-lg shadow-amber-400/30 transition hover:bg-amber-300 active:scale-[0.98]"
           >
             <Gift className="h-4 w-4" />
             استلم مكافأتك اليومية: {formatMoney(dailyReward)}
@@ -90,14 +114,14 @@ export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimD
           </div>
         </div>
 
-        <dl className="mt-10 grid max-w-md grid-cols-3 gap-3 text-sm">
-          <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-md">
-            <dt className="text-slate-300">المستوى</dt>
-            <dd className="mt-1 text-xl font-bold tabular-nums">{levelFor(profile.xp)}</dd>
-          </div>
+        <dl className="mt-6 grid max-w-md grid-cols-3 gap-3 text-sm">
           <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-md">
             <dt className="text-slate-300">أحسن نقاط</dt>
             <dd className="mt-1 text-xl font-bold tabular-nums">{profile.bestScore}</dd>
+          </div>
+          <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-md">
+            <dt className="text-slate-300">سلسلة يومية</dt>
+            <dd className="mt-1 text-xl font-bold tabular-nums">{profile.dailyStreak} يوم</dd>
           </div>
           <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur-md">
             <dt className="text-slate-300">الراكب</dt>
