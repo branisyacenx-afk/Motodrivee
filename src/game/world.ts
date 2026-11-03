@@ -38,6 +38,7 @@ export interface WorldOptions {
 export interface WorldCallbacks {
   onHud: (hud: HudSnapshot) => void;
   onEvent: (event: GameEvent) => void;
+  onDelivery: (pay: number) => void;
   onEnd: (summary: ShiftSummary) => void;
   onError?: (message: string) => void;
 }
@@ -313,7 +314,7 @@ export class GameWorld {
         }
       } else {
         this.offerCooldown -= dt;
-        if (this.offerCooldown <= 0) this.offer = this.generateOffer();
+        if (this.offerCooldown <= 0) this.offer = this.generateOffer({ x: this.bike.x, z: this.bike.z });
       }
       return;
     }
@@ -338,6 +339,7 @@ export class GameWorld {
     const onTime = order.lateSeconds <= 0;
     const pay = onTime ? order.pay : Math.round(order.pay / 2);
     this.earnings += pay;
+    this.callbacks.onDelivery(pay);
     if (onTime) {
       this.addScore(100 + Math.round(order.timeLeft * 2));
       this.emit({ kind: 'good', text: `وصلت في الوقت! +${formatMoney(pay)}` }, 'delivered');
