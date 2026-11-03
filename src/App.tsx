@@ -5,7 +5,7 @@ import { LeaderboardScreen } from '@/components/screens/LeaderboardScreen';
 import { MenuScreen } from '@/components/screens/MenuScreen';
 import { SummaryScreen } from '@/components/screens/SummaryScreen';
 import type { ShiftSummary } from '@/game/types';
-import { claimDaily, creditShift, loadProfile, saveProfile, todayKey, type Profile } from '@/lib/profile';
+import { claimDaily, creditDelivery, creditShift, loadProfile, saveProfile, todayKey, type Profile } from '@/lib/profile';
 
 type Screen = 'menu' | 'garage' | 'leaderboard' | 'play' | 'summary';
 
@@ -39,7 +39,7 @@ function App() {
         <GarageScreen profile={profile} onUpdate={setProfile} onBack={() => setScreen('menu')} />
       )}
       {screen === 'leaderboard' && <LeaderboardScreen onBack={() => setScreen('menu')} />}
-      {screen === 'play' && <GameScreen profile={profile} onFinish={handleFinish} />}
+      {screen === 'play' && <GameScreen profile={profile} onFinish={handleFinish} onDelivery={(pay) => setProfile((prev) => creditDelivery(prev, pay))} />}
       {screen === 'summary' && summary && (
         <SummaryScreen
           summary={summary}
