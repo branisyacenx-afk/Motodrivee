@@ -154,12 +154,15 @@ export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
   return { ...profile, wallet: profile.wallet - cost, upgrades: { ...profile.upgrades, [id]: level + 1 } };
 }
 
+export function creditDelivery(profile: Profile, pay: number): Profile {
+  return { ...profile, wallet: profile.wallet + Math.max(0, Math.round(pay)), xp: profile.xp + XP_PER_DELIVERY };
+}
+
 export function creditShift(profile: Profile, summary: ShiftSummary): Profile {
   const taskReward = completedTasks(summary).reduce((sum, task) => sum + task.reward, 0);
   return {
     ...profile,
-    wallet: profile.wallet + Math.round(summary.earnings) + taskReward,
-    xp: profile.xp + summary.deliveries * XP_PER_DELIVERY,
+    wallet: profile.wallet + taskReward,
     bestScore: Math.max(profile.bestScore, summary.score),
   };
 }

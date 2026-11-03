@@ -15,16 +15,18 @@ import type { Profile } from '@/lib/profile';
 interface GameScreenProps {
   profile: Profile;
   onFinish: (summary: ShiftSummary) => void;
+  onDelivery: (pay: number) => void;
 }
 
 const TOAST_LIFE_MS = 2600;
 const MAX_TOASTS = 3;
 
-export function GameScreen({ profile, onFinish }: GameScreenProps) {
+export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<GameWorld | null>(null);
   const inputRef = useRef<ReturnType<typeof createInputController> | null>(null);
   const onFinishRef = useRef(onFinish);
+  const onDeliveryRef = useRef(onDelivery);
   const layout = useMemo(() => createCityLayout(), []);
   const [loadout] = useState(() => ({
     stats: getBikeStats(profile.vehicle, profile.upgrades),
@@ -41,7 +43,8 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
 
   useEffect(() => {
     onFinishRef.current = onFinish;
-  }, [onFinish]);
+    onDeliveryRef.current = onDelivery;
+  }, [onFinish, onDelivery]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -79,6 +82,7 @@ export function GameScreen({ profile, onFinish }: GameScreenProps) {
         },
         {
           onHud: setHud,
+          onDelivery: (pay) => onDeliveryRef.current(pay),
           onEvent: (event: GameEvent) => {
             const id = ++nextToastId;
             setToasts((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { ...event, id }]);
