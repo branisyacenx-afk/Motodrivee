@@ -8,6 +8,9 @@ export interface Profile {
   xp: number;
   totalDeliveries: number;
   totalEarned: number;
+  dailyDeliveries: number;
+  dailyChallengeDate: string;
+  dailyChallengeClaimed: boolean;
   dailyStreak: number;
   lastDailyClaim: string | null;
   owned: VehicleId[];
@@ -21,6 +24,8 @@ const STORAGE_KEY = 'swift-drop-profile';
 const STARTING_WALLET = 1000;
 const XP_PER_DELIVERY = 100;
 const XP_PER_LEVEL = 500;
+export const DAILY_DELIVERY_GOAL = 3;
+export const DAILY_CHALLENGE_REWARD = 1200;
 
 export function levelFor(xp: number): number {
   return 1 + Math.floor(xp / XP_PER_LEVEL);
@@ -73,6 +78,18 @@ export function claimDaily(profile: Profile, today: string): Profile | null {
   };
 }
 
+export function claimDailyChallenge(profile: Profile, today: string): Profile | null {
+  const deliveries = profile.dailyChallengeDate === today ? profile.dailyDeliveries : 0;
+  const alreadyClaimed = profile.dailyChallengeDate === today && profile.dailyChallengeClaimed;
+  if (deliveries < DAILY_DELIVERY_GOAL || alreadyClaimed) return null;
+  return {
+    ...profile,
+    wallet: profile.wallet + DAILY_CHALLENGE_REWARD,
+    dailyChallengeDate: today,
+    dailyChallengeClaimed: true,
+  };
+}
+
 export function createProfile(): Profile {
   return {
     name: 'الراكب',
@@ -80,6 +97,9 @@ export function createProfile(): Profile {
     xp: 0,
     totalDeliveries: 0,
     totalEarned: 0,
+    dailyDeliveries: 0,
+    dailyChallengeDate: todayKey(),
+    dailyChallengeClaimed: false,
     dailyStreak: 0,
     lastDailyClaim: null,
     owned: ['classic'],
@@ -104,21 +124,23 @@ function finiteNonNegative(value: unknown, fallback: number): number {
 
 export function loadProfile(): Profile {
   const fallback = createProfile();
-
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return fallback;
-
     const parsed = JSON.parse(raw) as Partial<Profile>;
     const upgrades = parsed.upgrades ?? fallback.upgrades;
     const owned = Array.isArray(parsed.owned) ? parsed.owned.filter(isVehicleId) : fallback.owned;
-
+    const today = todayKey();
+    const challengeDate = typeof parsed.dailyChallengeDate === 'string' ? parsed.dailyChallengeDate : today;
     return {
       name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim().slice(0, 16) : fallback.name,
       wallet: finiteNonNegative(parsed.wallet, fallback.wallet),
       xp: Math.floor(finiteNonNegative(parsed.xp, 0)),
       totalDeliveries: Math.floor(finiteNonNegative(parsed.totalDeliveries, 0)),
       totalEarned: Math.floor(finiteNonNegative(parsed.totalEarned, 0)),
+      dailyDeliveries: challengeDate === today ? Math.floor(finiteNonNegative(parsed.dailyDeliveries, 0)) : 0,
+      dailyChallengeDate: challengeDate === today ? challengeDate : today,
+      dailyChallengeClaimed: challengeDate === today && parsed.dailyChallengeClaimed === true,
       dailyStreak: Math.floor(finiteNonNegative(parsed.dailyStreak, 0)),
       lastDailyClaim: typeof parsed.lastDailyClaim === 'string' ? parsed.lastDailyClaim : null,
       owned: owned.includes('classic') ? owned : ['classic', ...owned],
@@ -175,22 +197,23 @@ export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
 
 export function creditDelivery(profile: Profile, pay: number): Profile {
   const reward = Math.max(0, Math.round(pay));
+  const today = todayKey();
+  const dailyDeliveries = profile.dailyChallengeDate === today ? profile.dailyDeliveries : 0;
   return {
     ...profile,
     wallet: profile.wallet + reward,
     xp: profile.xp + XP_PER_DELIVERY,
     totalDeliveries: profile.totalDeliveries + 1,
     totalEarned: profile.totalEarned + reward,
+    dailyDeliveries: dailyDeliveries + 1,
+    dailyChallengeDate: today,
+    dailyChallengeClaimed: profile.dailyChallengeDate === today && profile.dailyChallengeClaimed,
   };
 }
 
 export function creditShift(profile: Profile, summary: ShiftSummary): Profile {
   const taskReward = completedTasks(summary).reduce((sum, task) => sum + task.reward, 0);
-  return {
-    ...profile,
-    wallet: profile.wallet + taskReward,
-    bestScore: Math.max(profile.bestScore, summary.score),
-  };
+  return { ...profile, wallet: profile.wallet + taskReward, bestScore: Math.max(profile.bestScore, summary.score) };
 }
 
 export function nextUpgradeCost(profile: Profile, id: UpgradeId): number | null {
