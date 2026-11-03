@@ -17,9 +17,10 @@ const TURN_META = {
 
 interface TurnCardProps {
   turn: HudSnapshot['turn'];
+  order: OrderHud | null;
 }
 
-export function TurnCard({ turn }: TurnCardProps) {
+export function TurnCard({ turn, order }: TurnCardProps) {
   if (!turn) {
     return (
       <div className={`${GLASS_CARD} flex items-center gap-3 px-4 py-2.5`}>
@@ -35,7 +36,9 @@ export function TurnCard({ turn }: TurnCardProps) {
   }
   const meta = TURN_META[turn.direction];
   const Icon = meta.icon;
-  const destination = turn.target === 'pickup' ? 'المطعم' : 'الزبون';
+  const destination = turn.target === 'pickup'
+    ? order ? `مطعم ${order.restaurant} · ${order.pickupDistrict}` : 'المطعم'
+    : order ? `الزبون · ${order.dropoffDistrict}` : 'الزبون';
   return (
     <div className={`${GLASS_CARD} flex items-center gap-3 px-4 py-2.5`}>
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white shadow-md">
