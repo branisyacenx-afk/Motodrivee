@@ -72,10 +72,10 @@ export function Hud({ hud, toasts, onAccept, onDecline, onPause, onDismissToast,
         </div>
       </div>
 
-      <div className="pointer-events-auto mx-auto flex w-full max-w-md flex-col gap-1.5 sm:gap-2">
+      <div className="pointer-events-auto mx-auto flex w-full max-w-sm flex-col gap-1 sm:gap-2">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
         <TurnCard turn={hud.turn} order={hud.order} />
-        <div className="grid grid-cols-[1.35fr_0.85fr] gap-1.5 sm:gap-2">
+        <div className="grid grid-cols-[1.2fr_0.8fr] gap-1 sm:gap-2">
           <OrderCard order={hud.order} />
           <EarningsCard earnings={hud.earnings} score={hud.score} deliveries={hud.deliveries} />
         </div>
