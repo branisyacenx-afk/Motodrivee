@@ -19,7 +19,7 @@ export interface PedestrianModel {
 export interface ActorAssets {
   bike(paintHex: string, vehicleId: VehicleId): BikeModel;
   car(color: string): THREE.Group;
-  pedestrian(shirt: string, skin: string): PedestrianModel;
+  pedestrian(shirt: string, skin: string, isChild?: boolean): PedestrianModel;
   cone(): THREE.Group;
 }
 
@@ -349,12 +349,13 @@ export function createActorAssets(): ActorAssets {
       return group;
     },
 
-    pedestrian(shirt, skin) {
+    pedestrian(shirt, skin, isChild = false) {
       pedParts ??= buildPedestrianParts();
       const parts = pedParts;
       const shirtMat = materialFor(shirt, 0.8, 0);
       const skinMat = materialFor(skin, 0.65, 0);
       const group = new THREE.Group();
+      if (isChild) group.scale.setScalar(0.72);
       const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, material: THREE.Material) => {
         const mesh = new THREE.Mesh(geo, material);
         mesh.castShadow = true;
