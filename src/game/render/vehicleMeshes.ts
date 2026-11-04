@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createLogoTexture } from '@/game/render/textures';
+import type { VehicleId } from '@/game/config';
 
 type Vec = readonly [number, number, number];
 
@@ -16,7 +17,7 @@ export interface PedestrianModel {
 }
 
 export interface ActorAssets {
-  bike(paintHex: string): BikeModel;
+  bike(paintHex: string, vehicleId: VehicleId): BikeModel;
   car(color: string): THREE.Group;
   pedestrian(shirt: string, skin: string): PedestrianModel;
   cone(): THREE.Group;
@@ -206,7 +207,7 @@ export function createActorAssets(): ActorAssets {
   let pedParts: ReturnType<typeof buildPedestrianParts> | null = null;
 
   return {
-    bike(paintHex) {
+    bike(paintHex, vehicleId) {
       const group = new THREE.Group();
       const paint = materialFor(paintHex, 0.35, 0.2);
       const paintGeo = merge([
@@ -248,6 +249,59 @@ export function createActorAssets(): ActorAssets {
       group.add(new THREE.Mesh(box(0.22, 0.1, 0.03, 0, 1.6, 0.27), visor));
       group.add(new THREE.Mesh(ball(0.09, 0, 0.98, 0.7), headlight));
       group.add(new THREE.Mesh(box(0.14, 0.08, 0.04, 0, 0.86, -0.95), brake));
+
+      // Lightweight silhouette kits make garage classes visually distinct while
+      // keeping the same rig, wheel pivots, and low draw-call budget.
+      const sportIds: VehicleId[] = ['sport', 'racer220', 'falcon320', 'phantom500', 'vortex600', 'blaze650', 'apex750', 'ultimate1000'];
+      const touringIds: VehicleId[] = ['beast', 'touring250', 'titan550'];
+      const adventureIds: VehicleId[] = ['desert300', 'rally450'];
+      const cruiserIds: VehicleId[] = ['shadow350', 'nighthawk700'];
+      if (sportIds.includes(vehicleId)) {
+        group.add(new THREE.Mesh(merge([
+          ball(0.27, 0, 0.93, 0.28, [1.25, 0.8, 1.35]),
+          box(0.08, 0.48, 0.48, -0.31, 0.91, 0.22),
+          box(0.08, 0.48, 0.48, 0.31, 0.91, 0.22),
+          limb([-0.23, 1.2, 0.58], [-0.28, 0.91, 0.85], 0.035),
+          limb([0.23, 1.2, 0.58], [0.28, 0.91, 0.85], 0.035),
+        ]), paint));
+        const screen = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 0.035), glass);
+        screen.position.set(0, 1.28, 0.56);
+        screen.rotation.x = -0.28;
+        group.add(screen);
+      } else if (touringIds.includes(vehicleId)) {
+        group.add(new THREE.Mesh(merge([
+          box(0.28, 0.42, 0.48, -0.43, 0.86, -0.72),
+          box(0.28, 0.42, 0.48, 0.43, 0.86, -0.72),
+          box(0.54, 0.08, 0.48, 0, 0.92, -0.72),
+          limb([-0.22, 1.12, 0.58], [-0.2, 1.55, 0.62], 0.025),
+          limb([0.22, 1.12, 0.58], [0.2, 1.55, 0.62], 0.025),
+        ]), paint));
+        const screen = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.42, 0.045), glass);
+        screen.position.set(0, 1.43, 0.62);
+        screen.rotation.x = -0.18;
+        group.add(screen);
+      } else if (adventureIds.includes(vehicleId)) {
+        group.add(new THREE.Mesh(merge([
+          box(0.42, 0.62, 0.22, 0, 1.02, 0.68),
+          box(0.16, 0.12, 0.7, 0, 0.55, 0.82),
+          limb([-0.28, 1.12, 0.5], [-0.4, 1.05, 0.76], 0.035),
+          limb([0.28, 1.12, 0.5], [0.4, 1.05, 0.76], 0.035),
+        ]), paint));
+        group.scale.y = 1.08;
+      } else if (cruiserIds.includes(vehicleId)) {
+        group.add(new THREE.Mesh(merge([
+          ball(0.25, 0, 0.9, 0.05, [1.2, 0.78, 1.9]),
+          limb([-0.18, 0.45, -0.35], [-0.18, 0.38, -1.0], 0.045),
+          limb([0.18, 0.45, -0.35], [0.18, 0.38, -1.0], 0.045),
+          box(0.42, 0.1, 0.16, 0, 0.42, -0.92),
+        ]), chrome));
+        group.scale.z = 1.08;
+      } else {
+        group.add(new THREE.Mesh(merge([
+          ball(0.19, 0, 0.98, 0.36, [1.15, 0.8, 1.25]),
+          box(0.36, 0.18, 0.22, 0, 1.12, 0.56),
+        ]), paint));
+      }
 
       const wheels: THREE.Object3D[] = [];
       for (const z of [0.82, -0.72]) {
