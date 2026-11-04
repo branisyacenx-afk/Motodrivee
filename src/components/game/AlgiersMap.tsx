@@ -53,8 +53,10 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       ctx.fillRect(x(zone.rect.minX), y(zone.rect.maxZ), (zone.rect.maxX - zone.rect.minX) * scale, (zone.rect.maxZ - zone.rect.minZ) * scale);
     });
 
-    ctx.strokeStyle = '#fffdf8';
-    ctx.lineWidth = Math.max(2, CITY.roadWidth * scale);
+    // High-contrast asphalt bands stay legible on narrow mobile screens.
+    ctx.strokeStyle = '#66717a';
+    ctx.lineWidth = Math.max(5, CITY.roadWidth * scale);
+    ctx.lineCap = 'butt';
     ctx.beginPath();
     for (let i = 0; i < CITY.cols; i++) {
       ctx.moveTo(x(i * CITY.pitch), y(bounds.minZ));
@@ -65,6 +67,23 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       ctx.lineTo(x(bounds.maxX), y(j * CITY.pitch));
     }
     ctx.stroke();
+
+    // Subtle dashed center markings visually connect the road network.
+    ctx.save();
+    ctx.strokeStyle = 'rgba(247, 239, 213, 0.9)';
+    ctx.lineWidth = Math.max(1, CITY.roadWidth * scale * 0.1);
+    ctx.setLineDash([Math.max(4, CITY.roadWidth * scale * 0.45), Math.max(3, CITY.roadWidth * scale * 0.3)]);
+    ctx.beginPath();
+    for (let i = 0; i < CITY.cols; i++) {
+      ctx.moveTo(x(i * CITY.pitch), y(bounds.minZ));
+      ctx.lineTo(x(i * CITY.pitch), y(bounds.maxZ));
+    }
+    for (let j = 0; j < CITY.rows; j++) {
+      ctx.moveTo(x(bounds.minX), y(j * CITY.pitch));
+      ctx.lineTo(x(bounds.maxX), y(j * CITY.pitch));
+    }
+    ctx.stroke();
+    ctx.restore();
 
     if (state.target) {
       const tx = x(state.target.x), ty = y(state.target.z);
