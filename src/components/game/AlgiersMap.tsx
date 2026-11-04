@@ -101,7 +101,7 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       ctx.save();
       // Follow the connected street grid rather than drawing a straight
       // diagonal or arbitrary L across building blocks.
-      ctx.strokeStyle = 'rgba(8, 120, 209, 0.22)';
+      ctx.strokeStyle = 'rgba(48, 38, 8, 0.78)';
       ctx.lineWidth = 11;
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
@@ -111,7 +111,7 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
         else ctx.lineTo(x(point.x), y(point.z));
       });
       ctx.stroke();
-      ctx.strokeStyle = '#0878d1';
+      ctx.strokeStyle = '#ffc928';
       ctx.lineWidth = 5;
       ctx.setLineDash([12, 8]);
       ctx.beginPath();
@@ -129,7 +129,7 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
         ctx.save();
         ctx.translate(px, py);
         ctx.rotate(Math.atan2(ty - by, tx - bx));
-        ctx.fillStyle = '#0878d1';
+        ctx.fillStyle = '#ffe17a';
         ctx.beginPath();
         ctx.moveTo(9, 0); ctx.lineTo(-6, -6); ctx.lineTo(-3, 0); ctx.lineTo(-6, 6);
         ctx.closePath(); ctx.fill();
@@ -229,7 +229,7 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 pb-3">
         <div>
           <h2 className="text-xl font-black">خريطة الجزائر العاصمة</h2>
-          <p className="text-xs text-slate-300">خريطة عالم اللعبة · المسار الأزرق والوجهة الحمراء</p>
+          <p className="text-xs text-slate-300">خريطة عالم اللعبة · المسار الأصفر والوجهة الحمراء</p>
         </div>
         <button type="button" onClick={onClose} aria-label="إغلاق الخريطة" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10"><X /></button>
       </header>
@@ -240,7 +240,7 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
         <aside className="grid grid-cols-2 gap-2 md:flex md:flex-col">
           <div className="col-span-2 rounded-2xl bg-white/10 p-3">
             <div className="flex items-center gap-2 font-bold"><Navigation className="h-4 w-4 text-sky-400" /> تتبع الوجهة</div>
-            <p className="mt-1 text-sm text-slate-300">{state.target ? 'اتبع الأسهم الزرقاء حتى العلامة الحمراء' : 'لا يوجد طلب نشط حالياً'}</p>
+            <p className="mt-1 text-sm text-slate-300">{state.target ? 'اتبع المسار الأصفر حتى العلامة الحمراء' : 'لا يوجد طلب نشط حالياً'}</p>
           </div>
           {ALGIERS_DISTRICTS.map((district, i) => (
             <div key={district} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-bold">
