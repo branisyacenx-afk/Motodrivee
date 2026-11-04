@@ -8,6 +8,7 @@ type Vec = readonly [number, number, number];
 export interface BikeModel {
   group: THREE.Group;
   wheels: THREE.Object3D[];
+  deliveryLid: THREE.Object3D;
 }
 
 export interface PedestrianModel {
@@ -319,6 +320,11 @@ export function createActorAssets(): ActorAssets {
       );
       deliveryBox.position.set(0, 1.05, -1.0);
       group.add(deliveryBox);
+      const deliveryLid = new THREE.Group();
+      deliveryLid.position.set(0, 1.33, -1.0);
+      const lidMesh = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.08, 0.62), boxRed);
+      deliveryLid.add(lidMesh);
+      group.add(deliveryLid);
 
       group.traverse((child) => {
         if (child instanceof THREE.Mesh) {
@@ -326,7 +332,7 @@ export function createActorAssets(): ActorAssets {
           child.receiveShadow = true;
         }
       });
-      return { group, wheels };
+      return { group, wheels, deliveryLid };
     },
 
     car(color) {
