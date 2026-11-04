@@ -21,6 +21,10 @@ export function createInputController(): InputController {
   const keys = new Set<string>();
   const touch = new Set<TouchControl>();
 
+  const clearInput = () => {
+    keys.clear();
+    touch.clear();
+  };
   const isActive = (control: keyof typeof KEY_BINDINGS) =>
     touch.has(control) || KEY_BINDINGS[control].some((code) => keys.has(code));
 
@@ -31,14 +35,17 @@ export function createInputController(): InputController {
   const onKeyUp = (event: KeyboardEvent) => {
     keys.delete(event.code);
   };
-  const onBlur = () => {
-    keys.clear();
-    touch.clear();
+  const onBlur = () => clearInput();
+  const onVisibilityChange = () => {
+    if (document.visibilityState !== 'visible') clearInput();
   };
+  const onPageHide = () => clearInput();
 
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('blur', onBlur);
+  window.addEventListener('pagehide', onPageHide);
+  document.addEventListener('visibilitychange', onVisibilityChange);
 
   return {
     read() {
@@ -53,9 +60,12 @@ export function createInputController(): InputController {
       else touch.delete(control);
     },
     dispose() {
+      clearInput();
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
+      window.removeEventListener('pagehide', onPageHide);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     },
   };
 }
