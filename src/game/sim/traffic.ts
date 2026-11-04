@@ -39,6 +39,8 @@ export type SignalState = 'red' | 'amber' | 'green';
 const AMBER_SECONDS = 1.1;
 const SIGNAL_BRAKE_DISTANCE = 36;
 const SIGNAL_STOP_OFFSET = 5.5;
+const COMFORT_BRAKE = 6.5;
+const TRAFFIC_ACCELERATION = 2.8;
 
 export function greenAxis(i: number, j: number, t: number): 'x' | 'z' {
   const cycle = Math.floor(t / CITY.lightHalfCycle);
@@ -153,18 +155,18 @@ export function updateTraffic(traffic: Traffic, t: number, dt: number, rider?: {
 
       // At amber, stop only when there is enough room to brake safely. If the
       // rider is already too close, clear the junction instead of hard braking.
-      const brakingDistance = (car.speed * car.speed) / (2 * 8);
+      const brakingDistance = (car.speed * car.speed) / (2 * COMFORT_BRAKE);
       if (signal === 'amber' && ahead < brakingDistance + SIGNAL_STOP_OFFSET + 2) continue;
 
       redStopDistance = Math.min(redStopDistance, ahead);
       const stoppingDistance = Math.max(0, ahead - SIGNAL_STOP_OFFSET);
-      const signalSpeed = Math.sqrt(2 * 8 * stoppingDistance);
+      const signalSpeed = Math.sqrt(2 * COMFORT_BRAKE * stoppingDistance);
       desired = Math.min(desired, signalSpeed);
     }
 
     const speed = car.speed < desired
-      ? Math.min(desired, car.speed + 3.5 * dt)
-      : Math.max(desired, car.speed - 9 * dt);
+      ? Math.min(desired, car.speed + TRAFFIC_ACCELERATION * dt)
+      : Math.max(desired, car.speed - COMFORT_BRAKE * dt);
     nextCars.push({
       car,
       speed,
