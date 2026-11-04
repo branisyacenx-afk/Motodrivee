@@ -153,6 +153,3 @@ jobs:
             - A separate workflow may merge this exact head commit only after CI succeeds.
 
             Please inspect the visual/gameplay result after deployment.
-          labels: |
-            automation
-            swift-drop
