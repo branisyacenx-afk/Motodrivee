@@ -5,6 +5,7 @@ import type { HudSnapshot, Layout, Rect } from '@/game/types';
 interface MinimapProps {
   layout: Layout;
   state: HudSnapshot['minimap'];
+  onOpen: () => void;
   className?: string;
 }
 
@@ -19,7 +20,7 @@ function drawRect(ctx: CanvasRenderingContext2D, rect: Rect, toX: (x: number) =>
   ctx.fillRect(x, y, w, h);
 }
 
-export function Minimap({ layout, state, className = '' }: MinimapProps) {
+export function Minimap({ layout, state, onOpen, className = '' }: MinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -89,8 +90,21 @@ export function Minimap({ layout, state, className = '' }: MinimapProps) {
   }, [layout, state]);
 
   return (
-    <div className={`overflow-hidden rounded-2xl bg-white/90 p-1.5 shadow-xl ring-1 ring-black/5 backdrop-blur-md ${className}`}>
-      <canvas ref={canvasRef} width={SIZE} height={SIZE} className="block aspect-square w-full rounded-xl" aria-label="الخريطة" />
-    </div>
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label="فتح الخريطة الكاملة"
+      title="اضغط لفتح خريطة المدينة"
+      className={`pointer-events-auto block aspect-square overflow-hidden rounded-full border-4 border-white/90 bg-white/90 p-0.5 shadow-2xl ring-1 ring-black/10 backdrop-blur-md transition-transform hover:scale-[1.03] active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-400 ${className}`}
+    >
+      <canvas
+        ref={canvasRef}
+        width={SIZE}
+        height={SIZE}
+        className="block h-full w-full rounded-full"
+        aria-hidden="true"
+      />
+      <span className="sr-only">اضغط لفتح خريطة الجزائر العاصمة والمسار</span>
+    </button>
   );
 }
