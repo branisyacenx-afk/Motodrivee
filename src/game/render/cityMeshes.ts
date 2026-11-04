@@ -46,6 +46,60 @@ function roadStrip(rect: Rect, horizontal: boolean, texture: THREE.CanvasTexture
   return mesh;
 }
 
+/** Two instanced overlays add a subtle wet sheen without duplicating road geometry. */
+function buildWetRoadOverlay(bounds: Rect): { group: THREE.Group; material: THREE.MeshBasicMaterial } {
+  const group = new THREE.Group();
+  const material = new THREE.MeshBasicMaterial({
+    color: '#7894a3',
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
+  });
+  const geometry = new THREE.PlaneGeometry(1, 1);
+  geometry.rotateX(-Math.PI / 2);
+  const horizontal = new THREE.InstancedMesh(geometry, material, CITY.rows);
+  const vertical = new THREE.InstancedMesh(geometry, material, CITY.cols);
+  const dummy = new THREE.Object3D();
+  const horizontalLength = bounds.maxX - bounds.minX;
+  const verticalLength = bounds.maxZ - bounds.minZ;
+
+  for (let row = 0; row < CITY.rows; row++) {
+    dummy.position.set((bounds.minX + bounds.maxX) / 2, 0.086, roadZ(row));
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.set(horizontalLength, 1, CITY.roadWidth);
+    dummy.updateMatrix();
+    horizontal.setMatrixAt(row, dummy.matrix);
+  }
+  for (let col = 0; col < CITY.cols; col++) {
+    dummy.position.set(roadX(col), 0.086, (bounds.minZ + bounds.maxZ) / 2);
+    dummy.rotation.set(0, Math.PI / 2, 0);
+    dummy.scale.set(verticalLength, 1, CITY.roadWidth);
+    dummy.updateMatrix();
+    vertical.setMatrixAt(col, dummy.matrix);
+  }
+  for (const mesh of [horizontal, vertical]) {
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    mesh.visible = false;
+    group.add(mesh);
+  }
+  return { group, material };
+}
+
+/** Update the rain sheen using one shared material for the entire road network. */
+export function setCityRain(city: THREE.Group, rain: number): void {
+  const material = city.userData.wetRoadMaterial as THREE.MeshBasicMaterial | undefined;
+  const overlays = city.userData.wetRoadOverlays as THREE.InstancedMesh[] | undefined;
+  if (!material || !overlays) return;
+  const intensity = THREE.MathUtils.clamp(rain, 0, 1);
+  material.opacity = intensity * 0.2;
+  const visible = intensity > 0.015;
+  overlays.forEach((mesh) => { mesh.visible = visible; });
+}
+
 /**
  * Add lightweight zebra crossings at alternating intersections. Instancing keeps
  * the markings to two draw calls instead of thousands of individual meshes.
@@ -902,6 +956,11 @@ export function buildCity(layout: Layout): THREE.Group {
     0,
   ));
   root.add(flatPlane(bounds, '#eee6d2', 0.02));
+
+  const wetRoads = buildWetRoadOverlay(bounds);
+  root.add(wetRoads.group);
+  root.userData.wetRoadMaterial = wetRoads.material;
+  root.userData.wetRoadOverlays = wetRoads.group.children;
 
   const roadTexture = createRoadTexture();
   for (let j = 0; j < CITY.rows; j++) {
