@@ -35,10 +35,18 @@ Make exactly one small, complete, player-visible or reliability-focused improvem
 ## Patch handoff (required)
 After your change is complete and all three checks pass, create the file `swift-drop-agent.patch` at the repository root. It is a temporary workflow artifact, not a source change. Include only allowlisted paths:
 ```bash
+paths=()
 for dir in src public docs tests; do
-  if [ -d "$dir" ]; then git add -N -- "$dir"; fi
+  if [ -d "$dir" ]; then
+    git add -N -- "$dir"
+    paths+=("$dir")
+  fi
 done
-git diff --binary -- src public docs tests > swift-drop-agent.patch
+if [ "${#paths[@]}" -eq 0 ]; then
+  : > swift-drop-agent.patch
+else
+  git diff --binary -- "${paths[@]}" > swift-drop-agent.patch
+fi
 ```
 Create an empty `swift-drop-agent.patch` if there are no changes. Do not add the patch file itself to git. The publisher job independently checks the patch boundary and repeats all validation before opening a PR.
 
