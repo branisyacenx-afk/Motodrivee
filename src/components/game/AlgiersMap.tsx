@@ -141,8 +141,9 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
     }
 
-    // Restaurant / delivery points are shown as colored pins with readable
-    // labels. The label is placed beside its pin to avoid hiding the route.
+    // Keep venue pins visible while preventing nearby labels from stacking
+    // over one another. Pins remain even when a dense area has no label space.
+    const placedLabels: Array<{ left: number; top: number; right: number; bottom: number }> = [];
     layout.venues.forEach((venue) => {
       const vx = x(venue.x), vy = y(venue.z);
       if (vx < PAD || vx > SIZE - PAD || vy < PAD || vy > SIZE - PAD) return;
@@ -160,14 +161,40 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       const labelWidth = ctx.measureText(label).width;
-      const lx = Math.min(SIZE - PAD - labelWidth - 8, Math.max(PAD + 2, vx + 9));
-      const ly = Math.min(SIZE - PAD - 9, Math.max(PAD + 9, vy - 8));
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-      ctx.beginPath();
-      ctx.roundRect(lx - 3, ly - 7, labelWidth + 7, 14, 4);
-      ctx.fill();
-      ctx.fillStyle = '#24332c';
-      ctx.fillText(label, lx, ly);
+      const boxWidth = labelWidth + 7;
+      const boxHeight = 14;
+      const candidates = [
+        { left: vx + 9, top: vy - 7 },
+        { left: vx - boxWidth - 9, top: vy - 7 },
+        { left: vx - boxWidth / 2, top: vy - 22 },
+        { left: vx - boxWidth / 2, top: vy + 9 },
+      ];
+      const placement = candidates.find(({ left, top }) => {
+        const right = left + boxWidth;
+        const bottom = top + boxHeight;
+        const inside = left >= PAD && top >= PAD && right <= SIZE - PAD && bottom <= SIZE - PAD;
+        const overlaps = placedLabels.some((placed) =>
+          left < placed.right + 4 && right + 4 > placed.left &&
+          top < placed.bottom + 3 && bottom + 3 > placed.top
+        );
+        return inside && !overlaps;
+      });
+
+      if (placement) {
+        const rect = {
+          left: placement.left,
+          top: placement.top,
+          right: placement.left + boxWidth,
+          bottom: placement.top + boxHeight,
+        };
+        placedLabels.push(rect);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+        ctx.beginPath();
+        ctx.roundRect(rect.left, rect.top, boxWidth, boxHeight, 4);
+        ctx.fill();
+        ctx.fillStyle = '#24332c';
+        ctx.fillText(label, rect.left + 3, rect.top + boxHeight / 2);
+      }
       ctx.restore();
     });
 
