@@ -26,6 +26,7 @@ export interface Pedestrian {
   skin: string;
   phase: number;
   isChild: boolean;
+  yieldFactor: number;
 }
 
 export interface Traffic {
@@ -95,6 +96,7 @@ export function createTraffic(layout: Layout): Traffic {
         skin: SKIN_COLORS[Math.floor(rand() * SKIN_COLORS.length)],
         phase: rand() * Math.PI * 2,
         isChild,
+        yieldFactor: 0,
       });
     }
   }
@@ -108,7 +110,7 @@ function wrap(pos: number, lane: Lane): number {
   return pos;
 }
 
-export function updateTraffic(traffic: Traffic, t: number, dt: number): void {
+export function updateTraffic(traffic: Traffic, t: number, dt: number, rider?: { x: number; z: number }): void {
   // Read every vehicle from the same frame snapshot. Updating positions in
   // place while scanning made later cars react to a different traffic state.
   const carsByLane = new Map<Lane, Car[]>();
@@ -222,7 +224,20 @@ export function updateTraffic(traffic: Traffic, t: number, dt: number): void {
   }
 
   for (const ped of traffic.pedestrians) {
-    ped.pos = wrap(ped.pos + ped.lane.dir * ped.speed * dt, ped.lane);
-    ped.phase += dt * ped.speed * 2.2;
+    let targetYield = 0;
+    if (rider) {
+      const pedX = ped.lane.axis === 'x' ? ped.pos : ped.lane.fixed;
+      const pedZ = ped.lane.axis === 'x' ? ped.lane.fixed : ped.pos;
+      const distance = Math.hypot(rider.x - pedX, rider.z - pedZ);
+      // Ease into a full stop only when the rider is close; pedestrians resume
+      // smoothly after the motorcycle has passed instead of snapping to speed.
+      const proximity = Math.max(0, Math.min(1, (6 - distance) / 3.6));
+      targetYield = proximity * proximity * (3 - 2 * proximity);
+    }
+    const yieldBlend = 1 - Math.exp(-5.5 * dt);
+    ped.yieldFactor += (targetYield - ped.yieldFactor) * yieldBlend;
+    const walkingSpeed = ped.speed * (1 - ped.yieldFactor);
+    ped.pos = wrap(ped.pos + ped.lane.dir * walkingSpeed * dt, ped.lane);
+    ped.phase += dt * walkingSpeed * 2.2;
   }
 }
