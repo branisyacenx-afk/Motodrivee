@@ -182,10 +182,10 @@ export function createActorAssets(): ActorAssets {
   const chrome = new THREE.MeshStandardMaterial({ color: '#c9ced6', roughness: 0.28, metalness: 0.85 });
   const black = new THREE.MeshStandardMaterial({ color: '#1b1e22', roughness: 0.6 });
   const trimMat = new THREE.MeshStandardMaterial({ color: '#1a1c20', roughness: 0.7 });
-  const jacket = materialFor(rider.jacket, 0.7, 0);
+  const jacket = new THREE.MeshStandardMaterial({ color: '#f3f3f0', roughness: 0.7 });
   const pants = new THREE.MeshStandardMaterial({ color: '#23272e', roughness: 0.8 });
   const boot = new THREE.MeshStandardMaterial({ color: '#16130f', roughness: 0.55 });
-  const helmet = materialFor(rider.helmet, 0.3, 0.1);
+  const helmet = new THREE.MeshStandardMaterial({ color: '#f7f7f5', roughness: 0.3 });
   const visor = new THREE.MeshStandardMaterial({ color: '#0d1620', roughness: 0.1, metalness: 0.4 });
   const brake = new THREE.MeshBasicMaterial({ color: '#ff3b30', toneMapped: false });
   const headlight = new THREE.MeshBasicMaterial({ color: '#fff1c4', toneMapped: false });
@@ -211,6 +211,8 @@ export function createActorAssets(): ActorAssets {
 
   return {
     bike(paintHex, vehicleId, rider = { gender: 'male', jacket: '#f3f3f0', helmet: '#f7f7f5' }) {
+      const riderJacketMat = materialFor(rider.jacket, 0.7, 0);
+      const riderHelmetMat = materialFor(rider.helmet, 0.3, 0.1);
       const group = new THREE.Group();
       const paint = materialFor(paintHex, 0.35, 0.2);
       const paintGeo = merge([
@@ -251,7 +253,7 @@ export function createActorAssets(): ActorAssets {
         ball(0.065, -0.2, 1.06, 0.6),
         ball(0.065, 0.2, 1.06, 0.6),
       ]), boot));
-      group.add(new THREE.Mesh(merge([ball(0.165, 0, 1.6, 0.1)]), helmet));
+      group.add(new THREE.Mesh(merge([ball(0.165, 0, 1.6, 0.1) ]), riderHelmetMat));
       group.add(new THREE.Mesh(box(0.22, 0.1, 0.03, 0, 1.6, 0.27), visor));
       const bikeHeadlight = headlight.clone();
       bikeHeadlight.color.set('#514b3c');
