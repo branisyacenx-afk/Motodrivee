@@ -118,7 +118,7 @@ export function updateTraffic(traffic: Traffic, t: number, dt: number): void {
     else carsByLane.set(car.lane, [car]);
   }
 
-  const nextCars: Array<{ car: Car; pos: number; speed: number }> = [];
+  const nextCars: Array<{ car: Car; pos: number; speed: number; travel: number; lead: Car | null; leadGap: number; stopDistance: number }> = [];
   for (const car of traffic.cars) {
     const { lane } = car;
     let desired = car.cruise;
@@ -163,23 +163,61 @@ export function updateTraffic(traffic: Traffic, t: number, dt: number): void {
     const speed = car.speed < desired
       ? Math.min(desired, car.speed + 3.5 * dt)
       : Math.max(desired, car.speed - 9 * dt);
-    const travel = speed * dt;
-    // Clamp the movement at the stop offset so a long frame cannot carry a
-    // vehicle through a red light even when its deceleration step is large.
-    const safeTravel = Number.isFinite(redStopDistance)
-      ? Math.min(travel, Math.max(0, redStopDistance - SIGNAL_STOP_OFFSET))
-      : travel;
     nextCars.push({
       car,
-      speed: safeTravel < travel ? 0 : speed,
-      pos: wrap(car.pos + lane.dir * safeTravel, lane),
+      speed,
+      pos: car.pos,
+      travel: speed * dt,
+      lead,
+      leadGap,
+      stopDistance: redStopDistance,
     });
+  }
+
+  // Resolve movement from the same frame snapshot. A follower may never
+  // consume the leader's safety buffer, even after a long or stalled frame.
+  const travelByCar = new Map<Car, number>();
+  for (const next of nextCars) {
+    let safeTravel = next.travel;
+    if (next.lead && Number.isFinite(next.leadGap)) {
+      const leaderTravel = travelByCar.get(next.lead);
+      // If the leader has not been resolved yet, its unconstrained movement
+      // is a conservative upper bound; the final pass below tightens it.
+      const leadMovement = leaderTravel ?? next.lead.speed * dt;
+      const bumperGap = next.leadGap - CAR_HALF_LENGTH * 2;
+      safeTravel = Math.min(safeTravel, Math.max(0, leadMovement + bumperGap - 7));
+    }
+
+    // Keep the red/amber stop-line clamp independent from car-following.
+    if (Number.isFinite(next.stopDistance)) {
+      safeTravel = Math.min(safeTravel, Math.max(0, next.stopDistance - SIGNAL_STOP_OFFSET));
+    }
+    travelByCar.set(next.car, safeTravel);
+  }
+
+  // Relax the follower constraints repeatedly so a stopped lead car
+  // propagates safely through an entire queue, regardless of array order.
+  for (let pass = 0; pass < nextCars.length; pass++) {
+    let changed = false;
+    for (const next of nextCars) {
+      if (!next.lead || !Number.isFinite(next.leadGap)) continue;
+      const leaderTravel = travelByCar.get(next.lead) ?? 0;
+      const bumperGap = next.leadGap - CAR_HALF_LENGTH * 2;
+      const allowed = Math.max(0, leaderTravel + bumperGap - 7);
+      const current = travelByCar.get(next.car) ?? next.travel;
+      if (allowed + 0.001 < current) {
+        travelByCar.set(next.car, allowed);
+        changed = true;
+      }
+    }
+    if (!changed) break;
   }
 
   // Commit together so car order in the array cannot affect the simulation.
   for (const next of nextCars) {
-    next.car.speed = next.speed;
-    next.car.pos = next.pos;
+    const safeTravel = travelByCar.get(next.car) ?? next.travel;
+    next.car.speed = dt > 0 ? Math.min(next.speed, safeTravel / dt) : next.speed;
+    next.car.pos = wrap(next.car.pos + next.car.lane.dir * safeTravel, next.car.lane);
     next.car.nearCooldown = Math.max(0, next.car.nearCooldown - dt);
   }
 
