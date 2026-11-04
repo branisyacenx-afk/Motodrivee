@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { BikePreview } from '@/components/screens/BikePreview';
 import { PAINTS, UPGRADES, VEHICLES } from '@/game/config';
 import { formatMoney } from '@/lib/money';
 import { buyUpgrade, buyVehicle, levelFor, nextUpgradeCost, selectPaint, selectVehicle, type Profile } from '@/lib/profile';
@@ -21,7 +22,10 @@ function bonusLabel(multiplier: number): string {
 
 export function BikesPanel({ profile, onUpdate }: PanelProps) {
   const currentLevel = levelFor(profile.xp);
+  const selectedBike = VEHICLES.find((vehicle) => vehicle.id === profile.vehicle) ?? VEHICLES[0];
   return (
+    <>
+      <BikePreview paint={PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? '#d7262e'} vehicleId={selectedBike.id} vehicleName={selectedBike.name} />
     <ul className="grid gap-3">
       {VEHICLES.map((vehicle) => {
         const owned = profile.owned.includes(vehicle.id);
@@ -71,6 +75,7 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
         );
       })}
     </ul>
+    </>
   );
 }
 
