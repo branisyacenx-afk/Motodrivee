@@ -48,7 +48,7 @@ export class TrafficSignals {
           dummy.updateMatrix();
           housings.setMatrixAt(headIndex, dummy.matrix);
 
-          dummy.position.set(cornerX, 4.55, cornerZ + offset);
+          dummy.position.set(cornerX + (axis === 'x' ? 0.34 : 0), 4.55, cornerZ + offset + (axis === 'z' ? 0.34 : 0));
           dummy.updateMatrix();
           this.lenses.setMatrixAt(headIndex, dummy.matrix);
           this.lenses.setColorAt(headIndex, new THREE.Color('#b3261e'));
@@ -62,6 +62,16 @@ export class TrafficSignals {
     this.lenses.instanceMatrix.needsUpdate = true;
     this.group.add(poles, housings, this.lenses);
     this.update(0);
+  }
+
+  dispose(): void {
+    this.group.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.geometry.dispose();
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach((material) => material.dispose());
+      }
+    });
   }
 
   update(time: number): void {
