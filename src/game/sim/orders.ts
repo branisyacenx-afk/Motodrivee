@@ -36,7 +36,15 @@ export function requiredWait(phase: ActiveOrder['phase']): number {
 
 export function createOfferGenerator(blocks: readonly Block[], venues: readonly Venue[], seed: number): (origin: Vec2) => Offer {
   const rand = createRandom(seed);
-  return (origin) => createOffer(blocks, venues, rand, origin);
+  // Remember a short history so consecutive offers feel like different jobs.
+  // Keep this state inside the generator: each game world gets its own history.
+  const recentRestaurants: string[] = [];
+  return (origin) => {
+    const offer = createOffer(blocks, venues, rand, origin, recentRestaurants);
+    recentRestaurants.push(offer.restaurant);
+    if (recentRestaurants.length > 3) recentRestaurants.shift();
+    return offer;
+  };
 }
 
 function randomPointOnBlock(block: Block, rand: Random): Vec2 {
@@ -47,10 +55,20 @@ function randomPointOnBlock(block: Block, rand: Random): Vec2 {
   return { x: range(block.minX, block.maxX, rand), z: block.maxZ + 1.5 };
 }
 
-function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: Random, origin: Vec2): Offer {
+function createOffer(
+  blocks: readonly Block[],
+  venues: readonly Venue[],
+  rand: Random,
+  origin: Vec2,
+  recentRestaurants: readonly string[],
+): Offer {
   const rankedVenues = [...venues].sort((a, b) => Math.hypot(a.x - origin.x, a.z - origin.z) - Math.hypot(b.x - origin.x, b.z - origin.z));
   const nearbyVenues = rankedVenues.filter((venue) => Math.hypot(venue.x - origin.x, venue.z - origin.z) <= MAX_PICKUP_APPROACH);
-  const venue = pick((nearbyVenues.length ? nearbyVenues : rankedVenues.slice(0, 8)), rand);
+  const candidates = nearbyVenues.length ? nearbyVenues : rankedVenues.slice(0, 8);
+  const freshCandidates = candidates.filter((venue) => !recentRestaurants.includes(venue.name));
+  // Prefer a restaurant not used in the last three offers, but never block
+  // offer generation if a small city has too few distinct venues.
+  const venue = pick(freshCandidates.length ? freshCandidates : candidates, rand);
   const pickup = { x: venue.x, z: venue.z };
   const longTrip = rand() < LONG_TRIP_CHANCE;
   const nearby = blocks.filter((block) => {
