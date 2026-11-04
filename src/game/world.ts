@@ -88,6 +88,7 @@ export class GameWorld {
   private readonly trafficSignals: TrafficSignals;
   private readonly carMeshes: THREE.Group[] = [];
   private readonly carBrakeLights: THREE.MeshStandardMaterial[] = [];
+  private readonly carHeadlights: THREE.MeshStandardMaterial[] = [];
   private readonly pedMeshes: PedestrianModel[] = [];
   private readonly venueStalls: THREE.Object3D[];
   private readonly cityGroup: THREE.Group;
@@ -193,6 +194,12 @@ export class GameWorld {
     this.traffic = createTraffic(layout);
     for (const car of this.traffic.cars) {
       const mesh = assets.car(car.color);
+      const headlights = mesh.getObjectByName('headlights');
+      if (headlights instanceof THREE.Mesh && headlights.material instanceof THREE.MeshStandardMaterial) {
+        this.carHeadlights.push(headlights.material);
+      } else {
+        this.carHeadlights.push(new THREE.MeshStandardMaterial({ color: '#fff6dc', emissive: '#fff1c4' }));
+      }
       const brakeLights = mesh.getObjectByName('brake-lights');
       if (brakeLights instanceof THREE.Mesh && brakeLights.material instanceof THREE.MeshStandardMaterial) {
         this.carBrakeLights.push(brakeLights.material);
@@ -262,6 +269,7 @@ export class GameWorld {
     disposeCity(this.cityGroup);
     this.trafficSignals.dispose();
     this.carBrakeLights.forEach((material) => material.dispose());
+    this.carHeadlights.forEach((material) => material.dispose());
     this.renderer.domElement.removeEventListener('webglcontextlost', this.onContextLost);
     this.renderer.dispose();
     this.renderer.forceContextLoss();
@@ -624,6 +632,9 @@ export class GameWorld {
       const mesh = this.carMeshes[index];
       mesh.position.set(car.lane.axis === 'x' ? car.pos : car.lane.fixed, 0, car.lane.axis === 'x' ? car.lane.fixed : car.pos);
       mesh.rotation.y = car.lane.axis === 'x' ? (car.lane.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : car.lane.dir > 0 ? 0 : Math.PI;
+      // Headlamps fade in with dusk; emissive meshes avoid extra point-light draw cost.
+      const nightFactor = THREE.MathUtils.smoothstep(dusk, 0.28, 0.82);
+      this.carHeadlights[index].emissiveIntensity = 0.08 + nightFactor * 2.2;
       // Rear lamps brighten only while the AI car is slowing for a queue or signal.
       this.carBrakeLights[index].emissiveIntensity = car.speed < car.cruise - 0.35 ? 2.4 : 0.35;
       mesh.visible = isNear(mesh.position.x, mesh.position.z, bike.x, bike.z);
