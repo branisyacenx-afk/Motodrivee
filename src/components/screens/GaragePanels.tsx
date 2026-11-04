@@ -25,7 +25,7 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
   const selectedBike = VEHICLES.find((vehicle) => vehicle.id === profile.vehicle) ?? VEHICLES[0];
   return (
     <>
-      <BikePreview paint={PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? '#d7262e'} vehicleId={selectedBike.id} vehicleName={selectedBike.name} />
+      <BikePreview paint={PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? '#d7262e'} vehicleId={selectedBike.id} vehicleName={selectedBike.name} riderGender={profile.riderGender} riderJacket={profile.riderJacket} riderHelmet={profile.riderHelmet} />
     <ul className="grid gap-3">
       {VEHICLES.map((vehicle) => {
         const owned = profile.owned.includes(vehicle.id);
@@ -82,7 +82,21 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
 export function PaintPanel({ profile, onUpdate }: PanelProps) {
   return (
     <div className={CARD}>
-      <p className="text-sm text-slate-300">اختار لون جسم الدراجة وصندوق التوصيل.</p>
+      <p className="text-sm text-slate-300">اختار لون جسم الدراجة وصندوق التوصيل، ثم خصّص مظهر السائق.</p>
+      <div className="mt-5 rounded-xl bg-black/20 p-4">
+        <p className="mb-3 text-sm font-bold text-white">شخصية السائق</p>
+        <div className="grid grid-cols-2 gap-2">
+          {([{ id: 'male', label: 'رجل' }, { id: 'female', label: 'امرأة' }] as const).map((option) => (
+            <button key={option.id} type="button" aria-pressed={profile.riderGender === option.id} onClick={() => onUpdate({ ...profile, riderGender: option.id })}
+              className={`rounded-lg px-3 py-2 text-sm font-bold ${profile.riderGender === option.id ? 'bg-brand-500 text-white' : 'bg-white/10 text-slate-300'}`}>{option.label}</button>
+          ))}
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <label className="text-xs font-semibold text-slate-300">لون السترة<input aria-label="لون سترة السائق" type="color" value={profile.riderJacket} onChange={(event) => onUpdate({ ...profile, riderJacket: event.target.value })} className="mt-2 h-10 w-full cursor-pointer rounded-lg bg-transparent" /></label>
+          <label className="text-xs font-semibold text-slate-300">لون الخوذة<input aria-label="لون خوذة السائق" type="color" value={profile.riderHelmet} onChange={(event) => onUpdate({ ...profile, riderHelmet: event.target.value })} className="mt-2 h-10 w-full cursor-pointer rounded-lg bg-transparent" /></label>
+        </div>
+        <p className="mt-2 text-xs text-slate-400">تُحفظ اختياراتك تلقائياً وتظهر على السائق أثناء اللعب.</p>
+      </div>
       <ul className="mt-5 grid gap-3 sm:grid-cols-3">
         {PAINTS.map((paint) => {
           const active = profile.paint === paint.id;
