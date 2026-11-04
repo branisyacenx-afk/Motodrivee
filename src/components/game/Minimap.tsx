@@ -44,7 +44,10 @@ export function Minimap({ layout, state, onOpen, className = '' }: MinimapProps)
     ctx.fillStyle = '#9fc08a';
     for (const zone of layout.zones) drawRect(ctx, zone.rect, toX, toY);
 
-    ctx.fillStyle = '#fbfaf7';
+    // Give the road network a strong, readable contrast at small phone sizes.
+    // Pale roads on pale blocks were collapsing into a checkerboard after scaling.
+    ctx.fillStyle = '#66717a';
+    const roadWidth = Math.max(4.5, CITY.roadWidth * scale);
     for (let j = 0; j < CITY.rows; j++) {
       const z = j * CITY.pitch;
       drawRect(ctx, { minX: bounds.minX, maxX: bounds.maxX, minZ: z - ROAD_HALF, maxZ: z + ROAD_HALF }, toX, toY);
@@ -53,6 +56,25 @@ export function Minimap({ layout, state, onOpen, className = '' }: MinimapProps)
       const x = i * CITY.pitch;
       drawRect(ctx, { minX: x - ROAD_HALF, maxX: x + ROAD_HALF, minZ: bounds.minZ, maxZ: bounds.maxZ }, toX, toY);
     }
+    // Fine center markings make the connected streets unmistakable without
+    // cluttering the circular radar with individual lane details.
+    ctx.save();
+    ctx.strokeStyle = 'rgba(247, 239, 213, 0.9)';
+    ctx.lineWidth = Math.max(0.8, roadWidth * 0.12);
+    ctx.setLineDash([Math.max(2, roadWidth * 0.45), Math.max(2, roadWidth * 0.35)]);
+    ctx.beginPath();
+    for (let j = 0; j < CITY.rows; j++) {
+      const z = j * CITY.pitch;
+      ctx.moveTo(toX(bounds.minX), toY(z));
+      ctx.lineTo(toX(bounds.maxX), toY(z));
+    }
+    for (let i = 0; i < CITY.cols; i++) {
+      const x = i * CITY.pitch;
+      ctx.moveTo(toX(x), toY(bounds.minZ));
+      ctx.lineTo(toX(x), toY(bounds.maxZ));
+    }
+    ctx.stroke();
+    ctx.restore();
 
     if (state.target) {
       const tx = toX(state.target.x);
