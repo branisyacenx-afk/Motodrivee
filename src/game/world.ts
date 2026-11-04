@@ -73,6 +73,10 @@ export class GameWorld {
   private readonly sun: THREE.DirectionalLight;
   private readonly bike: BikeState;
   private readonly bikeRig: BikeModel;
+  private readonly interactionRider: PedestrianModel;
+  private readonly interactionCustomer: PedestrianModel;
+  private readonly handoffPackage: THREE.Mesh;
+  private interaction: { kind: 'pickup' | 'dropoff'; left: number; order: ActiveOrder } | null = null;
   private readonly traffic: Traffic;
   private readonly carMeshes: THREE.Group[] = [];
   private readonly pedMeshes: PedestrianModel[] = [];
@@ -163,6 +167,16 @@ export class GameWorld {
     this.bikeRig = assets.bike(options.paintHex);
     this.bikeRig.group.rotation.order = 'YXZ';
     this.scene.add(this.bikeRig.group);
+    // Reuse the low-poly pedestrian rig for short, readable delivery cut-scenes.
+    this.interactionRider = assets.pedestrian('#e8e2d5', '#b9825d');
+    this.interactionCustomer = assets.pedestrian('#287a58', '#b9825d');
+    this.interactionRider.group.visible = false;
+    this.interactionCustomer.group.visible = false;
+    this.scene.add(this.interactionRider.group, this.interactionCustomer.group);
+    this.handoffPackage = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.34, 0.42), new THREE.MeshStandardMaterial({ color: '#d7262e', roughness: 0.75 }));
+    this.handoffPackage.visible = false;
+    this.handoffPackage.castShadow = true;
+    this.scene.add(this.handoffPackage);
     this.remoteRiders = createRemoteRiders(this.scene, assets);
 
     this.traffic = createTraffic(layout);
@@ -259,7 +273,12 @@ export class GameWorld {
     }
 
     this.lastInput = this.options.readInput();
-    stepBikeMotion(this.bike, this.lastInput, this.options.stats, dt);
+    if (this.interaction) {
+      this.bike.speed = 0;
+      this.updateInteraction(dt);
+    } else {
+      stepBikeMotion(this.bike, this.lastInput, this.options.stats, dt);
+    }
     this.sound.setEngine(Math.min(1, Math.abs(this.bike.speed) / this.options.stats.maxSpeed));
 
     const hits = resolveBikeContacts(this.bike, this.options.layout.boxes, this.traffic, this.options.layout.cones);
@@ -306,6 +325,7 @@ export class GameWorld {
   }
 
   private updateOrders(dt: number): void {
+    if (this.interaction) return;
     if (!this.order) {
       if (this.offer) {
         if (offerExpired(this.offer, dt)) {
@@ -323,9 +343,11 @@ export class GameWorld {
     const { bike } = this;
     const event = updateActiveOrder(order, bike.x, bike.z, bike.speed, dt);
     if (event.kind === 'picked-up') {
-      this.emit({ kind: 'good', text: `خذيت الطلب من ${order.restaurant}` }, 'pickup');
+      this.interaction = { kind: 'pickup', left: 2.4, order };
+      this.emit({ kind: 'good', text: `نزلت من الموتور واستلمت الطلب من ${order.restaurant}` }, 'pickup');
     } else if (event.kind === 'delivered') {
-      this.completeDelivery(order);
+      this.interaction = { kind: 'dropoff', left: 2.8, order };
+      this.emit({ kind: 'info', text: 'الزبون استلم الطلب…' }, 'delivered');
       return;
     }
 
@@ -333,6 +355,18 @@ export class GameWorld {
       this.lateWarned = true;
       this.emit({ kind: 'bad', text: 'راك متأخر، الربح بدا ينقص' });
     }
+  }
+
+  private updateInteraction(dt: number): void {
+    const interaction = this.interaction;
+    if (!interaction) return;
+    interaction.left = Math.max(0, interaction.left - dt);
+    if (interaction.left > 0) return;
+    this.interaction = null;
+    this.interactionRider.group.visible = false;
+    this.interactionCustomer.group.visible = false;
+    this.handoffPackage.visible = false;
+    if (interaction.kind === 'dropoff') this.completeDelivery(interaction.order);
   }
 
   private completeDelivery(order: ActiveOrder): void {
@@ -470,8 +504,28 @@ export class GameWorld {
     this.remoteRiders.update(this.options.network.riders(), dt);
     this.broadcastPose(dt);
 
+    this.bikeRig.group.visible = !this.interaction;
     this.bikeRig.group.position.set(bike.x, 0, bike.z);
     this.bikeRig.group.rotation.y = bike.heading;
+    if (this.interaction) {
+      const sideX = Math.cos(bike.heading) * 1.8;
+      const sideZ = -Math.sin(bike.heading) * 1.8;
+      this.interactionRider.group.visible = true;
+      this.interactionRider.group.position.set(bike.x + sideX, 0, bike.z + sideZ);
+      this.interactionRider.group.rotation.y = bike.heading + Math.PI;
+      this.interactionCustomer.group.visible = this.interaction.kind === 'dropoff';
+      if (this.interaction.kind === 'dropoff') {
+        const target = this.interaction.order.dropoff;
+        this.interactionCustomer.group.position.set(target.x + sideX * 1.8, 0, target.z + sideZ * 1.8);
+        this.interactionCustomer.group.rotation.y = bike.heading;
+      }
+      this.handoffPackage.visible = true;
+      this.handoffPackage.position.set(
+        this.interaction.kind === 'pickup' ? bike.x + sideX * 1.35 : (bike.x + this.interaction.order.dropoff.x) / 2,
+        1.05 + Math.sin(this.time * 7) * 0.06,
+        this.interaction.kind === 'pickup' ? bike.z + sideZ * 1.35 : (bike.z + this.interaction.order.dropoff.z) / 2,
+      );
+    }
     this.bikeRig.group.rotation.z = -this.lastInput.steer * Math.min(1, bike.speed / 14) * 0.12;
     for (const wheel of this.bikeRig.wheels) wheel.rotation.x = bike.wheelSpin;
 
