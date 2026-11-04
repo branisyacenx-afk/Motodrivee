@@ -143,7 +143,7 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
 
     // Restaurant / delivery points are shown as colored pins with readable
     // labels. The label is placed beside its pin to avoid hiding the route.
-    layout.venues.forEach((venue, index) => {
+    layout.venues.forEach((venue) => {
       const vx = x(venue.x), vy = y(venue.z);
       if (vx < PAD || vx > SIZE - PAD || vy < PAD || vy > SIZE - PAD) return;
       ctx.beginPath();
