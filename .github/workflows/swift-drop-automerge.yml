@@ -1,0 +1,54 @@
+name: Swift Drop autonomous merge
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  merge-tested-agent-change:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'codex/swift-drop-autonomous' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Merge only the exact commit that passed CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EXPECTED_HEAD: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+
+          # Never act on a branch other than the dedicated agent branch.
+          test "$HEAD_BRANCH" = "codex/swift-drop-autonomous"
+
+          pr_number="$(gh pr list --repo "$GH_REPO" --head "$HEAD_BRANCH" --base main --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$pr_number" ]; then
+            echo "No open autonomous pull request was found."
+            exit 0
+          fi
+
+          pr_data="$(gh pr view "$pr_number" --repo "$GH_REPO" --json headRefOid,baseRefName,headRefName)"
+          actual_head="$(printf '%s' "$pr_data" | jq -r '.headRefOid')"
+          actual_base="$(printf '%s' "$pr_data" | jq -r '.baseRefName')"
+          actual_branch="$(printf '%s' "$pr_data" | jq -r '.headRefName')"
+
+          if [ "$actual_head" != "$EXPECTED_HEAD" ]; then
+            echo "The PR has moved since this CI run; refusing to merge."
+            exit 1
+          fi
+          if [ "$actual_base" != "main" ] || [ "$actual_branch" != "$HEAD_BRANCH" ]; then
+            echo "Unexpected PR base or head branch; refusing to merge."
+            exit 1
+          fi
+
+          gh pr merge "$pr_number" --repo "$GH_REPO" --squash --delete-branch
