@@ -185,8 +185,8 @@ export function createActorAssets(): ActorAssets {
   const boot = new THREE.MeshStandardMaterial({ color: '#16130f', roughness: 0.55 });
   const helmet = new THREE.MeshStandardMaterial({ color: '#f7f7f5', roughness: 0.3 });
   const visor = new THREE.MeshStandardMaterial({ color: '#0d1620', roughness: 0.1, metalness: 0.4 });
-  const brake = new THREE.MeshStandardMaterial({ color: '#ff3b30', emissive: '#7a0c06', roughness: 0.4 });
-  const headlight = new THREE.MeshStandardMaterial({ color: '#fff6dc', emissive: '#fff1c4', roughness: 0.3 });
+  const brake = new THREE.MeshBasicMaterial({ color: '#ff3b30', toneMapped: false });
+  const headlight = new THREE.MeshBasicMaterial({ color: '#fff1c4', toneMapped: false });
   const cone = new THREE.MeshStandardMaterial({ color: '#ff7a1a', roughness: 0.6 });
   const logo = new THREE.MeshStandardMaterial({ map: createLogoTexture(), roughness: 0.6 });
   const boxRed = new THREE.MeshStandardMaterial({ color: '#d7262e', roughness: 0.6 });
@@ -352,10 +352,10 @@ export function createActorAssets(): ActorAssets {
       add(parts.rim, chrome);
       add(parts.trim, trimMat);
       const headlightMaterial = headlight.clone();
-      headlightMaterial.emissiveIntensity = 0.08;
+      headlightMaterial.color.set('#514b3c');
       add(parts.head, headlightMaterial, 'headlights');
       const brakeLightMaterial = brake.clone();
-      brakeLightMaterial.emissiveIntensity = 0.35;
+      brakeLightMaterial.color.set('#701b18');
       add(parts.tail, brakeLightMaterial, 'brake-lights');
       return group;
     },
