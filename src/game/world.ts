@@ -472,6 +472,7 @@ export class GameWorld {
     return {
       speedKmh: Math.round(bike.speed * 3.6),
       gameHour: Math.floor(this.environmentState.hour),
+      gameMinute: Math.floor((this.environmentState.hour % 1) * 60),
       weather: this.environmentState.weather,
       shiftLeft: Math.ceil(this.shiftLeft),
       score: this.score,
