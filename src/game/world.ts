@@ -72,6 +72,7 @@ export class GameWorld {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(56, 1, 0.1, 1500);
+  private readonly cameraTarget = new THREE.Vector3();
   private readonly sun: THREE.DirectionalLight;
   private readonly ambient: THREE.HemisphereLight;
   private readonly duskSkyColor = new THREE.Color('#e9a16f');
@@ -558,11 +559,28 @@ export class GameWorld {
     this.bikeRig.group.rotation.z = -bike.steering * Math.min(1, bike.speed / 14) * 0.12;
     for (const wheel of this.bikeRig.wheels) wheel.rotation.x = bike.wheelSpin;
 
-    const back = 8.5 + bike.speed * 0.04;
-    const desired = new THREE.Vector3(bike.x - forwardX * back, 3.6, bike.z - forwardZ * back);
-    if (snap) this.camera.position.copy(desired);
-    else this.camera.position.lerp(desired, 1 - Math.exp(-6 * dt));
-    this.camera.lookAt(bike.x + forwardX * 6, 1.4, bike.z + forwardZ * 6);
+    // Let the chase camera open up slightly at speed, while keeping the
+    // motorcycle framed and readable during quick direction changes.
+    const back = 8.5 + bike.speed * 0.075;
+    const cameraHeight = 3.6 + Math.min(1.0, bike.speed * 0.025);
+    const desired = new THREE.Vector3(bike.x - forwardX * back, cameraHeight, bike.z - forwardZ * back);
+    const lookAhead = 6 + Math.min(4, bike.speed * 0.12);
+    const sideX = Math.cos(bike.heading);
+    const sideZ = -Math.sin(bike.heading);
+    const desiredTarget = new THREE.Vector3(
+      bike.x + forwardX * lookAhead + sideX * bike.steering * 0.65,
+      1.4,
+      bike.z + forwardZ * lookAhead + sideZ * bike.steering * 0.65,
+    );
+    if (snap) {
+      this.camera.position.copy(desired);
+      this.cameraTarget.copy(desiredTarget);
+    } else {
+      const followBlend = 1 - Math.exp(-(5.2 + bike.speed * 0.035) * dt);
+      this.camera.position.lerp(desired, followBlend);
+      this.cameraTarget.lerp(desiredTarget, 1 - Math.exp(-5.5 * dt));
+    }
+    this.camera.lookAt(this.cameraTarget);
     const fov = 56 + Math.min(12, bike.speed * 0.35);
     if (Math.abs(this.camera.fov - fov) > 0.01) {
       this.camera.fov = fov;
