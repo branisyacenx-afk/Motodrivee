@@ -33,9 +33,22 @@ export interface Traffic {
   pedestrians: Pedestrian[];
 }
 
+export type SignalState = 'red' | 'amber' | 'green';
+
+const AMBER_SECONDS = 1.1;
+const SIGNAL_BRAKE_DISTANCE = 36;
+const SIGNAL_STOP_OFFSET = 5.5;
+
 export function greenAxis(i: number, j: number, t: number): 'x' | 'z' {
   const cycle = Math.floor(t / CITY.lightHalfCycle);
   return (cycle + i + j) % 2 === 0 ? 'x' : 'z';
+}
+
+/** Shared by simulation and rendering so amber timing never drifts visually. */
+export function trafficSignalState(axis: 'x' | 'z', i: number, j: number, t: number): SignalState {
+  if (greenAxis(i, j, t) !== axis) return 'red';
+  const phase = ((t % CITY.lightHalfCycle) + CITY.lightHalfCycle) % CITY.lightHalfCycle;
+  return phase >= CITY.lightHalfCycle - AMBER_SECONDS ? 'amber' : 'green';
 }
 
 export function aheadDistance(from: number, to: number, dir: 1 | -1, length: number): number {
@@ -130,25 +143,36 @@ export function updateTraffic(traffic: Traffic, t: number, dt: number): void {
       }
     }
 
+    let redStopDistance = Infinity;
     for (const stop of lane.stops) {
       const ahead = aheadDistance(car.pos, stop.pos, lane.dir, lane.length);
-      const isRed = greenAxis(stop.i, stop.j, t) !== lane.axis;
-      // Begin braking early enough to stop before the line, including when
-      // the vehicle is already inside the previous narrow braking window.
-      if (isRed && ahead > 0 && ahead < 36) {
-        const stoppingDistance = Math.max(0, ahead - 5.5);
-        const signalSpeed = Math.sqrt(2 * 8 * stoppingDistance);
-        desired = Math.min(desired, signalSpeed);
-      }
+      const signal = trafficSignalState(lane.axis, stop.i, stop.j, t);
+      if (ahead <= 0 || ahead >= SIGNAL_BRAKE_DISTANCE || signal === 'green') continue;
+
+      // At amber, stop only when there is enough room to brake safely. If the
+      // rider is already too close, clear the junction instead of hard braking.
+      const brakingDistance = (car.speed * car.speed) / (2 * 8);
+      if (signal === 'amber' && ahead < brakingDistance + SIGNAL_STOP_OFFSET + 2) continue;
+
+      redStopDistance = Math.min(redStopDistance, ahead);
+      const stoppingDistance = Math.max(0, ahead - SIGNAL_STOP_OFFSET);
+      const signalSpeed = Math.sqrt(2 * 8 * stoppingDistance);
+      desired = Math.min(desired, signalSpeed);
     }
 
     const speed = car.speed < desired
       ? Math.min(desired, car.speed + 3.5 * dt)
       : Math.max(desired, car.speed - 9 * dt);
+    const travel = speed * dt;
+    // Clamp the movement at the stop offset so a long frame cannot carry a
+    // vehicle through a red light even when its deceleration step is large.
+    const safeTravel = Number.isFinite(redStopDistance)
+      ? Math.min(travel, Math.max(0, redStopDistance - SIGNAL_STOP_OFFSET))
+      : travel;
     nextCars.push({
       car,
-      speed,
-      pos: wrap(car.pos + lane.dir * speed * dt, lane),
+      speed: safeTravel < travel ? 0 : speed,
+      pos: wrap(car.pos + lane.dir * safeTravel, lane),
     });
   }
 

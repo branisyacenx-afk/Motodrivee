@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CITY } from '@/game/config';
-import { greenAxis } from '@/game/sim/traffic';
+import { trafficSignalState } from '@/game/sim/traffic';
 
 const RED = new THREE.Color('#e53935');
 const AMBER = new THREE.Color('#ffb300');
@@ -100,12 +100,13 @@ export class TrafficSignals {
     let index = 0;
     for (let i = 0; i < CITY.cols; i++) {
       for (let j = 0; j < CITY.rows; j++) {
-        const green = greenAxis(i, j, time);
         for (const axis of ['x', 'z'] as const) {
-          const active = axis === green;
-          const colors = active
-            ? [OFF, amberPhase ? AMBER : OFF, amberPhase ? OFF : GREEN]
-            : [RED, OFF, OFF];
+          const state = trafficSignalState(axis, i, j, time);
+          const colors = state === 'green'
+            ? [OFF, OFF, GREEN]
+            : state === 'amber'
+              ? [OFF, AMBER, OFF]
+              : [RED, OFF, OFF];
           for (const color of colors) this.lenses.setColorAt(index++, color);
         }
       }
