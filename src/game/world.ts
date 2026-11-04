@@ -367,6 +367,7 @@ export class GameWorld {
     this.interactionRider.group.visible = false;
     this.interactionCustomer.group.visible = false;
     this.handoffPackage.visible = false;
+    this.bikeRig.deliveryLid.rotation.x = 0;
     if (interaction.kind === 'dropoff') this.completeDelivery(interaction.order);
   }
 
@@ -520,12 +521,29 @@ export class GameWorld {
         this.interactionCustomer.group.position.set(target.x + sideX * 1.8, 0, target.z + sideZ * 1.8);
         this.interactionCustomer.group.rotation.y = bike.heading;
       }
-      this.handoffPackage.visible = true;
-      this.handoffPackage.position.set(
-        this.interaction.kind === 'pickup' ? bike.x + sideX * 1.35 : (bike.x + this.interaction.order.dropoff.x) / 2,
-        1.05 + Math.sin(this.time * 7) * 0.06,
-        this.interaction.kind === 'pickup' ? bike.z + sideZ * 1.35 : (bike.z + this.interaction.order.dropoff.z) / 2,
-      );
+      const progress = this.interaction.kind === 'pickup'
+        ? 1 - this.interaction.left / 2.4
+        : 1 - this.interaction.left / 2.8;
+      const boxX = bike.x - forwardX * 1.0;
+      const boxZ = bike.z - forwardZ * 1.0;
+      const riderX = bike.x + sideX * 1.35;
+      const riderZ = bike.z + sideZ * 1.35;
+      const customer = this.interaction.order.dropoff;
+      const handoffX = customer.x + sideX * 1.8;
+      const handoffZ = customer.z + sideZ * 1.8;
+      const from = this.interaction.kind === 'pickup'
+        ? new THREE.Vector3(riderX, 1.12, riderZ)
+        : new THREE.Vector3(boxX, 1.28, boxZ);
+      const to = this.interaction.kind === 'pickup'
+        ? new THREE.Vector3(boxX, 1.28, boxZ)
+        : new THREE.Vector3(handoffX, 1.12, handoffZ);
+      const transfer = this.interaction.kind === 'pickup'
+        ? Math.min(1, progress / 0.62)
+        : Math.max(0, (progress - 0.18) / 0.7);
+      this.handoffPackage.visible = this.interaction.kind === 'dropoff' || progress < 0.88;
+      this.handoffPackage.position.lerpVectors(from, to, transfer);
+      this.handoffPackage.position.y += Math.sin(this.time * 7) * 0.035;
+      this.bikeRig.deliveryLid.rotation.x = -Math.sin(Math.min(1, progress * 3.2) * Math.PI / 2) * 1.05;
     }
     this.bikeRig.group.rotation.z = -this.lastInput.steer * Math.min(1, bike.speed / 14) * 0.12;
     for (const wheel of this.bikeRig.wheels) wheel.rotation.x = bike.wheelSpin;
