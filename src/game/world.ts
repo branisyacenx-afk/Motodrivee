@@ -22,6 +22,7 @@ import { buildVenues } from '@/game/render/venueMeshes';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
 import { createRemoteRiders, type RemoteRiders } from '@/game/render/remoteRiders';
 import { TrafficSignals } from '@/game/render/trafficSignals';
+import { DynamicEnvironment } from '@/game/render/dynamicEnvironment';
 import type { SharedCity } from '@/lib/sharedCity';
 import { createSoundBoard, type Cue, type SoundBoard } from '@/game/audio';
 import type { GameEvent, HudSnapshot, Layout, ShiftSummary, Vec2 } from '@/game/types';
@@ -86,6 +87,7 @@ export class GameWorld {
   private interaction: { kind: 'pickup' | 'dropoff'; left: number; order: ActiveOrder } | null = null;
   private readonly traffic: Traffic;
   private readonly trafficSignals: TrafficSignals;
+  private readonly environment: DynamicEnvironment;
   private readonly carMeshes: THREE.Group[] = [];
   private readonly carBrakeLights: THREE.MeshStandardMaterial[] = [];
   private readonly carHeadlights: THREE.MeshStandardMaterial[] = [];
@@ -166,7 +168,8 @@ export class GameWorld {
     this.venueStalls = venueGroup.children.slice(0, layout.venues.length);
     this.cityGroup = buildCity(layout);
     this.trafficSignals = new TrafficSignals();
-    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, this.trafficSignals.group);
+    this.environment = new DynamicEnvironment();
+    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, this.trafficSignals.group, this.environment.group);
 
     this.guide = createDeliveryGuide();
     this.scene.add(this.guide.group);
@@ -268,6 +271,7 @@ export class GameWorld {
     this.remoteRiders.dispose();
     disposeCity(this.cityGroup);
     this.trafficSignals.dispose();
+    this.environment.dispose();
     this.carBrakeLights.forEach((material) => material.dispose());
     this.carHeadlights.forEach((material) => material.dispose());
     this.renderer.domElement.removeEventListener('webglcontextlost', this.onContextLost);
@@ -533,7 +537,8 @@ export class GameWorld {
     this.remoteRiders.update(this.options.network.riders(), dt);
     this.broadcastPose(dt);
 
-    this.bikeRig.group.visible = !this.interaction;
+    // Dismounting must never hide or despawn the parked motorcycle.
+    this.bikeRig.group.visible = true;
     this.bikeRig.group.position.set(bike.x, 0, bike.z);
     this.bikeRig.group.rotation.y = bike.heading;
     if (this.interaction) {
@@ -558,18 +563,30 @@ export class GameWorld {
       const customer = this.interaction.order.dropoff;
       const handoffX = customer.x + sideX * 1.8;
       const handoffZ = customer.z + sideZ * 1.8;
-      const from = this.interaction.kind === 'pickup'
-        ? new THREE.Vector3(riderX, 1.12, riderZ)
-        : new THREE.Vector3(boxX, 1.28, boxZ);
-      const to = this.interaction.kind === 'pickup'
-        ? new THREE.Vector3(boxX, 1.28, boxZ)
-        : new THREE.Vector3(handoffX, 1.12, handoffZ);
-      const transfer = this.interaction.kind === 'pickup'
-        ? Math.min(1, progress / 0.62)
-        : Math.max(0, (progress - 0.18) / 0.7);
-      this.handoffPackage.visible = this.interaction.kind === 'dropoff' || progress < 0.88;
-      this.handoffPackage.position.lerpVectors(from, to, transfer);
-      this.handoffPackage.position.y += Math.sin(this.time * 7) * 0.035;
+      // Animate the parcel from the motorcycle to the rider's hand, then
+      // from the rider's hand into the customer's hand during drop-off.
+      this.interactionRider.group.updateMatrixWorld(true);
+      this.interactionCustomer.group.updateMatrixWorld(true);
+      const riderHand = this.interactionRider.arms[1].localToWorld(new THREE.Vector3(0, -0.58, 0));
+      const customerHand = this.interactionCustomer.arms[0].localToWorld(new THREE.Vector3(0, -0.58, 0));
+      const bikeBox = new THREE.Vector3(boxX, 1.28, boxZ);
+      if (this.interaction.kind === 'pickup') {
+        this.interactionRider.arms[1].rotation.x = -0.95 * Math.sin(Math.min(1, progress * 2) * Math.PI);
+        this.handoffPackage.visible = progress < 0.9;
+        this.handoffPackage.position.lerpVectors(riderHand, bikeBox, Math.min(1, progress / 0.72));
+      } else {
+        const takeParcel = THREE.MathUtils.clamp(progress / 0.38, 0, 1);
+        const giveParcel = THREE.MathUtils.clamp((progress - 0.38) / 0.58, 0, 1);
+        this.interactionRider.arms[1].rotation.x = -0.9 * Math.sin(Math.min(1, progress / 0.55) * Math.PI);
+        this.interactionCustomer.arms[0].rotation.x = -0.8 * giveParcel;
+        if (progress < 0.38) {
+          this.handoffPackage.position.lerpVectors(bikeBox, riderHand, takeParcel);
+        } else {
+          this.handoffPackage.position.lerpVectors(riderHand, customerHand, giveParcel);
+        }
+        this.handoffPackage.visible = progress < 0.96;
+      }
+      this.handoffPackage.position.y += Math.sin(this.time * 7) * 0.018;
       this.bikeRig.deliveryLid.rotation.x = -Math.sin(Math.min(1, progress * 3.2) * Math.PI / 2) * 1.05;
     }
     this.bikeRig.group.rotation.z = -bike.steering * Math.min(1, bike.speed / 14) * 0.12;
@@ -613,13 +630,24 @@ export class GameWorld {
     }
     this.guide.update(this.time);
 
-    const dusk = THREE.MathUtils.smoothstep(this.time / SHIFT_SECONDS, 0.62, 1);
-    (this.scene.background as THREE.Color).set('#bfdcec').lerp(this.duskSkyColor, dusk);
-    if (this.scene.fog instanceof THREE.Fog) this.scene.fog.color.set('#cfe3ee').lerp(this.duskFogColor, dusk);
-    this.sun.color.set('#fff0d4').lerp(this.sunsetLightColor, dusk);
-    this.sun.intensity = 2.5 - dusk * 0.85;
-    this.ambient.intensity = 1.15 - dusk * 0.2;
-    this.sun.position.set(bike.x - 60, 150 - dusk * 35, bike.z + 45);
+    const conditions = this.environment.update(this.time, bike.x, bike.z, dt);
+    const night = 1 - conditions.daylight;
+    const twilight = 1 - Math.abs(conditions.daylight - 0.5) * 2;
+    const sky = new THREE.Color('#86c5e8').lerp(this.duskSkyColor, THREE.MathUtils.clamp(twilight, 0, 1) * 0.72);
+    sky.lerp(new THREE.Color('#081426'), night * 0.94);
+    const weatherDarken = conditions.weather === 'rain' || conditions.weather === 'fog' ? 0.18 : conditions.weather === 'cloudy' ? 0.1 : 0;
+    sky.multiplyScalar(1 - weatherDarken);
+    (this.scene.background as THREE.Color).copy(sky);
+    if (this.scene.fog instanceof THREE.Fog) {
+      this.scene.fog.color.copy(sky).lerp(new THREE.Color('#b8c5d0'), conditions.fog * 0.5);
+      this.scene.fog.near = 260 - conditions.fog * 210 - conditions.rain * 75;
+      this.scene.fog.far = 980 - conditions.fog * 690 - conditions.rain * 260;
+    }
+    this.sun.color.set('#fff0d4').lerp(this.sunsetLightColor, THREE.MathUtils.clamp(twilight, 0, 1) * 0.8);
+    this.sun.intensity = 0.16 + conditions.daylight * 2.35 - conditions.rain * 0.42 - conditions.fog * 0.3;
+    this.ambient.intensity = 0.22 + conditions.daylight * 0.96 + night * 0.08;
+    const solarAngle = ((conditions.hour - 6) / 24) * Math.PI * 2;
+    this.sun.position.set(bike.x + Math.cos(solarAngle) * 100, 18 + conditions.daylight * 140, bike.z - 65);
     this.sun.target.position.set(bike.x, 0, bike.z);
     this.sun.target.updateMatrixWorld();
 
@@ -633,8 +661,8 @@ export class GameWorld {
       mesh.position.set(car.lane.axis === 'x' ? car.pos : car.lane.fixed, 0, car.lane.axis === 'x' ? car.lane.fixed : car.pos);
       mesh.rotation.y = car.lane.axis === 'x' ? (car.lane.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : car.lane.dir > 0 ? 0 : Math.PI;
       // Headlamps fade in with dusk; emissive meshes avoid extra point-light draw cost.
-      const nightFactor = THREE.MathUtils.smoothstep(dusk, 0.28, 0.82);
-      this.carHeadlights[index].emissiveIntensity = 0.08 + nightFactor * 2.2;
+      const nightFactor = 1 - conditions.daylight;
+      this.carHeadlights[index].emissiveIntensity = 0.08 + nightFactor * 3.2;
       // Rear lamps brighten only while the AI car is slowing for a queue or signal.
       this.carBrakeLights[index].emissiveIntensity = car.speed < car.cruise - 0.35 ? 2.4 : 0.35;
       mesh.visible = isNear(mesh.position.x, mesh.position.z, bike.x, bike.z);
