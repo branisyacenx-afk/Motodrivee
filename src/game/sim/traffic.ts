@@ -73,14 +73,15 @@ export function createTraffic(layout: Layout): Traffic {
     const offset = rand() * spacing;
     for (let k = 0; k < count; k++) {
       const jitter = (rand() - 0.5) * spacing * 0.2;
+      const isChild = rand() < 0.22;
       pedestrians.push({
         lane,
         pos: lane.min + ((offset + k * spacing + jitter + lane.length) % lane.length),
-        speed: rand() < 0.22 ? range(0.9, 1.35, rand) : range(1.1, 1.8, rand),
+        speed: isChild ? range(0.9, 1.35, rand) : range(1.1, 1.8, rand),
         shirt: WALK_COLORS[Math.floor(rand() * WALK_COLORS.length)],
         skin: SKIN_COLORS[Math.floor(rand() * SKIN_COLORS.length)],
         phase: rand() * Math.PI * 2,
-        isChild: rand() < 0.22,
+        isChild,
       });
     }
   }
