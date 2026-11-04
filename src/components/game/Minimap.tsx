@@ -133,6 +133,35 @@ export function Minimap({ layout, state, onOpen, className = '' }: MinimapProps)
       ctx.setLineDash([8, 5]);
       ctx.stroke();
       ctx.setLineDash([]);
+
+      // Small chevrons point toward the destination so the rider can read
+      // the next direction at a glance without opening the full map.
+      ctx.fillStyle = '#fff1a6';
+      ctx.strokeStyle = '#6c4b00';
+      ctx.lineWidth = 1.2;
+      for (let index = 1; index < route.length; index++) {
+        const from = route[index - 1];
+        const to = route[index];
+        const ax = toX(from.x), ay = toY(from.z);
+        const bx = toX(to.x), by = toY(to.z);
+        const length = Math.hypot(bx - ax, by - ay);
+        if (length < 20) continue;
+        const px = ax + (bx - ax) * 0.62;
+        const py = ay + (by - ay) * 0.62;
+        const angle = Math.atan2(by - ay, bx - ax);
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(5, 0);
+        ctx.lineTo(-4, -4);
+        ctx.lineTo(-2, 0);
+        ctx.lineTo(-4, 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
       ctx.restore();
 
       if (tx >= 0 && tx <= SIZE && ty >= 0 && ty <= SIZE) {
