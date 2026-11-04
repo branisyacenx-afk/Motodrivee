@@ -141,17 +141,34 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
     }
 
-    // Restaurant / delivery points are shown as colored map pins.
-    layout.venues.forEach((venue) => {
+    // Restaurant / delivery points are shown as colored pins with readable
+    // labels. The label is placed beside its pin to avoid hiding the route.
+    layout.venues.forEach((venue, index) => {
       const vx = x(venue.x), vy = y(venue.z);
       if (vx < PAD || vx > SIZE - PAD || vy < PAD || vy > SIZE - PAD) return;
       ctx.beginPath();
-      ctx.arc(vx, vy, 5.5, 0, Math.PI * 2);
+      ctx.arc(vx, vy, 6, 0, Math.PI * 2);
       ctx.fillStyle = venue.color;
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = '#fff';
       ctx.stroke();
+
+      const label = venue.name.length > 18 ? venue.name.slice(0, 17) + '…' : venue.name;
+      ctx.save();
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      const labelWidth = ctx.measureText(label).width;
+      const lx = Math.min(SIZE - PAD - labelWidth - 8, Math.max(PAD + 2, vx + 9));
+      const ly = Math.min(SIZE - PAD - 9, Math.max(PAD + 9, vy - 8));
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+      ctx.beginPath();
+      ctx.roundRect(lx - 3, ly - 7, labelWidth + 7, 14, 4);
+      ctx.fill();
+      ctx.fillStyle = '#24332c';
+      ctx.fillText(label, lx, ly);
+      ctx.restore();
     });
 
     // Subtle north indicator helps orient the full-screen map.
@@ -205,9 +222,11 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
           ))}
         </aside>
       </div>
-      <footer className="mx-auto flex w-full max-w-5xl items-center justify-center gap-5 pt-3 text-xs font-bold text-slate-200">
+      <footer className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-3 text-xs font-bold text-slate-200">
         <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-sky-500" /> دراجتك</span>
         <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-red-500" /> الوجهة</span>
+        <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-orange-700" /> مطاعم ونقاط تسليم</span>
+        <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm bg-[#8fba83]" /> حدائق ومساحات خضراء</span>
       </footer>
     </div>
   );
