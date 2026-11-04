@@ -32,4 +32,14 @@ Make exactly one small, complete, player-visible or reliability-focused improvem
 - Do not claim browser/device testing unless it was actually performed.
 - Do not merge, push, deploy, or modify git refs. The workflow handles publishing separately.
 
-If no worthwhile safe improvement exists, make no changes and explain that in your final message.
+## Patch handoff (required)
+After your change is complete and all three checks pass, create the file `swift-drop-agent.patch` at the repository root. It is a temporary workflow artifact, not a source change. Include only allowlisted paths:
+```bash
+for dir in src public docs tests; do
+  if [ -d "$dir" ]; then git add -N -- "$dir"; fi
+done
+git diff --binary -- src public docs tests > swift-drop-agent.patch
+```
+Create an empty `swift-drop-agent.patch` if there are no changes. Do not add the patch file itself to git. The publisher job independently checks the patch boundary and repeats all validation before opening a PR.
+
+If no worthwhile safe improvement exists, make no source changes, create an empty patch file, and explain that in your final message.
