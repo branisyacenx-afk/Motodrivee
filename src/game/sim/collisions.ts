@@ -102,16 +102,27 @@ function pushOut(bike: BikeState, contact: Contact, bounce: number): number {
 export function resolveBikeContacts(bike: BikeState, boxes: readonly Box[], traffic: Traffic, cones: readonly Vec2[]): BikeHit[] {
   const hits: BikeHit[] = [];
   const radius = BASE_BIKE.radius;
-  const nearbyBoxes = nearbyStaticBoxes(getStaticBoxIndex(boxes), bike.x, bike.z, radius);
+  // Include cells reachable by the largest possible corner push-out so later
+  // resolution passes can see adjacent geometry after the bike moves.
+  const nearbyBoxes = nearbyStaticBoxes(getStaticBoxIndex(boxes), bike.x, bike.z, radius * 3);
 
-  // Narrow-phase collision math now runs only against buildings, trees, and
-  // other static objects in the rider's immediate grid cells.
-  for (const box of nearbyBoxes) {
-    const contact = circleVsRect(bike.x, bike.z, radius, box);
-    if (!contact) continue;
-    const impact = pushOut(bike, contact, 0.7);
-    if (impact > 0.5) hits.push({ kind: 'wall', impact });
+  // Resolve static contacts in short passes. At building corners, one
+  // push can move the bike into a second overlapping rectangle; a few bounded
+  // passes settle the rider outside both without scanning the whole city.
+  let wallImpact = 0;
+  const maxResolutionPasses = 3;
+  for (let pass = 0; pass < maxResolutionPasses; pass++) {
+    let corrected = false;
+    for (const box of nearbyBoxes) {
+      const contact = circleVsRect(bike.x, bike.z, radius, box);
+      if (!contact) continue;
+      const impact = pushOut(bike, contact, 0.7);
+      wallImpact = Math.max(wallImpact, impact);
+      corrected = true;
+    }
+    if (!corrected) break;
   }
+  if (wallImpact > 0.5) hits.push({ kind: 'wall', impact: wallImpact });
 
   for (const car of traffic.cars) {
     const rect = carRect(car);
