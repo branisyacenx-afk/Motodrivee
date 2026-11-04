@@ -32,6 +32,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
   const [loadout] = useState(() => ({
     stats: getBikeStats(profile.vehicle, profile.upgrades),
     paintHex: PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? PAINTS[0].hex,
+    vehicleId: profile.vehicle,
     playerName: profile.name,
   }));
   const [hud, setHud] = useState<HudSnapshot | null>(null);
@@ -77,6 +78,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
           layout,
           stats: loadout.stats,
           paintHex: loadout.paintHex,
+          vehicleId: loadout.vehicleId,
           playerName: loadout.playerName,
           network,
           readInput: input.read,
