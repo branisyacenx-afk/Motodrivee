@@ -6,10 +6,73 @@ import type { Box, BikeContactKind, Rect, Vec2 } from '@/game/types';
 const PEDESTRIAN_RADIUS = 0.5;
 const CONE_RADIUS = 0.6;
 const CLOSE_CALL_RANGE = 1.3;
+const COLLISION_CELL_SIZE = 45;
+const MAX_INDEXED_CELLS_PER_BOX = 16;
 
 export interface BikeHit {
   kind: BikeContactKind | 'close-call';
   impact: number;
+}
+
+interface StaticBoxIndex {
+  cells: Map<string, Box[]>;
+  oversized: Box[];
+}
+
+// Layout geometry is immutable for a game session. Cache its broad-phase index
+// by array identity so the expensive build happens only once per city layout.
+const boxIndexCache = new WeakMap<readonly Box[], StaticBoxIndex>();
+
+function cellKey(x: number, z: number): string {
+  return `${x},${z}`;
+}
+
+function getStaticBoxIndex(boxes: readonly Box[]): StaticBoxIndex {
+  const cached = boxIndexCache.get(boxes);
+  if (cached) return cached;
+
+  const index: StaticBoxIndex = { cells: new Map(), oversized: [] };
+  for (const box of boxes) {
+    const minX = Math.floor(box.minX / COLLISION_CELL_SIZE);
+    const maxX = Math.floor(box.maxX / COLLISION_CELL_SIZE);
+    const minZ = Math.floor(box.minZ / COLLISION_CELL_SIZE);
+    const maxZ = Math.floor(box.maxZ / COLLISION_CELL_SIZE);
+    const cellCount = (maxX - minX + 1) * (maxZ - minZ + 1);
+
+    // World-boundary rectangles cover much of the map; keep them in a tiny
+    // fallback list rather than duplicating them into hundreds of grid cells.
+    if (cellCount > MAX_INDEXED_CELLS_PER_BOX) {
+      index.oversized.push(box);
+      continue;
+    }
+
+    for (let x = minX; x <= maxX; x++) {
+      for (let z = minZ; z <= maxZ; z++) {
+        const key = cellKey(x, z);
+        const bucket = index.cells.get(key);
+        if (bucket) bucket.push(box);
+        else index.cells.set(key, [box]);
+      }
+    }
+  }
+
+  boxIndexCache.set(boxes, index);
+  return index;
+}
+
+function nearbyStaticBoxes(index: StaticBoxIndex, x: number, z: number, radius: number): Box[] {
+  const candidates = new Set<Box>(index.oversized);
+  const minX = Math.floor((x - radius) / COLLISION_CELL_SIZE);
+  const maxX = Math.floor((x + radius) / COLLISION_CELL_SIZE);
+  const minZ = Math.floor((z - radius) / COLLISION_CELL_SIZE);
+  const maxZ = Math.floor((z + radius) / COLLISION_CELL_SIZE);
+
+  for (let cellX = minX; cellX <= maxX; cellX++) {
+    for (let cellZ = minZ; cellZ <= maxZ; cellZ++) {
+      for (const box of index.cells.get(cellKey(cellX, cellZ)) ?? []) candidates.add(box);
+    }
+  }
+  return [...candidates];
 }
 
 export function carRect(car: Car): Rect {
@@ -39,8 +102,11 @@ function pushOut(bike: BikeState, contact: Contact, bounce: number): number {
 export function resolveBikeContacts(bike: BikeState, boxes: readonly Box[], traffic: Traffic, cones: readonly Vec2[]): BikeHit[] {
   const hits: BikeHit[] = [];
   const radius = BASE_BIKE.radius;
+  const nearbyBoxes = nearbyStaticBoxes(getStaticBoxIndex(boxes), bike.x, bike.z, radius);
 
-  for (const box of boxes) {
+  // Narrow-phase collision math now runs only against buildings, trees, and
+  // other static objects in the rider's immediate grid cells.
+  for (const box of nearbyBoxes) {
     const contact = circleVsRect(bike.x, bike.z, radius, box);
     if (!contact) continue;
     const impact = pushOut(bike, contact, 0.7);
@@ -54,6 +120,7 @@ export function resolveBikeContacts(bike: BikeState, boxes: readonly Box[], traf
       car.nearCooldown = 3;
       hits.push({ kind: 'close-call', impact: 0 });
     }
+    if (distance >= radius) continue;
     const contact = circleVsRect(bike.x, bike.z, radius, rect);
     if (!contact) continue;
     const impact = pushOut(bike, contact, 0.9);
@@ -70,6 +137,10 @@ export function resolveBikeContacts(bike: BikeState, boxes: readonly Box[], traf
   for (const ped of traffic.pedestrians) {
     const px = ped.lane.axis === 'x' ? ped.pos : ped.lane.fixed;
     const pz = ped.lane.axis === 'x' ? ped.lane.fixed : ped.pos;
+    const dx = bike.x - px;
+    const dz = bike.z - pz;
+    const combinedRadius = radius + PEDESTRIAN_RADIUS;
+    if (dx * dx + dz * dz >= combinedRadius * combinedRadius) continue;
     const contact = circleVsCircle(bike.x, bike.z, radius, px, pz, PEDESTRIAN_RADIUS);
     if (!contact) continue;
     const impact = pushOut(bike, contact, 0.6);
