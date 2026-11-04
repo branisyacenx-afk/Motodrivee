@@ -243,6 +243,7 @@ export class GameWorld {
 
   setPaused(paused: boolean): void {
     this.paused = paused;
+    this.sound.setPaused(paused);
   }
 
   acceptOffer(): void {
