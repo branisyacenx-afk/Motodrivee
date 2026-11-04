@@ -21,6 +21,7 @@ import { buildZones } from '@/game/render/zoneMeshes';
 import { buildVenues } from '@/game/render/venueMeshes';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
 import { createRemoteRiders, type RemoteRiders } from '@/game/render/remoteRiders';
+import { TrafficSignals } from '@/game/render/trafficSignals';
 import type { SharedCity } from '@/lib/sharedCity';
 import { createSoundBoard, type Cue, type SoundBoard } from '@/game/audio';
 import type { GameEvent, HudSnapshot, Layout, ShiftSummary, Vec2 } from '@/game/types';
@@ -83,6 +84,7 @@ export class GameWorld {
   private readonly handoffPackage: THREE.Mesh;
   private interaction: { kind: 'pickup' | 'dropoff'; left: number; order: ActiveOrder } | null = null;
   private readonly traffic: Traffic;
+  private readonly trafficSignals: TrafficSignals;
   private readonly carMeshes: THREE.Group[] = [];
   private readonly pedMeshes: PedestrianModel[] = [];
   private readonly venueStalls: THREE.Object3D[];
@@ -160,7 +162,8 @@ export class GameWorld {
     const venueGroup = buildVenues(layout.venues);
     this.venueStalls = venueGroup.children.slice(0, layout.venues.length);
     this.cityGroup = buildCity(layout);
-    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup);
+    this.trafficSignals = new TrafficSignals();
+    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, this.trafficSignals.group);
 
     this.guide = createDeliveryGuide();
     this.scene.add(this.guide.group);
@@ -249,6 +252,7 @@ export class GameWorld {
     this.sound.dispose();
     this.remoteRiders.dispose();
     disposeCity(this.cityGroup);
+    this.trafficSignals.dispose();
     this.renderer.domElement.removeEventListener('webglcontextlost', this.onContextLost);
     this.renderer.dispose();
     this.renderer.forceContextLoss();
@@ -508,6 +512,7 @@ export class GameWorld {
     const forwardZ = Math.cos(bike.heading);
 
     updateCityChunkVisibility(this.cityGroup, bike.x, bike.z);
+    this.trafficSignals.update(this.time);
     this.remoteRiders.update(this.options.network.riders(), dt);
     this.broadcastPose(dt);
 
