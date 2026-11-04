@@ -159,8 +159,8 @@ function buildCarParts() {
     tire: merge(tires),
     rim: merge(rims),
     trim: merge(trim),
-    head: merge([box(0.42, 0.12, 0.05, -0.6, 0.8, 2.31), box(0.42, 0.12, 0.05, 0.6, 0.8, 2.31)]),
-    tail: merge([box(0.42, 0.12, 0.05, -0.6, 0.8, -2.31), box(0.42, 0.12, 0.05, 0.6, 0.8, -2.31)]),
+    head: merge([box(0.46, 0.16, 0.07, -0.6, 0.82, 2.43), box(0.46, 0.16, 0.07, 0.6, 0.82, 2.43)]),
+    tail: merge([box(0.46, 0.16, 0.07, -0.6, 0.82, -2.43), box(0.46, 0.16, 0.07, 0.6, 0.82, -2.43)]),
   };
 }
 
@@ -257,7 +257,10 @@ export function createActorAssets(): ActorAssets {
       group.add(headlightMesh);
       const bikeBrakeLight = brake.clone();
       bikeBrakeLight.color.set('#701b18');
-      const brakeMesh = new THREE.Mesh(box(0.14, 0.08, 0.04, 0, 0.86, -0.95), bikeBrakeLight);
+      const brakeMesh = new THREE.Mesh(merge([
+        box(0.2, 0.12, 0.07, -0.2, 1.1, -1.34),
+        box(0.2, 0.12, 0.07, 0.2, 1.1, -1.34),
+      ]), bikeBrakeLight);
       brakeMesh.name = 'bike-brake-light';
       group.add(brakeMesh);
 
