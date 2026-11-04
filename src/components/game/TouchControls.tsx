@@ -31,7 +31,7 @@ export function TouchControls({ onControl }: TouchControlsProps) {
 
   useEffect(() => {
     onControlRef.current = onControl;
-  }, []);
+  }, [onControl]);
 
   const releasePointer = (control: TouchControl, pointerId: number) => {
     const pointers = activePointers.current.get(control);
@@ -45,7 +45,7 @@ export function TouchControls({ onControl }: TouchControlsProps) {
   useEffect(() => () => {
     for (const control of activePointers.current.keys()) onControlRef.current(control, false);
     activePointers.current.clear();
-  }, [onControl]);
+  }, []);
 
   const bind = (control: TouchControl) => ({
     onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => {
