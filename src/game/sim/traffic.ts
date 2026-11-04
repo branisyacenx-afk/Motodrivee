@@ -195,22 +195,28 @@ export function updateTraffic(traffic: Traffic, t: number, dt: number): void {
     travelByCar.set(next.car, safeTravel);
   }
 
-  // Revisit followers after every leader has a resolved movement. This
-  // removes array-order dependence from the car-following constraint.
-  for (const next of nextCars) {
-    if (!next.lead || !Number.isFinite(next.leadGap)) continue;
-    const leaderTravel = travelByCar.get(next.lead) ?? 0;
-    const bumperGap = next.leadGap - CAR_HALF_LENGTH * 2;
-    travelByCar.set(
-      next.car,
-      Math.min(travelByCar.get(next.car) ?? next.travel, Math.max(0, leaderTravel + bumperGap - 7)),
-    );
+  // Relax the follower constraints repeatedly so a stopped lead car
+  // propagates safely through an entire queue, regardless of array order.
+  for (let pass = 0; pass < nextCars.length; pass++) {
+    let changed = false;
+    for (const next of nextCars) {
+      if (!next.lead || !Number.isFinite(next.leadGap)) continue;
+      const leaderTravel = travelByCar.get(next.lead) ?? 0;
+      const bumperGap = next.leadGap - CAR_HALF_LENGTH * 2;
+      const allowed = Math.max(0, leaderTravel + bumperGap - 7);
+      const current = travelByCar.get(next.car) ?? next.travel;
+      if (allowed + 0.001 < current) {
+        travelByCar.set(next.car, allowed);
+        changed = true;
+      }
+    }
+    if (!changed) break;
   }
 
   // Commit together so car order in the array cannot affect the simulation.
   for (const next of nextCars) {
     const safeTravel = travelByCar.get(next.car) ?? next.travel;
-    next.car.speed = safeTravel + 0.001 < next.travel ? 0 : next.speed;
+    next.car.speed = dt > 0 ? Math.min(next.speed, safeTravel / dt) : next.speed;
     next.car.pos = wrap(next.car.pos + next.car.lane.dir * safeTravel, next.car.lane);
     next.car.nearCooldown = Math.max(0, next.car.nearCooldown - dt);
   }
