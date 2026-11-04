@@ -109,6 +109,22 @@ export function Minimap({ layout, state, onOpen, className = '' }: MinimapProps)
       ctx.strokeRect(left, top, width, height);
     }
 
+    // Nearby restaurant pins make the local radar useful for spotting
+    // pickup locations without opening the full city map.
+    for (const venue of layout.venues) {
+      if (venue.x < view.minX || venue.x > view.maxX || venue.z < view.minZ || venue.z > view.maxZ) continue;
+      const vx = toX(venue.x);
+      const vy = toY(venue.z);
+      ctx.beginPath();
+      ctx.arc(vx, vy, 4.2, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(vx, vy, 2.7, 0, Math.PI * 2);
+      ctx.fillStyle = venue.color;
+      ctx.fill();
+    }
+
     if (state.target) {
       const tx = toX(state.target.x);
       const ty = toY(state.target.z);
