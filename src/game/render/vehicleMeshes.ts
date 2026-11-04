@@ -351,7 +351,9 @@ export function createActorAssets(): ActorAssets {
       add(parts.tire, tireMat);
       add(parts.rim, chrome);
       add(parts.trim, trimMat);
-      add(parts.head, headlight);
+      const headlightMaterial = headlight.clone();
+      headlightMaterial.emissiveIntensity = 0.08;
+      add(parts.head, headlightMaterial, 'headlights');
       const brakeLightMaterial = brake.clone();
       brakeLightMaterial.emissiveIntensity = 0.35;
       add(parts.tail, brakeLightMaterial, 'brake-lights');
