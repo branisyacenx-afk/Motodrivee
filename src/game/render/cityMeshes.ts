@@ -1101,18 +1101,33 @@ export function updateCityChunkVisibility(city: THREE.Group, x: number, z: numbe
   }
 
   // Build at most one nearby chunk per frame; do not spend work on distant blocks.
-  const nextKey = pending[0];
-  if (!nextKey) return;
-  const next = records.get(nextKey);
-  if (!next) {
-    pending.shift();
-    return;
+  // The queue is sorted when the rider enters a new chunk. If the rider moves
+  // within that chunk, its old first item may become distant while another
+  // queued chunk moves into range, so scan for the nearest currently eligible
+  // item instead of letting a stale queue head block all streaming.
+  let nextIndex = -1;
+  let nearestDistanceSq = unloadRadiusSq;
+  for (let index = 0; index < pending.length; index++) {
+    const record = records.get(pending[index]);
+    if (!record) {
+      if (nextIndex < 0) nextIndex = index;
+      continue;
+    }
+    const dx = record.x - x;
+    const dz = record.z - z;
+    const distanceSq = dx * dx + dz * dz;
+    if (distanceSq <= nearestDistanceSq) {
+      nearestDistanceSq = distanceSq;
+      nextIndex = index;
+    }
   }
+  if (nextIndex < 0) return;
+
+  const nextKey = pending.splice(nextIndex, 1)[0];
+  const next = records.get(nextKey);
+  if (!next) return;
   const dx = next.x - x;
   const dz = next.z - z;
-  if (dx * dx + dz * dz > unloadRadiusSq) return;
-
-  pending.shift();
   const group = buildChunk(next, city.userData.windowTexture as THREE.Texture);
   group.visible = dx * dx + dz * dz <= activeRadiusSq;
   city.add(group);
