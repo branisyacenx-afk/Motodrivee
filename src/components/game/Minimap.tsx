@@ -10,7 +10,6 @@ interface MinimapProps {
 }
 
 const SIZE = 240;
-const ROAD_HALF = CITY.roadWidth / 2;
 
 function drawRect(ctx: CanvasRenderingContext2D, rect: Rect, toX: (x: number) => number, toY: (z: number) => number) {
   const x = toX(rect.minX);
