@@ -18,8 +18,6 @@ jobs:
     name: Plan and implement one safe improvement
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    outputs:
-      has_changes: ${{ steps.patch.outputs.has_changes }}
     permissions:
       contents: read
     steps:
@@ -45,9 +43,8 @@ jobs:
           npm run lint
           npm run build
 
-      # The API key is passed only to this action, never to install/test steps.
+      # Keep the API key confined to the coding-agent action.
       - name: Run the Swift Drop coding agent
-        id: codex
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
@@ -55,62 +52,20 @@ jobs:
           permission-profile: ":workspace"
           safety-strategy: drop-sudo
 
-      - name: Validate the agent changes
-        run: |
-          npm run typecheck
-          npm run lint
-          npm run build
-
-      - name: Create a restricted patch
-        id: patch
-        shell: bash
-        run: |
-          set -euo pipefail
-          git add -N -- .
-          mapfile -t changed_files < <(git diff --name-only)
-          if [ "${#changed_files[@]}" -eq 0 ]; then
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "Codex found no safe improvement to submit."
-            exit 0
-          fi
-
-          if [ "${#changed_files[@]}" -gt 12 ]; then
-            echo "Refusing an oversized change: ${#changed_files[@]} files."
-            exit 1
-          fi
-
-          for path in "${changed_files[@]}"; do
-            case "$path" in
-              src/*|public/*|docs/*|tests/*) ;;
-              *)
-                echo "Blocked path outside the agent allowlist: $path"
-                exit 1
-                ;;
-            esac
-          done
-
-          git diff --binary > /tmp/swift-drop.patch
-          if [ ! -s /tmp/swift-drop.patch ] || [ "$(wc -c < /tmp/swift-drop.patch)" -gt 1048576 ]; then
-            echo "Patch is empty or exceeds the 1 MiB safety limit."
-            exit 1
-          fi
-          echo "has_changes=true" >> "$GITHUB_OUTPUT"
-
-      - name: Upload reviewed patch for the publisher job
-        if: steps.patch.outputs.has_changes == 'true'
+      # No shell scripts or repository code run after Codex in this job.
+      - name: Upload the agent-produced patch
         uses: actions/upload-artifact@v4
         with:
           name: swift-drop-agent-patch
-          path: /tmp/swift-drop.patch
+          path: swift-drop-agent.patch
           if-no-files-found: error
           retention-days: 2
 
   publish:
-    name: Open or update the autonomous pull request
+    name: Validate and open the autonomous pull request
     needs: agent
-    if: needs.agent.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: write
       pull-requests: write
@@ -127,13 +82,65 @@ jobs:
           name: swift-drop-agent-patch
           path: /tmp/swift-drop-patch
 
-      - name: Apply the patch
+      - name: Apply and enforce the patch boundary
+        id: patch
+        shell: bash
         run: |
           set -euo pipefail
-          git apply --check /tmp/swift-drop-patch/swift-drop.patch
-          git apply /tmp/swift-drop-patch/swift-drop.patch
+          patch_file=/tmp/swift-drop-patch/swift-drop-agent.patch
+          if [ ! -s "$patch_file" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Codex found no safe improvement to submit."
+            exit 0
+          fi
+          if [ "$(wc -c < "$patch_file")" -gt 1048576 ]; then
+            echo "Patch exceeds the 1 MiB safety limit."
+            exit 1
+          fi
 
+          git apply --check "$patch_file"
+          git apply "$patch_file"
+          mapfile -t changed_files < <(git diff --name-only)
+          if [ "${#changed_files[@]}" -gt 12 ]; then
+            echo "Refusing an oversized change: ${#changed_files[@]} files."
+            exit 1
+          fi
+          for path in "${changed_files[@]}"; do
+            case "$path" in
+              src/*|public/*|docs/*|tests/*) ;;
+              *)
+                echo "Blocked path outside the agent allowlist: $path"
+                exit 1
+                ;;
+            esac
+          done
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node.js
+        if: steps.patch.outputs.has_changes == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        if: steps.patch.outputs.has_changes == 'true'
+        run: npm ci
+
+      - name: Run full validation without a write token
+        if: steps.patch.outputs.has_changes == 'true'
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run build
+
+      # The write token is exposed only to this trusted publishing action.
       - name: Create or update the pull request
+        if: steps.patch.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ github.token }}
@@ -148,8 +155,8 @@ jobs:
 
             - The agent starts from the current `main` revision.
             - Only `src/`, `public/`, `docs/`, and `tests/` changes are accepted.
-            - TypeScript, ESLint, and production build must pass before a PR is opened.
-            - The repository CI runs again on this pull request.
+            - TypeScript, ESLint, and production build pass before a PR is opened.
+            - The repository CI repeats those checks on this pull request.
             - A separate workflow may merge this exact head commit only after CI succeeds.
 
             Please inspect the visual/gameplay result after deployment.
