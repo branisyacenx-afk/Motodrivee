@@ -14,8 +14,8 @@ This repository uses GitHub Actions and the official OpenAI Codex GitHub Action 
 ## Automation cycle
 
 - Scheduled/manual workflow checks the current `main` revision and runs typecheck, lint, and production build.
-- Codex receives the repository-specific task prompt and may edit only `src/`, `public/`, `docs/`, and `tests/`.
-- A separate, low-privilege publishing job receives only a bounded patch and opens/updates the dedicated PR.
+- Codex receives the repository-specific task prompt and may edit only `src/`, `public/`, `docs/`, and `tests/`; it writes a temporary patch artifact.
+- A separate publishing job checks the patch size and changed paths, applies it, repeats all three checks without a write token, then opens/updates the dedicated PR.
 - The existing CI workflow checks the PR. A separate workflow verifies that the exact PR head SHA passed CI before squashing it into `main`.
 - The existing Pages deployment workflow builds and publishes the new `main` revision.
 
