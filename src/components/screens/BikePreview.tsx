@@ -5,6 +5,9 @@ interface BikePreviewProps {
   paint: string;
   vehicleId: string;
   vehicleName: string;
+  riderGender: 'male' | 'female';
+  riderJacket: string;
+  riderHelmet: string;
 }
 
 function connect(scene: THREE.Group, a: THREE.Vector3, b: THREE.Vector3, radius: number, material: THREE.Material) {
@@ -15,7 +18,7 @@ function connect(scene: THREE.Group, a: THREE.Vector3, b: THREE.Vector3, radius:
   scene.add(mesh);
 }
 
-export function BikePreview({ paint, vehicleId, vehicleName }: BikePreviewProps) {
+export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJacket, riderHelmet }: BikePreviewProps) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = host.current;
@@ -142,18 +145,20 @@ export function BikePreview({ paint, vehicleId, vehicleName }: BikePreviewProps)
     // A seated delivery rider gives the garage model scale and makes the
     // motorcycle preview feel like a complete playable vehicle.
     const rider = new THREE.Group();
-    const jacket = new THREE.MeshStandardMaterial({ color: 0x253b55, roughness: 0.78 });
+    const jacket = new THREE.MeshStandardMaterial({ color: riderJacket, roughness: 0.78 });
     const trousers = new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.85 });
     const skin = new THREE.MeshStandardMaterial({ color: 0xb9825d, roughness: 0.9 });
-    const helmet = new THREE.MeshStandardMaterial({ color: 0xf1f3f5, metalness: 0.18, roughness: 0.28 });
+    const helmet = new THREE.MeshStandardMaterial({ color: riderHelmet, metalness: 0.18, roughness: 0.28 });
     const visor = new THREE.MeshStandardMaterial({ color: 0x152331, metalness: 0.45, roughness: 0.12 });
     const boot = new THREE.MeshStandardMaterial({ color: 0x11151a, roughness: 0.65 });
     const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.32, 5, 12), jacket);
     torso.position.set(0, 1.62, -0.25);
+    torso.scale.x = riderGender === 'female' ? 0.88 : 1.08;
     torso.rotation.x = -0.24;
     rider.add(torso);
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 20, 16), skin);
     head.position.set(0, 1.96, -0.02);
+    head.scale.x = riderGender === 'female' ? 0.96 : 1.04;
     rider.add(head);
     const helmetShell = new THREE.Mesh(new THREE.SphereGeometry(0.205, 20, 16), helmet);
     helmetShell.scale.set(1.02, 0.92, 1.08);
@@ -214,7 +219,7 @@ export function BikePreview({ paint, vehicleId, vehicleName }: BikePreviewProps)
       scene.traverse((object) => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; materials.forEach((material) => material.dispose()); } });
       renderer.domElement.remove();
     };
-  }, [paint, vehicleId]);
+  }, [paint, vehicleId, riderGender, riderJacket, riderHelmet]);
   return <section className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-black ring-1 ring-white/10">
     <div className="flex items-center justify-between px-4 pt-4">
       <div><p className="text-xs font-bold uppercase tracking-widest text-slate-400">معاينة ثلاثية الأبعاد</p><p className="mt-1 font-bold text-white">{vehicleName}</p></div>
