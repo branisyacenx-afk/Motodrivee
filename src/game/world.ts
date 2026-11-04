@@ -311,7 +311,7 @@ export class GameWorld {
     const hits = resolveBikeContacts(this.bike, this.options.layout.boxes, this.traffic, this.options.layout.cones);
     for (const hit of hits) this.handleHit(hit);
 
-    updateTraffic(this.traffic, this.time, dt, { x: this.bike.x, z: this.bike.z });
+    updateTraffic(this.traffic, this.time, dt, { x: this.bike.x, z: this.bike.z, heading: this.bike.heading, speed: this.bike.speed });
     this.updateOrders(dt);
 
     if (this.health <= 0) this.recoverBike();
