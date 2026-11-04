@@ -30,15 +30,40 @@ function appendUnique(points: Vec2[], next: Vec2): void {
   points.push(next);
 }
 
-export function buildRoadRoute(from: Vec2, to: Vec2): Vec2[] {
-  const start = snapToRoad(from);
-  const end = snapToRoad(to);
+function routeLength(points: Vec2[]): number {
+  let length = 0;
+  for (let i = 1; i < points.length; i++) {
+    length += Math.hypot(points[i].x - points[i - 1].x, points[i].z - points[i - 1].z);
+  }
+  return length;
+}
+
+function buildCandidate(from: Vec2, to: Vec2, start: RoadSnap, end: RoadSnap, horizontalFirst: boolean): Vec2[] {
   const points: Vec2[] = [];
   appendUnique(points, from);
   appendUnique(points, start.point);
   appendUnique(points, corner(start.i, start.j));
-  appendUnique(points, corner(end.i, start.j));
+
+  // Both alternatives stay on the connected street grid. Choose the shorter
+  // one so navigation does not make an unnecessary detour through a block.
+  if (horizontalFirst) {
+    appendUnique(points, corner(end.i, start.j));
+  } else {
+    appendUnique(points, corner(start.i, end.j));
+  }
+
   appendUnique(points, corner(end.i, end.j));
   appendUnique(points, end.point);
+  appendUnique(points, to);
   return points;
+}
+
+export function buildRoadRoute(from: Vec2, to: Vec2): Vec2[] {
+  const start = snapToRoad(from);
+  const end = snapToRoad(to);
+  const horizontalFirst = buildCandidate(from, to, start, end, true);
+  const verticalFirst = buildCandidate(from, to, start, end, false);
+  return routeLength(horizontalFirst) <= routeLength(verticalFirst)
+    ? horizontalFirst
+    : verticalFirst;
 }
