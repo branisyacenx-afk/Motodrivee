@@ -104,7 +104,7 @@ export function Hud({ hud, toasts, onAccept, onDecline, onPause, onDismissToast,
         <div className={`${GLASS_CARD} flex items-center gap-2 px-3 py-1.5 text-xs font-bold tabular-nums sm:gap-5 sm:px-6 sm:py-2 sm:text-sm`}>
           <span className="flex items-center gap-1.5">
             {isNight ? <Moon className="h-4 w-4 text-indigo-500" /> : <Sun className="h-4 w-4 text-amber-500" />}
-            {String(hud.gameHour).padStart(2, '0')}:00
+            {String(hud.gameHour).padStart(2, '0')}:{String(hud.gameMinute).padStart(2, '0')}
           </span>
           <span className="h-4 w-px bg-slate-300" />
           <span className="flex items-center gap-1.5">
