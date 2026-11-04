@@ -555,7 +555,7 @@ export class GameWorld {
       this.handoffPackage.position.y += Math.sin(this.time * 7) * 0.035;
       this.bikeRig.deliveryLid.rotation.x = -Math.sin(Math.min(1, progress * 3.2) * Math.PI / 2) * 1.05;
     }
-    this.bikeRig.group.rotation.z = -this.lastInput.steer * Math.min(1, bike.speed / 14) * 0.12;
+    this.bikeRig.group.rotation.z = -bike.steering * Math.min(1, bike.speed / 14) * 0.12;
     for (const wheel of this.bikeRig.wheels) wheel.rotation.x = bike.wheelSpin;
 
     const back = 8.5 + bike.speed * 0.04;

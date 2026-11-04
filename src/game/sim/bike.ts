@@ -7,6 +7,7 @@ export interface BikeState {
   z: number;
   heading: number;
   speed: number;
+  steering: number;
   wheelSpin: number;
 }
 
@@ -17,7 +18,7 @@ export interface BikeInput {
 }
 
 export function createBike(x: number, z: number, heading: number): BikeState {
-  return { x, z, heading, speed: 0, wheelSpin: 0 };
+  return { x, z, heading, speed: 0, steering: 0, wheelSpin: 0 };
 }
 
 export function stepBikeMotion(bike: BikeState, input: BikeInput, stats: BikeStats, dt: number): void {
@@ -28,8 +29,16 @@ export function stepBikeMotion(bike: BikeState, input: BikeInput, stats: BikeSta
 
   bike.speed = Math.max(0, Math.min(maxSpeed, bike.speed + (accel - drag - braking) * dt));
 
+  // Ease steering input so keyboard and touch controls do not snap the
+  // motorcycle's heading. A slightly quicker release keeps counter-steering
+  // responsive when the rider lets go of the controls.
+  const targetSteering = Math.max(-1, Math.min(1, input.steer));
+  const steeringResponse = targetSteering === 0 ? 7.5 : 6;
+  const steeringBlend = 1 - Math.exp(-steeringResponse * dt);
+  bike.steering += (targetSteering - bike.steering) * steeringBlend;
+
   const steerFactor = Math.min(1, bike.speed / 6) * (1 - 0.35 * Math.min(1, bike.speed / maxSpeed));
-  bike.heading += input.steer * stats.turnRate * steerFactor * dt;
+  bike.heading += bike.steering * stats.turnRate * steerFactor * dt;
 
   bike.x += Math.sin(bike.heading) * bike.speed * dt;
   bike.z += Math.cos(bike.heading) * bike.speed * dt;
