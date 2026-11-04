@@ -11,7 +11,7 @@ const AMBER_SECONDS = 1.1;
 export class TrafficSignals {
   readonly group = new THREE.Group();
   private readonly lenses: THREE.InstancedMesh;
-  private cycle = -1;
+  private phaseKey = -1;
 
   constructor() {
     const count = CITY.cols * CITY.rows;
@@ -92,10 +92,11 @@ export class TrafficSignals {
 
   update(time: number): void {
     const cycle = Math.floor(time / CITY.lightHalfCycle);
-    if (cycle === this.cycle) return;
-    this.cycle = cycle;
     const phase = time - cycle * CITY.lightHalfCycle;
     const amberPhase = phase >= CITY.lightHalfCycle - AMBER_SECONDS;
+    const phaseKey = cycle * 2 + (amberPhase ? 1 : 0);
+    if (phaseKey === this.phaseKey) return;
+    this.phaseKey = phaseKey;
     let index = 0;
     for (let i = 0; i < CITY.cols; i++) {
       for (let j = 0; j < CITY.rows; j++) {
@@ -103,7 +104,7 @@ export class TrafficSignals {
         for (const axis of ['x', 'z'] as const) {
           const active = axis === green;
           const colors = active
-            ? [amberPhase ? OFF : GREEN, amberPhase ? AMBER : OFF, OFF]
+            ? [OFF, amberPhase ? AMBER : OFF, amberPhase ? OFF : GREEN]
             : [RED, OFF, OFF];
           for (const color of colors) this.lenses.setColorAt(index++, color);
         }
