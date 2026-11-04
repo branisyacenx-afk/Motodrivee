@@ -3,6 +3,7 @@ export type Cue = 'good' | 'bad' | 'info' | 'pickup' | 'delivered';
 export interface SoundBoard {
   play(cue: Cue): void;
   setEngine(level: number): void;
+  setPaused(paused: boolean): void;
   setMuted(muted: boolean): void;
   dispose(): void;
 }
@@ -43,6 +44,8 @@ export function createSoundBoard(): SoundBoard {
   let master: GainNode | null = null;
   let engineOsc: OscillatorNode | null = null;
   let engineGain: GainNode | null = null;
+  let engineLevel = 0;
+  let paused = false;
   let muted = false;
 
   const ensureContext = (): AudioContext => {
@@ -98,8 +101,14 @@ export function createSoundBoard(): SoundBoard {
       const context = ensureContext();
       if (!engineOsc || !engineGain) return;
       const now = context.currentTime;
-      engineOsc.frequency.setTargetAtTime(38 + level * 62, now, 0.08);
-      engineGain.gain.setTargetAtTime(0.02 + level * 0.035, now, 0.1);
+      engineLevel = Math.max(0, Math.min(1, level));
+      engineOsc.frequency.setTargetAtTime(38 + engineLevel * 62, now, 0.08);
+      engineGain.gain.setTargetAtTime(paused ? 0 : 0.02 + engineLevel * 0.035, now, 0.1);
+    },
+    setPaused(value) {
+      paused = value;
+      if (!ctx || !engineGain) return;
+      engineGain.gain.setTargetAtTime(value ? 0 : 0.02 + engineLevel * 0.035, ctx.currentTime, 0.05);
     },
     setMuted(value) {
       muted = value;
