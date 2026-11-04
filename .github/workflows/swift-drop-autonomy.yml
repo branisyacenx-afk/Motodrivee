@@ -1,0 +1,158 @@
+name: Swift Drop autonomous development
+
+on:
+  # One bounded development cycle every 30 minutes.
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: swift-drop-autonomous-development
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  agent:
+    name: Plan and implement one safe improvement
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    outputs:
+      has_changes: ${{ steps.patch.outputs.has_changes }}
+    permissions:
+      contents: read
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify the starting revision
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run build
+
+      # The API key is passed only to this action, never to install/test steps.
+      - name: Run the Swift Drop coding agent
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/swift-drop-agent.md
+          permission-profile: ":workspace"
+          safety-strategy: drop-sudo
+
+      - name: Validate the agent changes
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run build
+
+      - name: Create a restricted patch
+        id: patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -N -- .
+          mapfile -t changed_files < <(git diff --name-only)
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Codex found no safe improvement to submit."
+            exit 0
+          fi
+
+          if [ "${#changed_files[@]}" -gt 12 ]; then
+            echo "Refusing an oversized change: ${#changed_files[@]} files."
+            exit 1
+          fi
+
+          for path in "${changed_files[@]}"; do
+            case "$path" in
+              src/*|public/*|docs/*|tests/*) ;;
+              *)
+                echo "Blocked path outside the agent allowlist: $path"
+                exit 1
+                ;;
+            esac
+          done
+
+          git diff --binary > /tmp/swift-drop.patch
+          if [ ! -s /tmp/swift-drop.patch ] || [ "$(wc -c < /tmp/swift-drop.patch)" -gt 1048576 ]; then
+            echo "Patch is empty or exceeds the 1 MiB safety limit."
+            exit 1
+          fi
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload reviewed patch for the publisher job
+        if: steps.patch.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: swift-drop-agent-patch
+          path: /tmp/swift-drop.patch
+          if-no-files-found: error
+          retention-days: 2
+
+  publish:
+    name: Open or update the autonomous pull request
+    needs: agent
+    if: needs.agent.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Download the isolated patch
+        uses: actions/download-artifact@v4
+        with:
+          name: swift-drop-agent-patch
+          path: /tmp/swift-drop-patch
+
+      - name: Apply the patch
+        run: |
+          set -euo pipefail
+          git apply --check /tmp/swift-drop-patch/swift-drop.patch
+          git apply /tmp/swift-drop-patch/swift-drop.patch
+
+      - name: Create or update the pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ github.token }}
+          branch: codex/swift-drop-autonomous
+          delete-branch: true
+          commit-message: "feat: autonomous Swift Drop improvement"
+          title: "Swift Drop: autonomous improvement"
+          body: |
+            ## Automated development cycle
+
+            This change was proposed by the Swift Drop coding agent.
+
+            - The agent starts from the current `main` revision.
+            - Only `src/`, `public/`, `docs/`, and `tests/` changes are accepted.
+            - TypeScript, ESLint, and production build must pass before a PR is opened.
+            - The repository CI runs again on this pull request.
+            - A separate workflow may merge this exact head commit only after CI succeeds.
+
+            Please inspect the visual/gameplay result after deployment.
+          labels: |
+            automation
+            swift-drop
