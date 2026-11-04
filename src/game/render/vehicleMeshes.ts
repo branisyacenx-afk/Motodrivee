@@ -339,8 +339,9 @@ export function createActorAssets(): ActorAssets {
       carParts ??= buildCarParts();
       const parts = carParts;
       const group = new THREE.Group();
-      const add = (geo: THREE.BufferGeometry, material: THREE.Material) => {
+      const add = (geo: THREE.BufferGeometry, material: THREE.Material, name?: string) => {
         const mesh = new THREE.Mesh(geo, material);
+        if (name) mesh.name = name;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         group.add(mesh);
@@ -351,7 +352,9 @@ export function createActorAssets(): ActorAssets {
       add(parts.rim, chrome);
       add(parts.trim, trimMat);
       add(parts.head, headlight);
-      add(parts.tail, brake);
+      const brakeLightMaterial = brake.clone();
+      brakeLightMaterial.emissiveIntensity = 0.35;
+      add(parts.tail, brakeLightMaterial, 'brake-lights');
       return group;
     },
 
