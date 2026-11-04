@@ -1,6 +1,6 @@
 # Swift Drop autonomous development
 
-This repository uses GitHub Actions and the official OpenAI Codex GitHub Action to run one bounded coding cycle every 30 minutes.
+This repository uses GitHub Actions and the official OpenAI Codex GitHub Action to run one bounded coding cycle every 10 minutes.
 
 ## One-time setup
 
@@ -21,7 +21,7 @@ This repository uses GitHub Actions and the official OpenAI Codex GitHub Action 
 
 ## Important limits
 
-- The schedule is every 30 minutes, not a continuously running process. GitHub may delay scheduled jobs, and repository plan limits, API billing, rate limits, or outages can pause work.
+- The schedule is every 10 minutes, not a continuously running process. GitHub may delay scheduled jobs, and repository plan limits, API billing, rate limits, or outages can pause work.
 - Add a billing limit/usage alert for the API key. The workflow does not bypass API billing.
 - The agent is deliberately restricted from editing workflows, dependencies, deployment/security settings, database policies, and secrets.
 - A successful typecheck/lint/build does not prove that a 3D scene looks correct on a physical phone. Visual gameplay checks remain useful after deployments.
