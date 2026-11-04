@@ -553,7 +553,7 @@ export class GameWorld {
     this.bikeRig.group.rotation.y = bike.heading;
     const bikeNightFactor = 1 - this.environmentState.daylight;
     this.bikeRig.headlight.color.set('#514b3c').lerp(new THREE.Color('#fff1c4'), bikeNightFactor);
-    this.bikeRig.brakeLight.color.set(this.lastInput.brake > 0.05 ? '#ff493e' : '#701b18');
+    this.bikeRig.brakeLight.color.set(this.lastInput.brake > 0.05 ? '#ff1717' : '#a31318');
     this.bikeBeam.intensity = bikeNightFactor * 32;
     if (this.interaction) {
       const sideX = Math.cos(bike.heading) * 1.8;
@@ -676,9 +676,10 @@ export class GameWorld {
       mesh.rotation.y = car.lane.axis === 'x' ? (car.lane.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : car.lane.dir > 0 ? 0 : Math.PI;
       // Headlamps fade in with dusk; emissive meshes avoid extra point-light draw cost.
       const nightFactor = 1 - conditions.daylight;
-      this.carHeadlights[index].color.set('#514b3c').lerp(new THREE.Color('#fff1c4'), nightFactor);
+      this.carHeadlights[index].color.set('#514b3c').lerp(new THREE.Color('#fff4d6'), THREE.MathUtils.smoothstep(nightFactor, 0.12, 0.48));
       // Rear lamps brighten only while the AI car is slowing for a queue or signal.
-      this.carBrakeLights[index].color.set(car.speed < car.cruise - 0.35 ? '#ff493e' : '#701b18');
+      const braking = car.speed < car.cruise - 0.35;
+      this.carBrakeLights[index].color.set(braking ? '#ff1717' : '#a31318');
       mesh.visible = isNear(mesh.position.x, mesh.position.z, bike.x, bike.z);
     });
 
