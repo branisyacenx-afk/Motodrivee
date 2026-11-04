@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BASE_BIKE, CITY, SHIFT_SECONDS, type BikeStats } from '@/game/config';
+import { BASE_BIKE, CITY, SHIFT_SECONDS, type BikeStats, type VehicleId } from '@/game/config';
 import { roadX, roadZ } from '@/game/city/layout';
 import { buildRoadRoute } from '@/game/city/route';
 import { createTraffic, updateTraffic, type Traffic } from '@/game/sim/traffic';
@@ -30,6 +30,7 @@ export interface WorldOptions {
   layout: Layout;
   stats: BikeStats;
   paintHex: string;
+  vehicleId: VehicleId;
   playerName: string;
   network: SharedCity;
   readInput: () => BikeInput;
@@ -164,7 +165,7 @@ export class GameWorld {
     const spawnZ = roadZ(2);
     const assets = createActorAssets();
     this.bike = createBike(spawnX, spawnZ, SPAWN_HEADING);
-    this.bikeRig = assets.bike(options.paintHex);
+    this.bikeRig = assets.bike(options.paintHex, options.vehicleId);
     this.bikeRig.group.rotation.order = 'YXZ';
     this.scene.add(this.bikeRig.group);
     // Reuse the low-poly pedestrian rig for short, readable delivery cut-scenes.
