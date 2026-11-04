@@ -6,6 +6,7 @@ const RED = new THREE.Color('#e53935');
 const AMBER = new THREE.Color('#ffb300');
 const GREEN = new THREE.Color('#35e36b');
 const OFF = new THREE.Color('#202629');
+const AMBER_SECONDS = 1.1;
 
 export class TrafficSignals {
   readonly group = new THREE.Group();
@@ -90,7 +91,10 @@ export class TrafficSignals {
   }
 
   update(time: number): void {
-    const phaseKey = Math.floor(time / (CITY.lightHalfCycle / 2));
+    const cycle = Math.floor(time / CITY.lightHalfCycle);
+    const phase = time - cycle * CITY.lightHalfCycle;
+    const amberPhase = phase >= CITY.lightHalfCycle - AMBER_SECONDS;
+    const phaseKey = cycle * 2 + (amberPhase ? 1 : 0);
     if (phaseKey === this.phaseKey) return;
     this.phaseKey = phaseKey;
     let index = 0;
