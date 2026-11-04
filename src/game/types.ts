@@ -87,6 +87,7 @@ export interface OfferHud {
   pickupDistrict: string;
   dropoffDistrict: string;
   distance: number;
+  pickupDistance: number;
   pay: number;
   expiresIn: number;
 }
