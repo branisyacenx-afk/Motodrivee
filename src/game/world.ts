@@ -187,7 +187,7 @@ export class GameWorld {
       this.scene.add(mesh);
     }
     for (const ped of this.traffic.pedestrians) {
-      const mesh = assets.pedestrian(ped.shirt, ped.skin);
+      const mesh = assets.pedestrian(ped.shirt, ped.skin, ped.isChild);
       this.pedMeshes.push(mesh);
       this.scene.add(mesh.group);
     }
