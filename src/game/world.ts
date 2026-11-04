@@ -562,11 +562,6 @@ export class GameWorld {
         : 1 - this.interaction.left / 2.8;
       const boxX = bike.x - forwardX * 1.0;
       const boxZ = bike.z - forwardZ * 1.0;
-      const riderX = bike.x + sideX * 1.35;
-      const riderZ = bike.z + sideZ * 1.35;
-      const customer = this.interaction.order.dropoff;
-      const handoffX = customer.x + sideX * 1.8;
-      const handoffZ = customer.z + sideZ * 1.8;
       // Animate the parcel from the motorcycle to the rider's hand, then
       // from the rider's hand into the customer's hand during drop-off.
       if (this.interaction.kind === 'pickup') {
