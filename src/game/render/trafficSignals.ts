@@ -27,12 +27,7 @@ export class TrafficSignals {
     );
     this.lenses = new THREE.InstancedMesh(
       new THREE.SphereGeometry(0.16, 8, 6),
-      new THREE.MeshStandardMaterial({
-        color: '#ffffff',
-        emissive: '#ffffff',
-        emissiveIntensity: 1.6,
-        roughness: 0.35,
-      }),
+      new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
       count * 6,
     );
 
