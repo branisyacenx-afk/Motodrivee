@@ -93,6 +93,9 @@ export interface OfferHud {
 
 export interface HudSnapshot {
   speedKmh: number;
+  gameHour: number;
+  gameMinute: number;
+  weather: 'clear' | 'cloudy' | 'rain' | 'fog' | 'wind';
   shiftLeft: number;
   score: number;
   earnings: number;
