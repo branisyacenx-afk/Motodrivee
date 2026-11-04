@@ -27,18 +27,23 @@ const PEDAL_PADS: PadDef[] = [
 
 export function TouchControls({ onControl }: TouchControlsProps) {
   const activePointers = useRef(new Map<TouchControl, Set<number>>());
+  const onControlRef = useRef(onControl);
+
+  useEffect(() => {
+    onControlRef.current = onControl;
+  }, []);
 
   const releasePointer = (control: TouchControl, pointerId: number) => {
     const pointers = activePointers.current.get(control);
     if (!pointers?.delete(pointerId)) return;
     if (pointers.size === 0) {
       activePointers.current.delete(control);
-      onControl(control, false);
+      onControlRef.current(control, false);
     }
   };
 
   useEffect(() => () => {
-    for (const control of activePointers.current.keys()) onControl(control, false);
+    for (const control of activePointers.current.keys()) onControlRef.current(control, false);
     activePointers.current.clear();
   }, [onControl]);
 
@@ -51,7 +56,7 @@ export function TouchControls({ onControl }: TouchControlsProps) {
         pointers = new Set<number>();
         activePointers.current.set(control, pointers);
       }
-      if (pointers.size === 0) onControl(control, true);
+      if (pointers.size === 0) onControlRef.current(control, true);
       pointers.add(event.pointerId);
     },
     onPointerUp: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
