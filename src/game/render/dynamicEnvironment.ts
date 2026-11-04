@@ -101,7 +101,7 @@ export class DynamicEnvironment {
   update(elapsed: number, x: number, z: number, dt: number): EnvironmentState {
     const hour = (6 + (elapsed / DAY_LENGTH_SECONDS) * 24) % 24;
     const solarWave = Math.sin(((hour - 6) / 12) * Math.PI);
-    const daylight = smooth(solarWave, -0.16, 0.22);
+    const daylight = smooth(solarWave, -0.08, 0.35);
     const solarAngle = ((hour - 6) / 24) * Math.PI * 2;
     const sunX = Math.cos(solarAngle) * 170;
     const sunY = 22 + Math.max(-0.7, solarWave) * 155;
@@ -109,7 +109,7 @@ export class DynamicEnvironment {
     this.sunDisc.position.set(sunX, sunY, sunZ);
     this.moonDisc.position.set(-sunX, Math.max(18, 22 - Math.max(-0.7, solarWave) * 145), -sunZ);
     this.moonLight.position.copy(this.moonDisc.position);
-    this.moonLight.target.position.set(x, 0, z);
+    this.moonLight.target.position.set(0, 0, 0);
     this.moonLight.intensity = (1 - daylight) * 0.34;
     this.sunDisc.visible = solarWave > -0.12;
     this.moonDisc.visible = solarWave < 0.12;
