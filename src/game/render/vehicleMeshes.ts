@@ -9,6 +9,8 @@ export interface BikeModel {
   group: THREE.Group;
   wheels: THREE.Object3D[];
   deliveryLid: THREE.Object3D;
+  headlight: THREE.MeshBasicMaterial;
+  brakeLight: THREE.MeshBasicMaterial;
 }
 
 export interface PedestrianModel {
@@ -248,8 +250,16 @@ export function createActorAssets(): ActorAssets {
       ]), boot));
       group.add(new THREE.Mesh(merge([ball(0.165, 0, 1.6, 0.1)]), helmet));
       group.add(new THREE.Mesh(box(0.22, 0.1, 0.03, 0, 1.6, 0.27), visor));
-      group.add(new THREE.Mesh(ball(0.09, 0, 0.98, 0.7), headlight));
-      group.add(new THREE.Mesh(box(0.14, 0.08, 0.04, 0, 0.86, -0.95), brake));
+      const bikeHeadlight = headlight.clone();
+      bikeHeadlight.color.set('#514b3c');
+      const headlightMesh = new THREE.Mesh(ball(0.09, 0, 0.98, 0.7), bikeHeadlight);
+      headlightMesh.name = 'bike-headlight';
+      group.add(headlightMesh);
+      const bikeBrakeLight = brake.clone();
+      bikeBrakeLight.color.set('#701b18');
+      const brakeMesh = new THREE.Mesh(box(0.14, 0.08, 0.04, 0, 0.86, -0.95), bikeBrakeLight);
+      brakeMesh.name = 'bike-brake-light';
+      group.add(brakeMesh);
 
       // Lightweight silhouette kits make garage classes visually distinct while
       // keeping the same rig, wheel pivots, and low draw-call budget.
@@ -332,7 +342,7 @@ export function createActorAssets(): ActorAssets {
           child.receiveShadow = true;
         }
       });
-      return { group, wheels, deliveryLid };
+      return { group, wheels, deliveryLid, headlight: bikeHeadlight, brakeLight: bikeBrakeLight };
     },
 
     car(color) {
