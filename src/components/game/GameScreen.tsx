@@ -122,6 +122,14 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
   }, [muted]);
 
   useEffect(() => {
+    const pauseWhenHidden = () => {
+      if (document.visibilityState !== 'visible') setPaused(true);
+    };
+    document.addEventListener('visibilitychange', pauseWhenHidden);
+    return () => document.removeEventListener('visibilitychange', pauseWhenHidden);
+  }, []);
+
+  useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.repeat || event.defaultPrevented) return;
       const target = event.target;
