@@ -760,6 +760,67 @@ function buildStreetDetailPack(): THREE.Group {
   return group;
 }
 
+function buildDistrictRoadSigns(): THREE.Group {
+  const group = new THREE.Group();
+  const districts = ['باب الوادي', 'حسين داي', 'القبة', 'الحراش', 'بئر مراد رايس', 'حيدرة'];
+  const postGeometry = new THREE.BoxGeometry(0.18, 4.2, 0.18);
+  const boardGeometry = new THREE.BoxGeometry(0.28, 1.35, 5.4);
+  const boardMaterial = new THREE.MeshStandardMaterial({ color: '#174c43', roughness: 0.78 });
+  const postMaterial = new THREE.MeshStandardMaterial({ color: '#59636a', metalness: 0.45, roughness: 0.65 });
+  const posts = new THREE.InstancedMesh(postGeometry, postMaterial, districts.length * 2);
+  const dummy = new THREE.Object3D();
+  const roadSideZ = roadZ(2) - CITY.roadWidth / 2 - 5.5;
+
+  districts.forEach((name, index) => {
+    const start = Math.floor((index / districts.length) * (CITY.cols - 1));
+    const end = Math.floor(((index + 1) / districts.length) * (CITY.cols - 1));
+    const x = (roadX(start) + roadX(Math.max(start + 1, end))) / 2;
+    for (const offset of [-2.25, 2.25]) {
+      dummy.position.set(x, 2.1, roadSideZ + offset);
+      dummy.updateMatrix();
+      posts.setMatrixAt(index * 2 + (offset > 0 ? 1 : 0), dummy.matrix);
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 128;
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.fillStyle = '#174c43';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.strokeStyle = '#e8d8a8';
+      context.lineWidth = 8;
+      context.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+      context.direction = 'rtl';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillStyle = '#fff5dc';
+      context.font = 'bold 48px sans-serif';
+      context.fillText(name, canvas.width / 2, canvas.height / 2);
+    }
+    const board = new THREE.Mesh(boardGeometry, boardMaterial);
+    board.position.set(x, 3.05, roadSideZ);
+    board.castShadow = true;
+    group.add(board);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const face = new THREE.Mesh(
+      new THREE.PlaneGeometry(5.15, 1.15),
+      new THREE.MeshStandardMaterial({ map: texture, roughness: 0.72, side: THREE.DoubleSide }),
+    );
+    face.position.set(x + 0.151, 3.05, roadSideZ);
+    face.rotation.y = Math.PI / 2;
+    face.castShadow = true;
+    group.add(face);
+  });
+
+  posts.instanceMatrix.needsUpdate = true;
+  posts.computeBoundingSphere();
+  posts.castShadow = true;
+  group.add(posts);
+  return group;
+}
+
 export function buildCity(layout: Layout): THREE.Group {
   const root = new THREE.Group();
   const { bounds } = layout;
@@ -788,6 +849,7 @@ export function buildCity(layout: Layout): THREE.Group {
   root.add(buildBusShelters());
   root.add(buildParkingBays());
   root.add(buildStreetDetailPack());
+  root.add(buildDistrictRoadSigns());
 
   const chunks = new Map<string, { x: number; z: number; buildings: Box[]; trees: Box[] }>();
   const getChunk = (x: number, z: number) => {
