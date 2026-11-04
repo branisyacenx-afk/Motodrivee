@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { CITY } from '@/game/config';
+import { buildRoadRoute } from '@/game/city/route';
 import type { HudSnapshot, Layout, Rect } from '@/game/types';
 
 interface MinimapProps {
@@ -111,13 +112,36 @@ export function Minimap({ layout, state, onOpen, className = '' }: MinimapProps)
     if (state.target) {
       const tx = toX(state.target.x);
       const ty = toY(state.target.z);
+      const route = buildRoadRoute({ x: state.x, z: state.z }, state.target);
+      // Yellow navigation path is drawn on top of the roads and clipped by
+      // the circular radar, matching the turn-by-turn guidance in the HUD.
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      route.forEach((point, index) => {
+        const px = toX(point.x);
+        const py = toY(point.z);
+        if (index === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.strokeStyle = 'rgba(42, 35, 12, 0.78)';
+      ctx.lineWidth = 7;
+      ctx.stroke();
+      ctx.strokeStyle = '#ffc928';
+      ctx.lineWidth = 4.5;
+      ctx.setLineDash([8, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
       if (tx >= 0 && tx <= SIZE && ty >= 0 && ty <= SIZE) {
         ctx.beginPath();
         ctx.arc(tx, ty, 9, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(215,38,46,0.22)';
+        ctx.fillStyle = 'rgba(215,38,46,0.24)';
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(tx, ty, 5, 0, Math.PI * 2);
+        ctx.arc(tx, ty, 5.5, 0, Math.PI * 2);
         ctx.fillStyle = '#d7262e';
         ctx.fill();
         ctx.lineWidth = 2;
