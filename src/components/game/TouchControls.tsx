@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUp, Square } from 'lucide-react';
 import type { TouchControl } from '@/game/input';
@@ -25,14 +26,37 @@ const PEDAL_PADS: PadDef[] = [
 ];
 
 export function TouchControls({ onControl }: TouchControlsProps) {
+  const activePointers = useRef(new Map<TouchControl, Set<number>>());
+
+  const releasePointer = (control: TouchControl, pointerId: number) => {
+    const pointers = activePointers.current.get(control);
+    if (!pointers?.delete(pointerId)) return;
+    if (pointers.size === 0) {
+      activePointers.current.delete(control);
+      onControl(control, false);
+    }
+  };
+
+  useEffect(() => () => {
+    for (const control of activePointers.current.keys()) onControl(control, false);
+    activePointers.current.clear();
+  }, [onControl]);
+
   const bind = (control: TouchControl) => ({
     onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => {
+      event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
-      onControl(control, true);
+      let pointers = activePointers.current.get(control);
+      if (!pointers) {
+        pointers = new Set<number>();
+        activePointers.current.set(control, pointers);
+      }
+      if (pointers.size === 0) onControl(control, true);
+      pointers.add(event.pointerId);
     },
-    onPointerUp: () => onControl(control, false),
-    onPointerCancel: () => onControl(control, false),
-    onLostPointerCapture: () => onControl(control, false),
+    onPointerUp: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
+    onPointerCancel: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
+    onLostPointerCapture: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
     onContextMenu: (event: ReactMouseEvent) => event.preventDefault(),
   });
 
