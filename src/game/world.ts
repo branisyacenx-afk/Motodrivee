@@ -72,6 +72,10 @@ export class GameWorld {
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(56, 1, 0.1, 1500);
   private readonly sun: THREE.DirectionalLight;
+  private readonly ambient: THREE.HemisphereLight;
+  private readonly duskSkyColor = new THREE.Color('#e9a16f');
+  private readonly duskFogColor = new THREE.Color('#d8a17f');
+  private readonly sunsetLightColor = new THREE.Color('#ffb36b');
   private readonly bike: BikeState;
   private readonly bikeRig: BikeModel;
   private readonly interactionRider: PedestrianModel;
@@ -138,7 +142,8 @@ export class GameWorld {
     this.scene.background = new THREE.Color('#bfdcec');
     this.scene.fog = new THREE.Fog('#cfe3ee', 260, 980);
 
-    this.scene.add(new THREE.HemisphereLight('#e2f1ff', '#8a8072', 1.15));
+    this.ambient = new THREE.HemisphereLight('#e2f1ff', '#8a8072', 1.15);
+    this.scene.add(this.ambient);
     this.sun = new THREE.DirectionalLight('#fff0d4', 2.5);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(shadowMapSize, shadowMapSize);
@@ -569,7 +574,13 @@ export class GameWorld {
     }
     this.guide.update(this.time);
 
-    this.sun.position.set(bike.x - 60, 150, bike.z + 45);
+    const dusk = THREE.MathUtils.smoothstep(this.time / SHIFT_SECONDS, 0.62, 1);
+    (this.scene.background as THREE.Color).set('#bfdcec').lerp(this.duskSkyColor, dusk);
+    if (this.scene.fog instanceof THREE.Fog) this.scene.fog.color.set('#cfe3ee').lerp(this.duskFogColor, dusk);
+    this.sun.color.set('#fff0d4').lerp(this.sunsetLightColor, dusk);
+    this.sun.intensity = 2.5 - dusk * 0.85;
+    this.ambient.intensity = 1.15 - dusk * 0.2;
+    this.sun.position.set(bike.x - 60, 150 - dusk * 35, bike.z + 45);
     this.sun.target.position.set(bike.x, 0, bike.z);
     this.sun.target.updateMatrixWorld();
 
