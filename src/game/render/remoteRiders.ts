@@ -31,7 +31,7 @@ export function createRemoteRiders(scene: THREE.Scene, actors: ActorAssets): Rem
   const views = new Map<string, RemoteView>();
 
   const spawn = (rider: RemoteRider): RemoteView => {
-    const rig = actors.bike(rider.paintHex);
+    const rig = actors.bike(rider.paintHex, 'classic');
     rig.group.rotation.order = 'YXZ';
     const labelMap = createLabelTexture(rider.name);
     const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelMap, transparent: true, depthWrite: false }));
