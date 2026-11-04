@@ -291,8 +291,14 @@ export class GameWorld {
     const dt = Math.min(0.05, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
     try {
-      if (!this.paused && !this.ended) this.step(dt);
-      this.syncScene(dt);
+      if (!this.paused && !this.ended) {
+        this.step(dt);
+        this.syncScene(dt);
+      } else {
+        // Keep rendering the frozen scene, but do not advance weather,
+        // remote-rider interpolation, delivery animations, or other visuals.
+        this.syncScene(0);
+      }
       this.renderer.render(this.scene, this.camera);
     } catch (error) {
       cancelAnimationFrame(this.frameId);
