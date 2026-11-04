@@ -30,7 +30,6 @@ export class DynamicEnvironment {
   private readonly rainPositions: Float32Array;
   private weatherBlend = 0;
   private currentWeather: WeatherKind = 'clear';
-  private previousWeather: WeatherKind = 'clear';
   private lastWeatherStep = -1;
 
   constructor() {
@@ -107,8 +106,8 @@ export class DynamicEnvironment {
     const sunX = Math.cos(solarAngle) * 170;
     const sunY = 22 + Math.max(-0.7, solarWave) * 155;
     const sunZ = -65;
-    this.sunDisc.position.set(x + sunX, sunY, z + sunZ);
-    this.moonDisc.position.set(x - sunX, Math.max(18, 22 - Math.max(-0.7, solarWave) * 145), z - sunZ);
+    this.sunDisc.position.set(sunX, sunY, sunZ);
+    this.moonDisc.position.set(-sunX, Math.max(18, 22 - Math.max(-0.7, solarWave) * 145), -sunZ);
     this.moonLight.position.copy(this.moonDisc.position);
     this.moonLight.target.position.set(x, 0, z);
     this.moonLight.intensity = (1 - daylight) * 0.34;
@@ -118,7 +117,6 @@ export class DynamicEnvironment {
     const weatherStep = Math.floor(elapsed / WEATHER_STEP_SECONDS);
     if (weatherStep !== this.lastWeatherStep) {
       this.lastWeatherStep = weatherStep;
-      this.previousWeather = this.currentWeather;
       this.currentWeather = WEATHER_SEQUENCE[weatherStep % WEATHER_SEQUENCE.length];
       this.weatherBlend = 0;
     }
@@ -146,7 +144,7 @@ export class DynamicEnvironment {
       this.rainPositions[i + 5] = this.rainPositions[i + 2] - wind * 0.7;
     }
     position.needsUpdate = true;
-    this.rain.material.opacity = 0.62 * rain;
+    (this.rain.material as THREE.LineBasicMaterial).opacity = 0.62 * rain;
 
     return { hour, daylight, weather, rain, fog, wind };
   }
