@@ -513,6 +513,7 @@ export class GameWorld {
             pickupDistrict: offer.pickupDistrict,
             dropoffDistrict: offer.dropoffDistrict,
             distance: Math.round(offer.distance),
+            pickupDistance: Math.round(Math.hypot(offer.pickup.x - bike.x, offer.pickup.z - bike.z)),
             pay: offer.pay,
             expiresIn: Math.ceil(offer.expiresIn),
           }
