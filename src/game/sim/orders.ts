@@ -21,12 +21,22 @@ export interface ActiveOrder extends Omit<Offer, 'expiresIn'> {
 }
 
 export const OFFER_LIFETIME = 20;
-const MIN_TRIP_STRAIGHT = 85;
-const MAX_TRIP_STRAIGHT = 175;
-const LONG_TRIP_CHANCE = 0.2;
-const LONG_TRIP_MIN = 180;
-const LONG_TRIP_MAX = 300;
-const MAX_PICKUP_APPROACH = 220;
+// Weighted distance bands keep jobs varied: very short and very long trips
+// are occasional, while medium-distance work remains the everyday norm.
+const PICKUP_BANDS = [
+  { min: 0, max: 90, weight: 10 },
+  { min: 90, max: 220, weight: 20 },
+  { min: 220, max: 450, weight: 40 },
+  { min: 450, max: 750, weight: 20 },
+  { min: 750, max: 1100, weight: 10 },
+] as const;
+const DELIVERY_BANDS = [
+  { min: 55, max: 140, weight: 10 },
+  { min: 140, max: 280, weight: 20 },
+  { min: 280, max: 500, weight: 40 },
+  { min: 500, max: 760, weight: 20 },
+  { min: 760, max: 1050, weight: 10 },
+] as const;
 const ARRIVAL_RADIUS = 9;
 const STOP_SPEED = 4;
 
@@ -47,6 +57,16 @@ export function createOfferGenerator(blocks: readonly Block[], venues: readonly 
   };
 }
 
+function weightedBand<T extends { weight: number }>(bands: readonly T[], rand: Random): T {
+  const total = bands.reduce((sum, band) => sum + band.weight, 0);
+  let ticket = rand() * total;
+  for (const band of bands) {
+    ticket -= band.weight;
+    if (ticket < 0) return band;
+  }
+  return bands[bands.length - 1];
+}
+
 function randomPointOnBlock(block: Block, rand: Random): Vec2 {
   const side = Math.floor(rand() * 4);
   if (side === 0) return { x: block.minX - 1.5, z: range(block.minZ, block.maxZ, rand) };
@@ -62,26 +82,29 @@ function createOffer(
   origin: Vec2,
   recentRestaurants: readonly string[],
 ): Offer {
-  const rankedVenues = [...venues].sort((a, b) => Math.hypot(a.x - origin.x, a.z - origin.z) - Math.hypot(b.x - origin.x, b.z - origin.z));
-  const nearbyVenues = rankedVenues.filter((venue) => Math.hypot(venue.x - origin.x, venue.z - origin.z) <= MAX_PICKUP_APPROACH);
-  const candidates = nearbyVenues.length ? nearbyVenues : rankedVenues.slice(0, 8);
+  const pickupBand = weightedBand(PICKUP_BANDS, rand);
+  const pickupCandidates = venues.filter((venue) => {
+    const distance = Math.hypot(venue.x - origin.x, venue.z - origin.z);
+    return distance >= pickupBand.min && distance < pickupBand.max;
+  });
+  const fallbackVenues = [...venues].sort((a, b) => Math.hypot(a.x - origin.x, a.z - origin.z) - Math.hypot(b.x - origin.x, b.z - origin.z)).slice(0, 12);
+  const candidates = pickupCandidates.length ? pickupCandidates : fallbackVenues;
   const freshCandidates = candidates.filter((venue) => !recentRestaurants.includes(venue.name));
   // Prefer a restaurant not used in the last three offers, but never block
   // offer generation if a small city has too few distinct venues.
   const venue = pick(freshCandidates.length ? freshCandidates : candidates, rand);
   const pickup = { x: venue.x, z: venue.z };
-  const longTrip = rand() < LONG_TRIP_CHANCE;
+  const deliveryBand = weightedBand(DELIVERY_BANDS, rand);
   const nearby = blocks.filter((block) => {
     const straight = Math.hypot((block.minX + block.maxX) / 2 - pickup.x, (block.minZ + block.maxZ) / 2 - pickup.z);
-    return longTrip
-      ? straight >= LONG_TRIP_MIN && straight <= LONG_TRIP_MAX
-      : straight >= MIN_TRIP_STRAIGHT && straight <= MAX_TRIP_STRAIGHT;
+    return straight >= deliveryBand.min && straight < deliveryBand.max;
   });
   const dropBlock = pick(nearby.length > 0 ? nearby : blocks, rand);
   const dropoff = randomPointOnBlock(dropBlock, rand);
   const straight = Math.hypot(dropoff.x - pickup.x, dropoff.z - pickup.z);
   const distance = straight * 1.12;
   const approachDistance = Math.hypot(pickup.x - origin.x, pickup.z - origin.z);
+  const totalDistance = approachDistance + distance;
   return {
     restaurant: venue.name,
     pickup,
@@ -89,10 +112,10 @@ function createOffer(
     pickupDistrict: venue.district,
     dropoffDistrict: dropBlock.district,
     distance,
-    pay: Math.round(450 + distance * (longTrip ? 1.25 : 0.95) + approachDistance * 0.4),
-    // A tighter average-speed budget keeps nearby jobs brisk while longer jobs
-    // receive a proportionally larger window and a noticeably higher payout.
-    timeLimit: Math.max(65, Math.min(190, Math.round((approachDistance + distance) / (longTrip ? 6.2 : 7.2) + 38))),
+    pay: Math.round(450 + distance * (distance >= 500 ? 1.25 : 0.95) + approachDistance * 0.4),
+    // Shorter deadlines make every delivery a real challenge; longer routes
+    // still receive extra time, but never the old three-minute window.
+    timeLimit: Math.max(42, Math.min(125, Math.round(totalDistance / 9 + 26))),
     expiresIn: OFFER_LIFETIME,
   };
 }
