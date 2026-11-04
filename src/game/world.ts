@@ -311,7 +311,7 @@ export class GameWorld {
     const hits = resolveBikeContacts(this.bike, this.options.layout.boxes, this.traffic, this.options.layout.cones);
     for (const hit of hits) this.handleHit(hit);
 
-    updateTraffic(this.traffic, this.time, dt);
+    updateTraffic(this.traffic, this.time, dt, { x: this.bike.x, z: this.bike.z });
     this.updateOrders(dt);
 
     if (this.health <= 0) this.recoverBike();
@@ -643,17 +643,18 @@ export class GameWorld {
     this.traffic.pedestrians.forEach((ped, index) => {
       const mesh = this.pedMeshes[index];
       const stride = Math.sin(ped.phase);
+      const walkAmount = 1 - ped.yieldFactor;
       mesh.group.position.set(
         ped.lane.axis === 'x' ? ped.pos : ped.lane.fixed,
-        Math.abs(stride) * 0.035,
+        Math.abs(stride) * 0.035 * walkAmount,
         ped.lane.axis === 'x' ? ped.lane.fixed : ped.pos,
       );
       mesh.group.rotation.y = ped.lane.axis === 'x' ? (ped.lane.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : ped.lane.dir > 0 ? 0 : Math.PI;
       // A restrained body counter-sway and vertical bounce make the walk cycle
       // read more naturally without adding meshes, materials, or draw calls.
-      mesh.group.rotation.z = Math.cos(ped.phase * 2) * 0.018;
+      mesh.group.rotation.z = Math.cos(ped.phase * 2) * 0.018 * walkAmount;
       mesh.group.visible = isNear(mesh.group.position.x, mesh.group.position.z, bike.x, bike.z);
-      const swing = stride * 0.5;
+      const swing = stride * 0.5 * walkAmount;
       mesh.legs[0].rotation.x = swing;
       mesh.legs[1].rotation.x = -swing;
       mesh.arms[0].rotation.x = -swing * 0.8;
