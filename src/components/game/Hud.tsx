@@ -1,4 +1,4 @@
-import { Bike, Gauge, Heart, Pause, Timer, Volume2, VolumeX } from 'lucide-react';
+import { Bike, Cloud, CloudFog, CloudRain, Gauge, Heart, Moon, Pause, Sun, Timer, Volume2, VolumeX, Wind } from 'lucide-react';
 import { EarningsCard, OfferCard, OrderCard, Toasts, TurnCard, GLASS_CARD } from '@/components/game/HudCards';
 import type { GameEvent, HudSnapshot } from '@/game/types';
 
@@ -23,6 +23,22 @@ const LINK_DOT: Record<HudSnapshot['link'], string> = {
   offline: 'bg-slate-400',
 };
 
+const WEATHER_LABEL: Record<HudSnapshot['weather'], string> = {
+  clear: 'صحو',
+  cloudy: 'غائم',
+  rain: 'ممطر',
+  fog: 'ضباب',
+  wind: 'رياح',
+};
+
+const WEATHER_ICON = {
+  clear: Sun,
+  cloudy: Cloud,
+  rain: CloudRain,
+  fog: CloudFog,
+  wind: Wind,
+} as const;
+
 const LINK_LABEL: Record<HudSnapshot['link'], string> = {
   connecting: 'جاري الاتصال',
   live: 'متصل',
@@ -37,6 +53,8 @@ function formatClock(totalSeconds: number): string {
 
 export function Hud({ hud, toasts, onAccept, onDecline, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
   const lowHealth = hud.health < 35;
+  const WeatherIcon = WEATHER_ICON[hud.weather];
+  const isNight = hud.gameHour < 6 || hud.gameHour >= 19;
   return (
     <div className="pointer-events-none absolute inset-0 z-10 flex flex-col gap-1.5 p-2 sm:gap-3 sm:p-5">
       <div className="flex items-center justify-between gap-3">
@@ -84,6 +102,16 @@ export function Hud({ hud, toasts, onAccept, onDecline, onPause, onDismissToast,
 
       <div className="mt-auto flex justify-center">
         <div className={`${GLASS_CARD} flex items-center gap-2 px-3 py-1.5 text-xs font-bold tabular-nums sm:gap-5 sm:px-6 sm:py-2 sm:text-sm`}>
+          <span className="flex items-center gap-1.5">
+            {isNight ? <Moon className="h-4 w-4 text-indigo-500" /> : <Sun className="h-4 w-4 text-amber-500" />}
+            {String(hud.gameHour).padStart(2, '0')}:00
+          </span>
+          <span className="h-4 w-px bg-slate-300" />
+          <span className="flex items-center gap-1.5">
+            <WeatherIcon className="h-4 w-4 text-sky-600" />
+            {WEATHER_LABEL[hud.weather]}
+          </span>
+          <span className="h-4 w-px bg-slate-300" />
           <span className="flex items-center gap-1.5">
             <Gauge className="h-4 w-4 text-slate-500" />
             {hud.speedKmh} كم/س
