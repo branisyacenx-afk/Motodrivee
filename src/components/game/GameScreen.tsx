@@ -124,7 +124,11 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.repeat) return;
+      if (event.repeat || event.defaultPrevented) return;
+      const target = event.target;
+      const isInteractive = target instanceof HTMLElement &&
+        (target.isContentEditable || target.matches('input, textarea, select, button, a, [role="button"], [role="textbox"]'));
+      if (isInteractive) return;
       if (event.key === 'Enter') worldRef.current?.acceptOffer();
       else if (event.key === 'n' || event.key === 'N') worldRef.current?.declineOffer();
       else if (event.key === 'p' || event.key === 'P' || event.key === 'Escape') setPaused((value) => !value);

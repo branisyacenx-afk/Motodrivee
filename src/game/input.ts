@@ -29,8 +29,14 @@ export function createInputController(): InputController {
     touch.has(control) || KEY_BINDINGS[control].some((code) => keys.has(code));
 
   const onKeyDown = (event: KeyboardEvent) => {
-    if (GAME_KEYS.has(event.code)) event.preventDefault();
-    keys.add(event.code);
+    const target = event.target;
+    const isInteractive = target instanceof HTMLElement &&
+      (target.isContentEditable || target.matches('input, textarea, select, button, a, [role="button"], [role="textbox"]'));
+    if (isInteractive || event.defaultPrevented) return;
+    if (GAME_KEYS.has(event.code)) {
+      event.preventDefault();
+      keys.add(event.code);
+    }
   };
   const onKeyUp = (event: KeyboardEvent) => {
     keys.delete(event.code);
