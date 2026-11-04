@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ALGIERS_DISTRICTS, CITY } from '@/game/config';
 import type { HudSnapshot, Layout } from '@/game/types';
+import { buildRoadRoute } from '@/game/city/route';
 import { X, Navigation } from 'lucide-react';
 
 interface AlgiersMapProps {
@@ -44,13 +45,21 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       ctx.fillText(name, (left + right) / 2, 25);
     });
 
+    // Draw city blocks, parks and their boundaries as distinct map features.
     ctx.fillStyle = '#bcb8ad';
     layout.blocks.forEach((block) => {
       ctx.fillRect(x(block.minX), y(block.maxZ), (block.maxX - block.minX) * scale, (block.maxZ - block.minZ) * scale);
     });
-    ctx.fillStyle = '#9dbd8b';
+    ctx.strokeStyle = 'rgba(74, 78, 73, 0.42)';
+    ctx.lineWidth = 1;
+    layout.blocks.forEach((block) => {
+      ctx.strokeRect(x(block.minX), y(block.maxZ), (block.maxX - block.minX) * scale, (block.maxZ - block.minZ) * scale);
+    });
+    ctx.fillStyle = '#8fba83';
     layout.zones.forEach((zone) => {
       ctx.fillRect(x(zone.rect.minX), y(zone.rect.maxZ), (zone.rect.maxX - zone.rect.minX) * scale, (zone.rect.maxZ - zone.rect.minZ) * scale);
+      ctx.strokeStyle = 'rgba(53, 111, 66, 0.7)';
+      ctx.strokeRect(x(zone.rect.minX), y(zone.rect.maxZ), (zone.rect.maxX - zone.rect.minX) * scale, (zone.rect.maxZ - zone.rect.minZ) * scale);
     });
 
     // High-contrast asphalt bands stay legible on narrow mobile screens.
@@ -88,16 +97,28 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
     if (state.target) {
       const tx = x(state.target.x), ty = y(state.target.z);
       const bx = x(state.x), by = y(state.z);
-      const bendX = tx;
+      const roadPoints = buildRoadRoute({ x: state.x, z: state.z }, state.target);
       ctx.save();
-      ctx.strokeStyle = '#1687e8';
+      // Follow the connected street grid rather than drawing a straight
+      // diagonal or arbitrary L across building blocks.
+      ctx.strokeStyle = 'rgba(8, 120, 209, 0.22)';
+      ctx.lineWidth = 11;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      roadPoints.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(x(point.x), y(point.z));
+        else ctx.lineTo(x(point.x), y(point.z));
+      });
+      ctx.stroke();
+      ctx.strokeStyle = '#0878d1';
       ctx.lineWidth = 5;
       ctx.setLineDash([12, 8]);
-      ctx.lineJoin = 'round';
       ctx.beginPath();
-      ctx.moveTo(bx, by);
-      ctx.lineTo(bendX, by);
-      ctx.lineTo(tx, ty);
+      roadPoints.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(x(point.x), y(point.z));
+        else ctx.lineTo(x(point.x), y(point.z));
+      });
       ctx.stroke();
       ctx.setLineDash([]);
       const segments = Math.max(2, Math.floor(Math.hypot(tx - bx, ty - by) / 42));
@@ -119,6 +140,32 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       ctx.fillStyle = '#e33b42'; ctx.fill();
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
     }
+
+    // Restaurant / delivery points are shown as colored map pins.
+    layout.venues.forEach((venue) => {
+      const vx = x(venue.x), vy = y(venue.z);
+      if (vx < PAD || vx > SIZE - PAD || vy < PAD || vy > SIZE - PAD) return;
+      ctx.beginPath();
+      ctx.arc(vx, vy, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = venue.color;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#fff';
+      ctx.stroke();
+    });
+
+    // Subtle north indicator helps orient the full-screen map.
+    ctx.save();
+    ctx.translate(SIZE - 38, PAD + 22);
+    ctx.fillStyle = '#344b43';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('N', 0, -10);
+    ctx.beginPath();
+    ctx.moveTo(0, -3); ctx.lineTo(8, 13); ctx.lineTo(0, 9); ctx.lineTo(-8, 13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
 
     const bx = x(state.x), by = y(state.z);
     ctx.save();
