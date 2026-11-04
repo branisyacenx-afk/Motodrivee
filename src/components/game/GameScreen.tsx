@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Map as MapIcon } from 'lucide-react';
 import { Hud, type ToastItem } from '@/components/game/Hud';
 import { Minimap } from '@/components/game/Minimap';
 import { AlgiersMap } from '@/components/game/AlgiersMap';
@@ -158,18 +157,6 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
         </div>
       )}
 
-      {hud && !paused && isTouch && (
-        <button
-          type="button"
-          onClick={() => setMapOpen(true)}
-          aria-label="فتح خريطة المدينة"
-          className="pointer-events-auto absolute left-4 top-20 z-20 flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-white/80 bg-slate-950/90 text-[10px] font-extrabold text-white shadow-xl backdrop-blur-md transition active:scale-95"
-        >
-          <MapIcon className="h-6 w-6" />
-          الخريطة
-        </button>
-      )}
-
       {hud && (
         <>
           <Hud
@@ -182,12 +169,14 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
             muted={muted}
             onToggleMute={() => setMuted((value) => !value)}
           />
-          {!isTouch && !mapOpen && (
+          {!mapOpen && !paused && (
             <Minimap
               layout={layout}
               state={hud.minimap}
               onOpen={() => setMapOpen(true)}
-              className="absolute bottom-20 left-6 z-20 w-44 md:w-52"
+              className={isTouch
+                ? 'absolute left-4 top-20 z-20 w-32'
+                : 'absolute bottom-20 left-6 z-20 w-44 md:w-52'}
             />
           )}
         </>
