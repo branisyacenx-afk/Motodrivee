@@ -765,6 +765,7 @@ function buildDistrictRoadSigns(): THREE.Group {
   const districts = ['باب الوادي', 'حسين داي', 'القبة', 'الحراش', 'بئر مراد رايس', 'حيدرة'];
   const postGeometry = new THREE.BoxGeometry(0.18, 4.2, 0.18);
   const boardGeometry = new THREE.BoxGeometry(0.28, 1.35, 5.4);
+  const boardMaterial = new THREE.MeshStandardMaterial({ color: '#174c43', roughness: 0.78 });
   const postMaterial = new THREE.MeshStandardMaterial({ color: '#59636a', metalness: 0.45, roughness: 0.65 });
   const posts = new THREE.InstancedMesh(postGeometry, postMaterial, districts.length * 2);
   const dummy = new THREE.Object3D();
@@ -797,13 +798,17 @@ function buildDistrictRoadSigns(): THREE.Group {
       context.font = 'bold 48px sans-serif';
       context.fillText(name, canvas.width / 2, canvas.height / 2);
     }
+    const board = new THREE.Mesh(boardGeometry, boardMaterial);
+    board.position.set(x, 3.05, roadSideZ);
+    board.castShadow = true;
+    group.add(board);
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     const face = new THREE.Mesh(
       new THREE.PlaneGeometry(5.15, 1.15),
       new THREE.MeshStandardMaterial({ map: texture, roughness: 0.72, side: THREE.DoubleSide }),
     );
-    face.position.set(x + 0.17, 3.05, roadSideZ);
+    face.position.set(x + 0.151, 3.05, roadSideZ);
     face.rotation.y = Math.PI / 2;
     face.castShadow = true;
     group.add(face);
