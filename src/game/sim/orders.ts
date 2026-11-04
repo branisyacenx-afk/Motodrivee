@@ -23,6 +23,9 @@ export interface ActiveOrder extends Omit<Offer, 'expiresIn'> {
 export const OFFER_LIFETIME = 20;
 const MIN_TRIP_STRAIGHT = 85;
 const MAX_TRIP_STRAIGHT = 175;
+const LONG_TRIP_CHANCE = 0.2;
+const LONG_TRIP_MIN = 180;
+const LONG_TRIP_MAX = 300;
 const MAX_PICKUP_APPROACH = 220;
 const ARRIVAL_RADIUS = 9;
 const STOP_SPEED = 4;
@@ -49,9 +52,12 @@ function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: R
   const nearbyVenues = rankedVenues.filter((venue) => Math.hypot(venue.x - origin.x, venue.z - origin.z) <= MAX_PICKUP_APPROACH);
   const venue = pick((nearbyVenues.length ? nearbyVenues : rankedVenues.slice(0, 8)), rand);
   const pickup = { x: venue.x, z: venue.z };
+  const longTrip = rand() < LONG_TRIP_CHANCE;
   const nearby = blocks.filter((block) => {
     const straight = Math.hypot((block.minX + block.maxX) / 2 - pickup.x, (block.minZ + block.maxZ) / 2 - pickup.z);
-    return straight >= MIN_TRIP_STRAIGHT && straight <= MAX_TRIP_STRAIGHT;
+    return longTrip
+      ? straight >= LONG_TRIP_MIN && straight <= LONG_TRIP_MAX
+      : straight >= MIN_TRIP_STRAIGHT && straight <= MAX_TRIP_STRAIGHT;
   });
   const dropBlock = pick(nearby.length > 0 ? nearby : blocks, rand);
   const dropoff = randomPointOnBlock(dropBlock, rand);
@@ -65,8 +71,10 @@ function createOffer(blocks: readonly Block[], venues: readonly Venue[], rand: R
     pickupDistrict: venue.district,
     dropoffDistrict: dropBlock.district,
     distance,
-    pay: Math.round(450 + distance * 0.9 + approachDistance * 0.35),
-    timeLimit: Math.max(90, Math.min(210, Math.round((approachDistance + distance) / 5 + 55))),
+    pay: Math.round(450 + distance * (longTrip ? 1.25 : 0.95) + approachDistance * 0.4),
+    // A tighter average-speed budget keeps nearby jobs brisk while longer jobs
+    // receive a proportionally larger window and a noticeably higher payout.
+    timeLimit: Math.max(65, Math.min(190, Math.round((approachDistance + distance) / (longTrip ? 6.2 : 7.2) + 38))),
     expiresIn: OFFER_LIFETIME,
   };
 }
