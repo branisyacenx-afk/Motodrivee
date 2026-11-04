@@ -182,10 +182,8 @@ export function createActorAssets(): ActorAssets {
   const chrome = new THREE.MeshStandardMaterial({ color: '#c9ced6', roughness: 0.28, metalness: 0.85 });
   const black = new THREE.MeshStandardMaterial({ color: '#1b1e22', roughness: 0.6 });
   const trimMat = new THREE.MeshStandardMaterial({ color: '#1a1c20', roughness: 0.7 });
-  const jacket = new THREE.MeshStandardMaterial({ color: '#f3f3f0', roughness: 0.7 });
   const pants = new THREE.MeshStandardMaterial({ color: '#23272e', roughness: 0.8 });
   const boot = new THREE.MeshStandardMaterial({ color: '#16130f', roughness: 0.55 });
-  const helmet = new THREE.MeshStandardMaterial({ color: '#f7f7f5', roughness: 0.3 });
   const visor = new THREE.MeshStandardMaterial({ color: '#0d1620', roughness: 0.1, metalness: 0.4 });
   const brake = new THREE.MeshBasicMaterial({ color: '#ff3b30', toneMapped: false });
   const headlight = new THREE.MeshBasicMaterial({ color: '#fff1c4', toneMapped: false });
@@ -238,7 +236,7 @@ export function createActorAssets(): ActorAssets {
         limb([-0.2, 1.38, 0.0], [-0.2, 1.08, 0.56], 0.07),
         limb([0.2, 1.38, 0.0], [0.2, 1.08, 0.56], 0.07),
       ]);
-      const torsoMesh = new THREE.Mesh(riderTorso, jacket);
+      const torsoMesh = new THREE.Mesh(riderTorso, riderJacketMat);
       torsoMesh.scale.x = rider.gender === 'female' ? 0.88 : 1.08;
       group.add(torsoMesh);
       group.add(new THREE.Mesh(merge([
