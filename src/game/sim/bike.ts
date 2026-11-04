@@ -21,11 +21,14 @@ export function createBike(x: number, z: number, heading: number): BikeState {
   return { x, z, heading, speed: 0, steering: 0, wheelSpin: 0 };
 }
 
-export function stepBikeMotion(bike: BikeState, input: BikeInput, stats: BikeStats, dt: number): void {
+export function stepBikeMotion(bike: BikeState, input: BikeInput, stats: BikeStats, dt: number, grip = 1): void {
   const { maxSpeed } = stats;
-  const accel = input.throttle * stats.accel * (1 - Math.min(1, bike.speed / maxSpeed) ** 2);
+  // Keep the default dry-road behavior unchanged while allowing weather to
+  // reduce acceleration, braking, and cornering traction in a controlled way.
+  const traction = Math.max(0.78, Math.min(1, grip));
+  const accel = input.throttle * stats.accel * traction * (1 - Math.min(1, bike.speed / maxSpeed) ** 2);
   const drag = 0.4 + bike.speed * 0.02;
-  const braking = input.brake * BASE_BIKE.brake;
+  const braking = input.brake * BASE_BIKE.brake * traction;
 
   bike.speed = Math.max(0, Math.min(maxSpeed, bike.speed + (accel - drag - braking) * dt));
 
@@ -38,7 +41,7 @@ export function stepBikeMotion(bike: BikeState, input: BikeInput, stats: BikeSta
   bike.steering += (targetSteering - bike.steering) * steeringBlend;
 
   const steerFactor = Math.min(1, bike.speed / 6) * (1 - 0.35 * Math.min(1, bike.speed / maxSpeed));
-  bike.heading += bike.steering * stats.turnRate * steerFactor * dt;
+  bike.heading += bike.steering * stats.turnRate * traction * steerFactor * dt;
 
   bike.x += Math.sin(bike.heading) * bike.speed * dt;
   bike.z += Math.cos(bike.heading) * bike.speed * dt;

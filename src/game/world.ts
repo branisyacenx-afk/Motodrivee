@@ -313,7 +313,9 @@ export class GameWorld {
       this.bike.speed = 0;
       this.updateInteraction(dt);
     } else {
-      stepBikeMotion(this.bike, this.lastInput, this.options.stats, dt);
+      // Rain reduces tire grip, slightly extending braking distance and softening cornering response.
+      const roadGrip = Math.max(0.78, 1 - this.environmentState.rain * 0.22);
+      stepBikeMotion(this.bike, this.lastInput, this.options.stats, dt, roadGrip);
     }
     this.sound.setEngine(Math.min(1, Math.abs(this.bike.speed) / this.options.stats.maxSpeed));
 
