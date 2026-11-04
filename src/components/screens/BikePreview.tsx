@@ -73,6 +73,58 @@ export function BikePreview({ paint, vehicleId, vehicleName }: BikePreviewProps)
     tank.scale.set(0.72, 0.72, 1.15);
     tank.position.set(0, 1.22, 0.12);
     bike.add(tank);
+    const sportIds = ['sport', 'racer220', 'falcon320', 'phantom500', 'vortex600', 'blaze650', 'apex750', 'ultimate1000'];
+    const touringIds = ['beast', 'touring250', 'titan550'];
+    const adventureIds = ['desert300', 'rally450'];
+    const cruiserIds = ['shadow350', 'nighthawk700'];
+    if (sportIds.includes(vehicleId)) {
+      const fairing = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.5, 0.48), body);
+      fairing.position.set(0, 1.02, 0.42);
+      fairing.rotation.x = -0.18;
+      bike.add(fairing);
+      const screen = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.3, 0.05), dark);
+      screen.position.set(0, 1.43, 0.65);
+      screen.rotation.x = -0.25;
+      bike.add(screen);
+    } else if (touringIds.includes(vehicleId)) {
+      for (const x of [-0.48, 0.48]) {
+        const pannier = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.5, 0.52), body);
+        pannier.position.set(x, 0.98, -0.78);
+        bike.add(pannier);
+      }
+      const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.48, 0.055), dark);
+      windshield.position.set(0, 1.48, 0.62);
+      windshield.rotation.x = -0.18;
+      bike.add(windshield);
+    } else if (adventureIds.includes(vehicleId)) {
+      const beak = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.16, 0.72), body);
+      beak.position.set(0, 0.94, 0.92);
+      bike.add(beak);
+      const windscreen = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.48, 0.055), dark);
+      windscreen.position.set(0, 1.52, 0.62);
+      windscreen.rotation.x = -0.12;
+      bike.add(windscreen);
+      for (const x of [-0.48, 0.48]) {
+        const guard = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.66), metal);
+        guard.position.set(x, 0.92, 0.6);
+        bike.add(guard);
+      }
+    } else if (cruiserIds.includes(vehicleId)) {
+      const longSeat = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.16, 1.1), dark);
+      longSeat.position.set(0, 1.26, -0.64);
+      bike.add(longSeat);
+      for (const x of [-0.48, 0.48]) {
+        const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.92, 12), metal);
+        exhaust.rotation.x = Math.PI / 2;
+        exhaust.position.set(x, 0.58, -0.48);
+        bike.add(exhaust);
+      }
+    } else {
+      const classicPanel = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), body);
+      classicPanel.scale.set(1.15, 0.65, 1.2);
+      classicPanel.position.set(0, 1.02, 0.36);
+      bike.add(classicPanel);
+    }
     const saddle = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.13, 0.78), dark);
     saddle.position.set(0, 1.29, -0.57);
     bike.add(saddle);
