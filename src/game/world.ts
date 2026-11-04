@@ -16,7 +16,7 @@ import {
   type Offer,
 } from '@/game/sim/orders';
 import { createActorAssets, type BikeModel, type PedestrianModel } from '@/game/render/vehicleMeshes';
-import { buildCity, disposeCity, updateCityChunkVisibility } from '@/game/render/cityMeshes';
+import { buildCity, disposeCity, setCityRain, updateCityChunkVisibility } from '@/game/render/cityMeshes';
 import { buildZones } from '@/game/render/zoneMeshes';
 import { buildVenues } from '@/game/render/venueMeshes';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
@@ -648,6 +648,7 @@ export class GameWorld {
 
     const conditions = this.environment.update(this.time, bike.x, bike.z, dt);
     this.environmentState = conditions;
+    setCityRain(this.cityGroup, conditions.rain);
     const night = 1 - conditions.daylight;
     const twilight = 1 - Math.abs(conditions.daylight - 0.5) * 2;
     const sky = new THREE.Color('#86c5e8').lerp(this.duskSkyColor, THREE.MathUtils.clamp(twilight, 0, 1) * 0.72);
