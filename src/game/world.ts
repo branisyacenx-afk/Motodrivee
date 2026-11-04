@@ -80,6 +80,7 @@ export class GameWorld {
   private readonly sunsetLightColor = new THREE.Color('#ffb36b');
   private readonly bike: BikeState;
   private readonly bikeRig: BikeModel;
+  private readonly bikeBeam: THREE.SpotLight;
   private readonly interactionRider: PedestrianModel;
   private readonly interactionCustomer: PedestrianModel;
   private readonly handoffPackage: THREE.Mesh;
@@ -181,6 +182,10 @@ export class GameWorld {
     this.bike = createBike(spawnX, spawnZ, SPAWN_HEADING);
     this.bikeRig = assets.bike(options.paintHex, options.vehicleId);
     this.bikeRig.group.rotation.order = 'YXZ';
+    this.bikeBeam = new THREE.SpotLight('#fff0c2', 0, 92, Math.PI / 6, 0.48, 1.25);
+    this.bikeBeam.position.set(0, 1.0, 0.82);
+    this.bikeBeam.target.position.set(0, 0.1, 32);
+    this.bikeRig.group.add(this.bikeBeam, this.bikeBeam.target);
     this.scene.add(this.bikeRig.group);
     // Reuse the low-poly pedestrian rig for short, readable delivery cut-scenes.
     this.interactionRider = assets.pedestrian('#e8e2d5', '#b9825d');
@@ -546,6 +551,10 @@ export class GameWorld {
     this.bikeRig.group.visible = true;
     this.bikeRig.group.position.set(bike.x, 0, bike.z);
     this.bikeRig.group.rotation.y = bike.heading;
+    const bikeNightFactor = 1 - this.environmentState.daylight;
+    this.bikeRig.headlight.color.set('#514b3c').lerp(new THREE.Color('#fff1c4'), bikeNightFactor);
+    this.bikeRig.brakeLight.color.set(this.lastInput.brake > 0.05 ? '#ff493e' : '#701b18');
+    this.bikeBeam.intensity = bikeNightFactor * 32;
     if (this.interaction) {
       const sideX = Math.cos(bike.heading) * 1.8;
       const sideZ = -Math.sin(bike.heading) * 1.8;
