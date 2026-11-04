@@ -25,6 +25,7 @@ export interface Pedestrian {
   shirt: string;
   skin: string;
   phase: number;
+  isChild: boolean;
 }
 
 export interface Traffic {
@@ -67,7 +68,7 @@ export function createTraffic(layout: Layout): Traffic {
 
   const pedestrians: Pedestrian[] = [];
   for (const lane of layout.walkLanes) {
-    const count = 2;
+    const count = 3;
     const spacing = lane.length / count;
     const offset = rand() * spacing;
     for (let k = 0; k < count; k++) {
@@ -75,10 +76,11 @@ export function createTraffic(layout: Layout): Traffic {
       pedestrians.push({
         lane,
         pos: lane.min + ((offset + k * spacing + jitter + lane.length) % lane.length),
-        speed: range(1.1, 1.8, rand),
+        speed: rand() < 0.22 ? range(0.9, 1.35, rand) : range(1.1, 1.8, rand),
         shirt: WALK_COLORS[Math.floor(rand() * WALK_COLORS.length)],
         skin: SKIN_COLORS[Math.floor(rand() * SKIN_COLORS.length)],
         phase: rand() * Math.PI * 2,
+        isChild: rand() < 0.22,
       });
     }
   }
