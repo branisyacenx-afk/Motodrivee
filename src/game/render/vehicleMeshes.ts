@@ -257,9 +257,11 @@ export function createActorAssets(): ActorAssets {
       group.add(headlightMesh);
       const bikeBrakeLight = brake.clone();
       bikeBrakeLight.color.set('#701b18');
+      // Keep the rear brake lamps above the delivery box so the red glow
+      // never covers the branded rear face or its lettering.
       const brakeMesh = new THREE.Mesh(merge([
-        box(0.2, 0.12, 0.07, -0.2, 1.1, -1.34),
-        box(0.2, 0.12, 0.07, 0.2, 1.1, -1.34),
+        box(0.18, 0.07, 0.045, -0.2, 1.39, -1.12),
+        box(0.18, 0.07, 0.045, 0.2, 1.39, -1.12),
       ]), bikeBrakeLight);
       brakeMesh.name = 'bike-brake-light';
       group.add(brakeMesh);
