@@ -154,7 +154,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
         </div>
       )}
 
-      {hud && !paused && (
+      {hud && !paused && isTouch && (
         <button
           type="button"
           onClick={() => setMapOpen(true)}
@@ -182,7 +182,8 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
             <Minimap
               layout={layout}
               state={hud.minimap}
-              className="pointer-events-none absolute bottom-20 left-6 z-10 w-44 md:w-56"
+              onOpen={() => setMapOpen(true)}
+              className="absolute bottom-20 left-6 z-20 w-44 md:w-52"
             />
           )}
         </>
