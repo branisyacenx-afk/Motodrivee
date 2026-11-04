@@ -112,7 +112,7 @@ function wrap(pos: number, lane: Lane): number {
   return pos;
 }
 
-export function updateTraffic(traffic: Traffic, t: number, dt: number, rider?: { x: number; z: number }): void {
+export function updateTraffic(traffic: Traffic, t: number, dt: number, rider?: { x: number; z: number; heading: number; speed: number }): void {
   // Read every vehicle from the same frame snapshot. Updating positions in
   // place while scanning made later cars react to a different traffic state.
   const carsByLane = new Map<Lane, Car[]>();
@@ -230,11 +230,22 @@ export function updateTraffic(traffic: Traffic, t: number, dt: number, rider?: {
     if (rider) {
       const pedX = ped.lane.axis === 'x' ? ped.pos : ped.lane.fixed;
       const pedZ = ped.lane.axis === 'x' ? ped.lane.fixed : ped.pos;
-      const distance = Math.hypot(rider.x - pedX, rider.z - pedZ);
-      // Ease into a full stop only when the rider is close; pedestrians resume
-      // smoothly after the motorcycle has passed instead of snapping to speed.
-      const proximity = Math.max(0, Math.min(1, (6 - distance) / 3.6));
-      targetYield = proximity * proximity * (3 - 2 * proximity);
+      const dx = pedX - rider.x;
+      const dz = pedZ - rider.z;
+      const forwardX = Math.sin(rider.heading);
+      const forwardZ = Math.cos(rider.heading);
+      const forwardDistance = dx * forwardX + dz * forwardZ;
+      const lateralDistance = Math.abs(dx * forwardZ - dz * forwardX);
+
+      // Yield only to a moving motorcycle approaching from ahead and within
+      // its path corridor. Nearby pedestrians behind or beside the rider keep
+      // walking instead of freezing due to proximity alone.
+      if (rider.speed > 1.2 && forwardDistance > 0 && forwardDistance < 6 && lateralDistance < 3.5) {
+        const forwardProximity = Math.max(0, Math.min(1, (6 - forwardDistance) / 3.6));
+        const lateralProximity = Math.max(0, Math.min(1, (3.5 - lateralDistance) / 2));
+        const proximity = forwardProximity * lateralProximity;
+        targetYield = proximity * proximity * (3 - 2 * proximity);
+      }
     }
     const yieldBlend = 1 - Math.exp(-5.5 * dt);
     ped.yieldFactor += (targetYield - ped.yieldFactor) * yieldBlend;
