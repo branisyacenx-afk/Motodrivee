@@ -89,8 +89,8 @@ export class GameWorld {
   private readonly trafficSignals: TrafficSignals;
   private readonly environment: DynamicEnvironment;
   private readonly carMeshes: THREE.Group[] = [];
-  private readonly carBrakeLights: THREE.MeshStandardMaterial[] = [];
-  private readonly carHeadlights: THREE.MeshStandardMaterial[] = [];
+  private readonly carBrakeLights: THREE.MeshBasicMaterial[] = [];
+  private readonly carHeadlights: THREE.MeshBasicMaterial[] = [];
   private readonly pedMeshes: PedestrianModel[] = [];
   private readonly venueStalls: THREE.Object3D[];
   private readonly cityGroup: THREE.Group;
@@ -198,16 +198,16 @@ export class GameWorld {
     for (const car of this.traffic.cars) {
       const mesh = assets.car(car.color);
       const headlights = mesh.getObjectByName('headlights');
-      if (headlights instanceof THREE.Mesh && headlights.material instanceof THREE.MeshStandardMaterial) {
+      if (headlights instanceof THREE.Mesh && headlights.material instanceof THREE.MeshBasicMaterial) {
         this.carHeadlights.push(headlights.material);
       } else {
-        this.carHeadlights.push(new THREE.MeshStandardMaterial({ color: '#fff6dc', emissive: '#fff1c4' }));
+        this.carHeadlights.push(new THREE.MeshBasicMaterial({ color: '#514b3c', toneMapped: false }));
       }
       const brakeLights = mesh.getObjectByName('brake-lights');
-      if (brakeLights instanceof THREE.Mesh && brakeLights.material instanceof THREE.MeshStandardMaterial) {
+      if (brakeLights instanceof THREE.Mesh && brakeLights.material instanceof THREE.MeshBasicMaterial) {
         this.carBrakeLights.push(brakeLights.material);
       } else {
-        this.carBrakeLights.push(new THREE.MeshStandardMaterial({ color: '#ff3b30', emissive: '#7a0c06' }));
+        this.carBrakeLights.push(new THREE.MeshBasicMaterial({ color: '#701b18', toneMapped: false }));
       }
       this.carMeshes.push(mesh);
       this.scene.add(mesh);
@@ -662,9 +662,9 @@ export class GameWorld {
       mesh.rotation.y = car.lane.axis === 'x' ? (car.lane.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : car.lane.dir > 0 ? 0 : Math.PI;
       // Headlamps fade in with dusk; emissive meshes avoid extra point-light draw cost.
       const nightFactor = 1 - conditions.daylight;
-      this.carHeadlights[index].emissiveIntensity = 0.08 + nightFactor * 3.2;
+      this.carHeadlights[index].color.set('#514b3c').lerp(new THREE.Color('#fff1c4'), nightFactor);
       // Rear lamps brighten only while the AI car is slowing for a queue or signal.
-      this.carBrakeLights[index].emissiveIntensity = car.speed < car.cruise - 0.35 ? 2.4 : 0.35;
+      this.carBrakeLights[index].color.set(car.speed < car.cruise - 0.35 ? '#ff493e' : '#701b18');
       mesh.visible = isNear(mesh.position.x, mesh.position.z, bike.x, bike.z);
     });
 
