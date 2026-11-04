@@ -131,7 +131,7 @@ export function OfferCard({ offer, onAccept, onDecline }: OfferCardProps) {
           <p className="text-[11px] font-bold text-brand-600">طلبية جديدة</p>
           <p className="truncate text-base font-extrabold leading-tight">{offer.restaurant}</p>
           <p className="mt-0.5 text-xs text-slate-500">
-            من {offer.pickupDistrict} إلى {offer.dropoffDistrict} · {formatDistance(offer.distance)}
+            من {offer.pickupDistrict} إلى {offer.dropoffDistrict} · {formatDistance(offer.pickupDistance)} للمطعم · {formatDistance(offer.distance)} للزبون
           </p>
         </div>
         <div className="shrink-0 text-end">
