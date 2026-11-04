@@ -77,7 +77,6 @@ export class GameWorld {
   private readonly sun: THREE.DirectionalLight;
   private readonly ambient: THREE.HemisphereLight;
   private readonly duskSkyColor = new THREE.Color('#e9a16f');
-  private readonly duskFogColor = new THREE.Color('#d8a17f');
   private readonly sunsetLightColor = new THREE.Color('#ffb36b');
   private readonly bike: BikeState;
   private readonly bikeRig: BikeModel;
