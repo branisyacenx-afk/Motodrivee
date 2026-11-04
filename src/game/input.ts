@@ -30,9 +30,9 @@ export function createInputController(): InputController {
 
   const onKeyDown = (event: KeyboardEvent) => {
     const target = event.target;
-    const isEditing = target instanceof HTMLElement &&
-      (target.isContentEditable || target.matches('input, textarea, select, [role="textbox"]'));
-    if (isEditing || event.defaultPrevented) return;
+    const isInteractive = target instanceof HTMLElement &&
+      (target.isContentEditable || target.matches('input, textarea, select, button, a, [role="button"], [role="textbox"]'));
+    if (isInteractive || event.defaultPrevented) return;
     if (GAME_KEYS.has(event.code)) {
       event.preventDefault();
       keys.add(event.code);
