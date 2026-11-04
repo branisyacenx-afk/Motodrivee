@@ -22,7 +22,7 @@ import { buildVenues } from '@/game/render/venueMeshes';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
 import { createRemoteRiders, type RemoteRiders } from '@/game/render/remoteRiders';
 import { TrafficSignals } from '@/game/render/trafficSignals';
-import { DynamicEnvironment } from '@/game/render/dynamicEnvironment';
+import { DynamicEnvironment, type EnvironmentState } from '@/game/render/dynamicEnvironment';
 import type { SharedCity } from '@/lib/sharedCity';
 import { createSoundBoard, type Cue, type SoundBoard } from '@/game/audio';
 import type { GameEvent, HudSnapshot, Layout, ShiftSummary, Vec2 } from '@/game/types';
@@ -88,6 +88,7 @@ export class GameWorld {
   private readonly traffic: Traffic;
   private readonly trafficSignals: TrafficSignals;
   private readonly environment: DynamicEnvironment;
+  private environmentState: EnvironmentState = { hour: 6, daylight: 0, weather: 'clear', rain: 0, fog: 0, wind: 0 };
   private readonly carMeshes: THREE.Group[] = [];
   private readonly carBrakeLights: THREE.MeshBasicMaterial[] = [];
   private readonly carHeadlights: THREE.MeshBasicMaterial[] = [];
@@ -396,6 +397,8 @@ export class GameWorld {
     this.interaction = null;
     this.interactionRider.group.visible = false;
     this.interactionCustomer.group.visible = false;
+    this.interactionRider.arms.forEach((arm) => arm.rotation.set(0, 0, 0));
+    this.interactionCustomer.arms.forEach((arm) => arm.rotation.set(0, 0, 0));
     this.handoffPackage.visible = false;
     this.bikeRig.deliveryLid.rotation.x = 0;
     if (interaction.kind === 'dropoff') this.completeDelivery(interaction.order);
@@ -469,6 +472,8 @@ export class GameWorld {
 
     return {
       speedKmh: Math.round(bike.speed * 3.6),
+      gameHour: Math.floor(this.environmentState.hour),
+      weather: this.environmentState.weather,
       shiftLeft: Math.ceil(this.shiftLeft),
       score: this.score,
       earnings: round2(this.earnings),
@@ -565,20 +570,24 @@ export class GameWorld {
       const handoffZ = customer.z + sideZ * 1.8;
       // Animate the parcel from the motorcycle to the rider's hand, then
       // from the rider's hand into the customer's hand during drop-off.
+      if (this.interaction.kind === 'pickup') {
+        this.interactionRider.arms[1].rotation.x = -0.95 * Math.sin(Math.min(1, progress * 2) * Math.PI);
+      } else {
+        const giveParcel = THREE.MathUtils.clamp((progress - 0.38) / 0.58, 0, 1);
+        this.interactionRider.arms[1].rotation.x = -0.9 * Math.sin(Math.min(1, progress / 0.55) * Math.PI);
+        this.interactionCustomer.arms[0].rotation.x = -0.8 * giveParcel;
+      }
       this.interactionRider.group.updateMatrixWorld(true);
       this.interactionCustomer.group.updateMatrixWorld(true);
       const riderHand = this.interactionRider.arms[1].localToWorld(new THREE.Vector3(0, -0.58, 0));
       const customerHand = this.interactionCustomer.arms[0].localToWorld(new THREE.Vector3(0, -0.58, 0));
       const bikeBox = new THREE.Vector3(boxX, 1.28, boxZ);
       if (this.interaction.kind === 'pickup') {
-        this.interactionRider.arms[1].rotation.x = -0.95 * Math.sin(Math.min(1, progress * 2) * Math.PI);
         this.handoffPackage.visible = progress < 0.9;
         this.handoffPackage.position.lerpVectors(riderHand, bikeBox, Math.min(1, progress / 0.72));
       } else {
         const takeParcel = THREE.MathUtils.clamp(progress / 0.38, 0, 1);
         const giveParcel = THREE.MathUtils.clamp((progress - 0.38) / 0.58, 0, 1);
-        this.interactionRider.arms[1].rotation.x = -0.9 * Math.sin(Math.min(1, progress / 0.55) * Math.PI);
-        this.interactionCustomer.arms[0].rotation.x = -0.8 * giveParcel;
         if (progress < 0.38) {
           this.handoffPackage.position.lerpVectors(bikeBox, riderHand, takeParcel);
         } else {
@@ -631,6 +640,7 @@ export class GameWorld {
     this.guide.update(this.time);
 
     const conditions = this.environment.update(this.time, bike.x, bike.z, dt);
+    this.environmentState = conditions;
     const night = 1 - conditions.daylight;
     const twilight = 1 - Math.abs(conditions.daylight - 0.5) * 2;
     const sky = new THREE.Color('#86c5e8').lerp(this.duskSkyColor, THREE.MathUtils.clamp(twilight, 0, 1) * 0.72);
