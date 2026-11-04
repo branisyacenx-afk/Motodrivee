@@ -680,33 +680,47 @@ export class GameWorld {
       stall.visible = isNear(venue.x, venue.z, bike.x, bike.z);
     });
 
+    const nightFactor = 1 - conditions.daylight;
+    const headlightBlend = THREE.MathUtils.smoothstep(nightFactor, 0.12, 0.48);
+    const nightHeadlightColor = new THREE.Color('#fff4d6');
     this.traffic.cars.forEach((car, index) => {
       const mesh = this.carMeshes[index];
-      mesh.position.set(car.lane.axis === 'x' ? car.pos : car.lane.fixed, 0, car.lane.axis === 'x' ? car.lane.fixed : car.pos);
+      const x = car.lane.axis === 'x' ? car.pos : car.lane.fixed;
+      const z = car.lane.axis === 'x' ? car.lane.fixed : car.pos;
+      // Off-screen traffic keeps moving in the simulation, but its Three.js
+      // transforms and lamp materials are left untouched until it re-enters range.
+      if (!isNear(x, z, bike.x, bike.z)) {
+        mesh.visible = false;
+        return;
+      }
+      mesh.visible = true;
+      mesh.position.set(x, 0, z);
       mesh.rotation.y = car.lane.axis === 'x' ? (car.lane.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : car.lane.dir > 0 ? 0 : Math.PI;
       // Headlamps fade in with dusk; emissive meshes avoid extra point-light draw cost.
-      const nightFactor = 1 - conditions.daylight;
-      this.carHeadlights[index].color.set('#514b3c').lerp(new THREE.Color('#fff4d6'), THREE.MathUtils.smoothstep(nightFactor, 0.12, 0.48));
+      this.carHeadlights[index].color.set('#514b3c').lerp(nightHeadlightColor, headlightBlend);
       // Rear lamps brighten only while the AI car is slowing for a queue or signal.
       const braking = car.speed < car.cruise - 0.35;
       this.carBrakeLights[index].color.set(braking ? '#ff1717' : '#a31318');
-      mesh.visible = isNear(mesh.position.x, mesh.position.z, bike.x, bike.z);
     });
 
     this.traffic.pedestrians.forEach((ped, index) => {
       const mesh = this.pedMeshes[index];
+      const x = ped.lane.axis === 'x' ? ped.pos : ped.lane.fixed;
+      const z = ped.lane.axis === 'x' ? ped.lane.fixed : ped.pos;
+      // Pedestrian simulation continues off-screen; skip scene graph and limb
+      // updates until the character is close enough to be rendered.
+      if (!isNear(x, z, bike.x, bike.z)) {
+        mesh.group.visible = false;
+        return;
+      }
+      mesh.group.visible = true;
       const stride = Math.sin(ped.phase);
       const walkAmount = 1 - ped.yieldFactor;
-      mesh.group.position.set(
-        ped.lane.axis === 'x' ? ped.pos : ped.lane.fixed,
-        Math.abs(stride) * 0.035 * walkAmount,
-        ped.lane.axis === 'x' ? ped.lane.fixed : ped.pos,
-      );
+      mesh.group.position.set(x, Math.abs(stride) * 0.035 * walkAmount, z);
       mesh.group.rotation.y = ped.lane.axis === 'x' ? (ped.lane.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : ped.lane.dir > 0 ? 0 : Math.PI;
       // A restrained body counter-sway and vertical bounce make the walk cycle
       // read more naturally without adding meshes, materials, or draw calls.
       mesh.group.rotation.z = Math.cos(ped.phase * 2) * 0.018 * walkAmount;
-      mesh.group.visible = isNear(mesh.group.position.x, mesh.group.position.z, bike.x, bike.z);
       const swing = stride * 0.5 * walkAmount;
       mesh.legs[0].rotation.x = swing;
       mesh.legs[1].rotation.x = -swing;
