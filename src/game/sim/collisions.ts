@@ -102,7 +102,9 @@ function pushOut(bike: BikeState, contact: Contact, bounce: number): number {
 export function resolveBikeContacts(bike: BikeState, boxes: readonly Box[], traffic: Traffic, cones: readonly Vec2[]): BikeHit[] {
   const hits: BikeHit[] = [];
   const radius = BASE_BIKE.radius;
-  const nearbyBoxes = nearbyStaticBoxes(getStaticBoxIndex(boxes), bike.x, bike.z, radius);
+  // Include cells reachable by the largest possible corner push-out so later
+  // resolution passes can see adjacent geometry after the bike moves.
+  const nearbyBoxes = nearbyStaticBoxes(getStaticBoxIndex(boxes), bike.x, bike.z, radius * 3);
 
   // Resolve static contacts in short passes. At building corners, one
   // push can move the bike into a second overlapping rectangle; a few bounded
