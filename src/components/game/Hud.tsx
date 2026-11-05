@@ -1,4 +1,4 @@
-import { Bike, Cloud, CloudFog, CloudRain, Gauge, Heart, Moon, Pause, Sun, Timer, Volume2, VolumeX, Wind } from 'lucide-react';
+import { Bike, Cloud, CloudFog, CloudRain, Gauge, Heart, Moon, Pause, Sun, Timer, Volume2, VolumeX, Wind, ShieldAlert } from 'lucide-react';
 import { EarningsCard, OfferCard, OrderCard, Toasts, TurnCard, GLASS_CARD } from '@/components/game/HudCards';
 import type { GameEvent, HudSnapshot } from '@/game/types';
 
@@ -108,6 +108,14 @@ export function Hud({ hud, toasts, onAccept, onDecline, onRefuel, onRepair, onPa
           <button type="button" onClick={onRefuel} className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white shadow-xl ring-2 ring-white/80 active:scale-95">
             ⛽ تعبئة الوقود · E
           </button>
+        </div>
+      )}
+      {hud.nearPoliceZone && (
+        <div className="pointer-events-none absolute left-1/2 top-24 z-20 -translate-x-1/2">
+          <div className="flex items-center gap-2 rounded-full border border-blue-200 bg-blue-950/90 px-4 py-2 text-xs font-extrabold text-white shadow-xl">
+            <ShieldAlert className="h-4 w-4 text-amber-300" />
+            منطقة مراقبة الشرطة · الحد 60 كم/س
+          </div>
         </div>
       )}
       {hud.nearRepairShop && (
