@@ -72,6 +72,7 @@ export interface Layout {
   fuelStations: Vec2[];
   repairShops: Vec2[];
   civicBuildings: CivicBuilding[];
+  policeZones: Vec2[];
 }
 
 export type BikeContactKind = 'wall' | 'car' | 'pedestrian' | 'cone';
@@ -116,6 +117,7 @@ export interface HudSnapshot {
   fuel: number;
   nearFuelStation: boolean;
   nearRepairShop: boolean;
+  nearPoliceZone: boolean;
   order: OrderHud | null;
   offer: OfferHud | null;
   turn: { direction: 'left' | 'right' | 'straight' | 'uturn'; distance: number; target: 'pickup' | 'dropoff' } | null;
