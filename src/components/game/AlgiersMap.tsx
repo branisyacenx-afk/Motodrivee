@@ -94,6 +94,28 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
     ctx.stroke();
     ctx.restore();
 
+    // Fuel stations and repair shops are visible as service pins on the full map.
+    const drawServicePin = (point: { x: number; z: number }, color: string, symbol: string) => {
+      const px = x(point.x), py = y(point.z);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, py, 8, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(symbol, px, py + 0.5);
+      ctx.restore();
+    };
+    layout.fuelStations.forEach((point) => drawServicePin(point, '#159b69', 'F'));
+    layout.repairShops.forEach((point) => drawServicePin(point, '#1677b8', 'R'));
+
     // Police monitoring zones are shown as translucent blue circles on the full map.
     layout.policeZones.forEach((zone) => {
       const px = x(zone.x), py = y(zone.z);
@@ -276,7 +298,7 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
         <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-sky-500" /> دراجتك</span>
         <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-red-500" /> الوجهة</span>\n        <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full border-2 border-dashed border-blue-500 bg-blue-500/20" /> مناطق مراقبة الشرطة</span>
         <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-orange-700" /> مطاعم ونقاط تسليم</span>
-        <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm bg-[#8fba83]" /> حدائق ومساحات خضراء</span>
+        <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm bg-[#8fba83]" /> حدائق ومساحات خضراء</span>\n        <span className="flex items-center gap-2"><i className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[9px] text-white">F</i> محطة وقود</span>\n        <span className="flex items-center gap-2"><i className="flex h-4 w-4 items-center justify-center rounded-full bg-sky-700 text-[9px] text-white">R</i> ورشة إصلاح</span>
       </footer>
     </div>
   );
