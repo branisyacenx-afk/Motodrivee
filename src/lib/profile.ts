@@ -21,6 +21,9 @@ export interface Profile {
   owned: VehicleId[];
   vehicle: VehicleId;
   paint: PaintId;
+  riderGender: 'male' | 'female';
+  riderJacket: string;
+  riderHelmet: string;
   upgrades: Record<UpgradeId, number>;
   bestScore: number;
 }
@@ -106,7 +109,7 @@ export function createProfile(): Profile {
     name: 'الراكب', wallet: STARTING_WALLET, xp: 0, totalDeliveries: 0, totalEarned: 0, reputation: 80, cleanDeliveries: 0,
     dailyDeliveries: 0, dailyChallengeDate: todayKey(), dailyChallengeClaimed: false,
     weeklyDeliveries: 0, weeklyChallengeWeek: weekKey(), weeklyChallengeClaimed: false,
-    dailyStreak: 0, lastDailyClaim: null, owned: ['classic'], vehicle: 'classic', paint: 'swift',
+    dailyStreak: 0, lastDailyClaim: null, owned: ['classic'], vehicle: 'classic', paint: 'swift', riderGender: 'male', riderJacket: '#253b55', riderHelmet: '#f1f3f5',
     upgrades: { engine: 0, handling: 0, helmet: 0 }, bestScore: 0,
   };
 }
@@ -154,6 +157,9 @@ export function loadProfile(): Profile {
       owned: owned.includes('classic') ? owned : ['classic', ...owned],
       vehicle: isVehicleId(parsed.vehicle) && owned.includes(parsed.vehicle) ? parsed.vehicle : fallback.vehicle,
       paint: isPaintId(parsed.paint) ? parsed.paint : fallback.paint,
+      riderGender: parsed.riderGender === 'female' ? 'female' : 'male',
+      riderJacket: typeof parsed.riderJacket === 'string' && /^#[0-9a-fA-F]{6}$/.test(parsed.riderJacket) ? parsed.riderJacket : fallback.riderJacket,
+      riderHelmet: typeof parsed.riderHelmet === 'string' && /^#[0-9a-fA-F]{6}$/.test(parsed.riderHelmet) ? parsed.riderHelmet : fallback.riderHelmet,
       upgrades: { engine: clampLevel(upgrades.engine, 'engine'), handling: clampLevel(upgrades.handling, 'handling'), helmet: clampLevel(upgrades.helmet, 'helmet') },
       bestScore: finiteNonNegative(parsed.bestScore, 0),
     };

@@ -33,6 +33,9 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
     paintHex: PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? PAINTS[0].hex,
     vehicleId: profile.vehicle,
     playerName: profile.name,
+    riderGender: profile.riderGender,
+    riderJacket: profile.riderJacket,
+    riderHelmet: profile.riderHelmet,
   }));
   const [hud, setHud] = useState<HudSnapshot | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -79,6 +82,9 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
           paintHex: loadout.paintHex,
           vehicleId: loadout.vehicleId,
           playerName: loadout.playerName,
+          riderGender: loadout.riderGender,
+          riderJacket: loadout.riderJacket,
+          riderHelmet: loadout.riderHelmet,
           network,
           readInput: input.read,
         },
