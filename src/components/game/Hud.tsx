@@ -53,6 +53,7 @@ function formatClock(totalSeconds: number): string {
 
 export function Hud({ hud, toasts, onAccept, onDecline, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
   const lowHealth = hud.health < 35;
+  const lowFuel = hud.fuel < 25;
   const WeatherIcon = WEATHER_ICON[hud.weather];
   const isNight = hud.gameHour < 6 || hud.gameHour >= 19;
   return (
@@ -120,6 +121,14 @@ export function Hud({ hud, toasts, onAccept, onDecline, onPause, onDismissToast,
           <span className="flex items-center gap-1.5">
             <Timer className="h-4 w-4 text-slate-500" />
             {formatClock(hud.shiftLeft)}
+          </span>
+          <span className="h-4 w-px bg-slate-300" />
+          <span className="flex items-center gap-1.5" aria-label={'الوقود ' + hud.fuel + '%'}>
+            <span className={lowFuel ? 'font-extrabold text-brand-600' : 'font-extrabold text-amber-700'}>⛽</span>
+            <span className="w-12 overflow-hidden rounded-full bg-slate-200 sm:w-20">
+              <span className={lowFuel ? 'block h-1.5 rounded-full bg-brand-500' : 'block h-1.5 rounded-full bg-amber-500'} style={{ width: hud.fuel + '%' }} />
+            </span>
+            <span className={lowFuel ? 'text-brand-600' : ''}>{hud.fuel}%</span>
           </span>
           <span className="h-4 w-px bg-slate-300" />
           <span className="flex items-center gap-1.5">
