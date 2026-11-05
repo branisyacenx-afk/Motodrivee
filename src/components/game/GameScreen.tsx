@@ -145,6 +145,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
       if (event.key === 'Enter') worldRef.current?.acceptOffer();
       else if (event.key === 'n' || event.key === 'N') worldRef.current?.declineOffer();
       else if (event.key === 'e' || event.key === 'E') worldRef.current?.refuel();
+      else if (event.key === 'r' || event.key === 'R') worldRef.current?.repairBike();
       else if (event.key === 'p' || event.key === 'P' || event.key === 'Escape') setPaused((value) => !value);
     };
     window.addEventListener('keydown', onKey);
@@ -180,6 +181,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
             onAccept={() => worldRef.current?.acceptOffer()}
             onDecline={() => worldRef.current?.declineOffer()}
             onRefuel={() => worldRef.current?.refuel()}
+            onRepair={() => worldRef.current?.repairBike()}
             onPause={() => setPaused(true)}
             onDismissToast={dismissToast}
             muted={muted}
