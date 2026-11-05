@@ -72,6 +72,7 @@ export interface Layout {
   fuelStations: Vec2[];
   repairShops: Vec2[];
   civicBuildings: CivicBuilding[];
+  policeZones: Vec2[];
 }
 
 export type BikeContactKind = 'wall' | 'car' | 'pedestrian' | 'cone';
