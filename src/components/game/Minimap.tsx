@@ -133,6 +133,29 @@ export function Minimap({ layout, state, onOpen, className = '' }: MinimapProps)
       ctx.restore();
     }
 
+    // Fuel and repair facilities use distinct compact symbols on the local radar.
+    const drawServicePin = (point: { x: number; z: number }, color: string, symbol: string) => {
+      if (point.x < view.minX || point.x > view.maxX || point.z < view.minZ || point.z > view.maxZ) return;
+      const px = toX(point.x), py = toY(point.z);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, py, 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(px, py, 5.2, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 7px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(symbol, px, py + 0.5);
+      ctx.restore();
+    };
+    layout.fuelStations.forEach((point) => drawServicePin(point, '#159b69', 'F'));
+    layout.repairShops.forEach((point) => drawServicePin(point, '#1677b8', 'R'));
+
     // Nearby restaurant pins make the local radar useful for spotting
     // pickup locations without opening the full city map.
     for (const venue of layout.venues) {
