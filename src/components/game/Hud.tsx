@@ -12,6 +12,7 @@ interface HudProps {
   onAccept: () => void;
   onDecline: () => void;
   onRefuel: () => void;
+  onRepair: () => void;
   onPause: () => void;
   onDismissToast: (id: number) => void;
   muted: boolean;
@@ -52,7 +53,7 @@ function formatClock(totalSeconds: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-export function Hud({ hud, toasts, onAccept, onDecline, onRefuel, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
+export function Hud({ hud, toasts, onAccept, onDecline, onRefuel, onRepair, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
   const lowHealth = hud.health < 35;
   const lowFuel = hud.fuel < 25;
   const WeatherIcon = WEATHER_ICON[hud.weather];
@@ -106,6 +107,13 @@ export function Hud({ hud, toasts, onAccept, onDecline, onRefuel, onPause, onDis
         <div className="pointer-events-auto absolute bottom-20 right-4 z-30 sm:bottom-24 sm:right-8">
           <button type="button" onClick={onRefuel} className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white shadow-xl ring-2 ring-white/80 active:scale-95">
             ⛽ تعبئة الوقود · E
+          </button>
+        </div>
+      )}
+      {hud.nearRepairShop && (
+        <div className="pointer-events-auto absolute bottom-20 left-4 z-30 sm:bottom-24 sm:left-8">
+          <button type="button" onClick={onRepair} className="rounded-2xl bg-sky-700 px-4 py-3 text-sm font-extrabold text-white shadow-xl ring-2 ring-white/80 active:scale-95">
+            🔧 إصلاح الدراجة · R
           </button>
         </div>
       )}

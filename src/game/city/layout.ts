@@ -217,5 +217,11 @@ export function createCityLayout(): Layout {
     { x: roadX(Math.floor(cols / 2)) - 8, z: roadZ(Math.floor(rows / 2)) - 8 },
   ];
 
-  return { bounds, boxes, zones, carLanes, walkLanes, cones, blocks, venues, fuelStations };
+  const repairShops: Vec2[] = [
+    { x: roadX(2) - 9, z: roadZ(4) + 8 },
+    { x: roadX(cols - 3) + 9, z: roadZ(rows - 3) - 8 },
+    { x: roadX(Math.floor(cols / 2) + 1) + 9, z: roadZ(1) - 8 },
+  ];
+
+  return { bounds, boxes, zones, carLanes, walkLanes, cones, blocks, venues, fuelStations, repairShops };
 }

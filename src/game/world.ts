@@ -20,6 +20,7 @@ import { buildCity, disposeCity, setCityRain, updateCityChunkVisibility } from '
 import { buildZones } from '@/game/render/zoneMeshes';
 import { buildVenues } from '@/game/render/venueMeshes';
 import { buildFuelStations } from '@/game/render/fuelStations';
+import { buildRepairShops } from '@/game/render/repairShops';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
 import { createRemoteRiders, type RemoteRiders } from '@/game/render/remoteRiders';
 import { TrafficSignals } from '@/game/render/trafficSignals';
@@ -175,7 +176,7 @@ export class GameWorld {
     this.cityGroup = buildCity(layout);
     this.trafficSignals = new TrafficSignals();
     this.environment = new DynamicEnvironment();
-    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, buildFuelStations(layout.fuelStations), this.trafficSignals.group, this.environment.group);
+    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, buildFuelStations(layout.fuelStations), buildRepairShops(layout.repairShops), this.trafficSignals.group, this.environment.group);
 
     this.guide = createDeliveryGuide();
     this.scene.add(this.guide.group);
@@ -270,6 +271,28 @@ export class GameWorld {
     this.earnings -= cost;
     this.fuel = 100;
     this.emit({ kind: 'good', text: `تم ملء الخزان بنجاح · ${formatMoney(cost)}` });
+    this.callbacks.onHud(this.snapshot());
+  }
+
+  repairBike(): void {
+    const shop = this.options.layout.repairShops.find((point) => Math.hypot(point.x - this.bike.x, point.z - this.bike.z) < 14);
+    if (!shop) return;
+    if (Math.abs(this.bike.speed) > 0.8) {
+      this.emit({ kind: 'bad', text: 'أوقف الدراجة أمام الورشة أولاً' });
+      return;
+    }
+    if (this.health >= 99) {
+      this.emit({ kind: 'info', text: 'الدراجة بحالة ممتازة ولا تحتاج إلى إصلاح' });
+      return;
+    }
+    const cost = Math.ceil((100 - this.health) * 3);
+    if (this.earnings < cost) {
+      this.emit({ kind: 'bad', text: `تحتاج ${formatMoney(cost)} لإصلاح الدراجة` });
+      return;
+    }
+    this.earnings -= cost;
+    this.health = 100;
+    this.emit({ kind: 'good', text: `تم إصلاح الدراجة بالكامل · ${formatMoney(cost)}` });
     this.callbacks.onHud(this.snapshot());
   }
 
@@ -527,6 +550,7 @@ export class GameWorld {
       health: Math.round(this.health),
       fuel: Math.round(this.fuel),
       nearFuelStation: this.options.layout.fuelStations.some((point) => Math.hypot(point.x - bike.x, point.z - bike.z) < 13),
+      nearRepairShop: this.options.layout.repairShops.some((point) => Math.hypot(point.x - bike.x, point.z - bike.z) < 14),
       order:
         order && target
           ? {
