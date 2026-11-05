@@ -232,11 +232,17 @@ export function createCityLayout(): Layout {
     { x: roadX(Math.floor(cols / 2)) - 8, z: roadZ(Math.floor(rows / 2)) - 8 },
   ];
 
+  const policeZones: Vec2[] = [
+    { x: roadX(2) + 15, z: roadZ(rows - 3) + 12 },
+    { x: roadX(cols - 3) - 15, z: roadZ(2) + 12 },
+    { x: roadX(Math.floor(cols / 2)) + 12, z: roadZ(Math.floor(rows / 2)) - 12 },
+  ];
+
   const repairShops: Vec2[] = [
     { x: roadX(2) - 9, z: roadZ(4) + 8 },
     { x: roadX(cols - 3) + 9, z: roadZ(rows - 3) - 8 },
     { x: roadX(Math.floor(cols / 2) + 1) + 9, z: roadZ(1) - 8 },
   ];
 
-  return { bounds, boxes, zones, carLanes, walkLanes, cones, blocks, venues, fuelStations, repairShops, civicBuildings };
+  return { bounds, boxes, zones, carLanes, walkLanes, cones, blocks, venues, fuelStations, repairShops, civicBuildings, policeZones };
 }
