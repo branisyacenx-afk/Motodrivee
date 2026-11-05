@@ -109,6 +109,30 @@ export function Minimap({ layout, state, onOpen, className = '' }: MinimapProps)
       ctx.strokeRect(left, top, width, height);
     }
 
+    // Blue dashed rings reveal monitored police zones before the rider enters them.
+    for (const zone of layout.policeZones) {
+      if (zone.x < view.minX || zone.x > view.maxX || zone.z < view.minZ || zone.z > view.maxZ) continue;
+      const px = toX(zone.x), py = toY(zone.z);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, py, 28, 0, Math.PI * 2);
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(37, 99, 235, 0.9)';
+      ctx.fillStyle = 'rgba(37, 99, 235, 0.12)';
+      ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // Nearby restaurant pins make the local radar useful for spotting
     // pickup locations without opening the full city map.
     for (const venue of layout.venues) {
