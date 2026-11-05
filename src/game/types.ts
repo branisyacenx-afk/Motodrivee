@@ -61,6 +61,7 @@ export interface Layout {
   cones: Vec2[];
   blocks: Block[];
   venues: Venue[];
+  fuelStations: Vec2[];
 }
 
 export type BikeContactKind = 'wall' | 'car' | 'pedestrian' | 'cone';
@@ -103,6 +104,7 @@ export interface HudSnapshot {
   deliveries: number;
   health: number;
   fuel: number;
+  nearFuelStation: boolean;
   order: OrderHud | null;
   offer: OfferHud | null;
   turn: { direction: 'left' | 'right' | 'straight' | 'uturn'; distance: number; target: 'pickup' | 'dropoff' } | null;

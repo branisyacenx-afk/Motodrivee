@@ -11,6 +11,7 @@ interface HudProps {
   toasts: ToastItem[];
   onAccept: () => void;
   onDecline: () => void;
+  onRefuel: () => void;
   onPause: () => void;
   onDismissToast: (id: number) => void;
   muted: boolean;
@@ -51,7 +52,7 @@ function formatClock(totalSeconds: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-export function Hud({ hud, toasts, onAccept, onDecline, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
+export function Hud({ hud, toasts, onAccept, onDecline, onRefuel, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
   const lowHealth = hud.health < 35;
   const lowFuel = hud.fuel < 25;
   const WeatherIcon = WEATHER_ICON[hud.weather];
@@ -101,6 +102,13 @@ export function Hud({ hud, toasts, onAccept, onDecline, onPause, onDismissToast,
         {hud.offer && <OfferCard offer={hud.offer} onAccept={onAccept} onDecline={onDecline} />}
       </div>
 
+      {hud.nearFuelStation && (
+        <div className="pointer-events-auto absolute bottom-20 right-4 z-30 sm:bottom-24 sm:right-8">
+          <button type="button" onClick={onRefuel} className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white shadow-xl ring-2 ring-white/80 active:scale-95">
+            ⛽ تعبئة الوقود · E
+          </button>
+        </div>
+      )}
       <div className="mt-auto flex justify-center">
         <div className={`${GLASS_CARD} flex items-center gap-2 px-3 py-1.5 text-xs font-bold tabular-nums sm:gap-5 sm:px-6 sm:py-2 sm:text-sm`}>
           <span className="flex items-center gap-1.5">

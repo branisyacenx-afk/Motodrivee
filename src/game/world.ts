@@ -19,6 +19,7 @@ import { createActorAssets, type BikeModel, type PedestrianModel } from '@/game/
 import { buildCity, disposeCity, setCityRain, updateCityChunkVisibility } from '@/game/render/cityMeshes';
 import { buildZones } from '@/game/render/zoneMeshes';
 import { buildVenues } from '@/game/render/venueMeshes';
+import { buildFuelStations } from '@/game/render/fuelStations';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
 import { createRemoteRiders, type RemoteRiders } from '@/game/render/remoteRiders';
 import { TrafficSignals } from '@/game/render/trafficSignals';
@@ -174,7 +175,7 @@ export class GameWorld {
     this.cityGroup = buildCity(layout);
     this.trafficSignals = new TrafficSignals();
     this.environment = new DynamicEnvironment();
-    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, this.trafficSignals.group, this.environment.group);
+    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, buildFuelStations(layout.fuelStations), this.trafficSignals.group, this.environment.group);
 
     this.guide = createDeliveryGuide();
     this.scene.add(this.guide.group);
@@ -248,6 +249,28 @@ export class GameWorld {
   setPaused(paused: boolean): void {
     this.paused = paused;
     this.sound.setPaused(paused);
+  }
+
+  refuel(): void {
+    const station = this.options.layout.fuelStations.find((point) => Math.hypot(point.x - this.bike.x, point.z - this.bike.z) < 13);
+    if (!station) return;
+    if (Math.abs(this.bike.speed) > 0.8) {
+      this.emit({ kind: 'bad', text: 'أوقف الدراجة بجانب المضخة أولاً' });
+      return;
+    }
+    if (this.fuel >= 99) {
+      this.emit({ kind: 'info', text: 'خزان الوقود ممتلئ بالفعل' });
+      return;
+    }
+    const cost = Math.ceil((100 - this.fuel) * 2);
+    if (this.earnings < cost) {
+      this.emit({ kind: 'bad', text: `تحتاج ${formatMoney(cost)} للتعبئة` });
+      return;
+    }
+    this.earnings -= cost;
+    this.fuel = 100;
+    this.emit({ kind: 'good', text: `تم ملء الخزان بنجاح · ${formatMoney(cost)}` });
+    this.callbacks.onHud(this.snapshot());
   }
 
   acceptOffer(): void {
@@ -503,6 +526,7 @@ export class GameWorld {
       deliveries: this.deliveries,
       health: Math.round(this.health),
       fuel: Math.round(this.fuel),
+      nearFuelStation: this.options.layout.fuelStations.some((point) => Math.hypot(point.x - bike.x, point.z - bike.z) < 13),
       order:
         order && target
           ? {
