@@ -62,6 +62,7 @@ export function createCityLayout(): Layout {
   const zones: Zone[] = [];
   const blocks: Block[] = [];
   const venues: Venue[] = [];
+  const civicBuildings: Layout['civicBuildings'] = [];
 
   const tree = (x: number, z: number) => {
     boxes.push({ minX: x - 0.6, maxX: x + 0.6, minZ: z - 0.6, maxZ: z + 0.6, height: 7, color: '#4f8a45', kind: 'tree', seed: rand() });
@@ -79,6 +80,20 @@ export function createCityLayout(): Layout {
       const district = ALGIERS_DISTRICTS[districtIndex];
       const buildingColors = DISTRICT_BUILDING_PALETTES[districtIndex];
       blocks.push({ ...block, district });
+
+      const civic = bi === 1 && bj === 1
+        ? { kind: 'bank' as const, name: 'بنك المدينة', color: '#176b62' }
+        : bi === cols - 3 && bj === 2
+          ? { kind: 'kiosk' as const, name: 'كشك الحي', color: '#d97706' }
+          : bi === Math.floor(cols / 2) && bj === rows - 3
+            ? { kind: 'market' as const, name: 'سوق المدينة', color: '#a83d36' }
+            : bi === 2 && bj === rows - 3
+              ? { kind: 'police' as const, name: 'مركز الشرطة', color: '#285b91' }
+              : null;
+      if (civic) {
+        civicBuildings.push({ ...block, ...civic });
+        continue;
+      }
 
       for (let z = block.minZ + 8; z < block.maxZ - 4; z += 22) {
         if (rand() < 0.55) tree(roadX(bi) + SIDEWALK_TREE, z);
@@ -223,5 +238,5 @@ export function createCityLayout(): Layout {
     { x: roadX(Math.floor(cols / 2) + 1) + 9, z: roadZ(1) - 8 },
   ];
 
-  return { bounds, boxes, zones, carLanes, walkLanes, cones, blocks, venues, fuelStations, repairShops };
+  return { bounds, boxes, zones, carLanes, walkLanes, cones, blocks, venues, fuelStations, repairShops, civicBuildings };
 }
