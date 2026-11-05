@@ -21,6 +21,7 @@ import { buildZones } from '@/game/render/zoneMeshes';
 import { buildVenues } from '@/game/render/venueMeshes';
 import { buildFuelStations } from '@/game/render/fuelStations';
 import { buildRepairShops } from '@/game/render/repairShops';
+import { buildCivicBuildings } from '@/game/render/civicBuildings';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
 import { createRemoteRiders, type RemoteRiders } from '@/game/render/remoteRiders';
 import { TrafficSignals } from '@/game/render/trafficSignals';
@@ -176,7 +177,7 @@ export class GameWorld {
     this.cityGroup = buildCity(layout);
     this.trafficSignals = new TrafficSignals();
     this.environment = new DynamicEnvironment();
-    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, buildFuelStations(layout.fuelStations), buildRepairShops(layout.repairShops), this.trafficSignals.group, this.environment.group);
+    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, buildFuelStations(layout.fuelStations), buildRepairShops(layout.repairShops), buildCivicBuildings(layout.civicBuildings), this.trafficSignals.group, this.environment.group);
 
     this.guide = createDeliveryGuide();
     this.scene.add(this.guide.group);
