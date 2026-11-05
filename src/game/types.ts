@@ -117,6 +117,7 @@ export interface HudSnapshot {
   fuel: number;
   nearFuelStation: boolean;
   nearRepairShop: boolean;
+  nearPoliceZone: boolean;
   order: OrderHud | null;
   offer: OfferHud | null;
   turn: { direction: 'left' | 'right' | 'straight' | 'uturn'; distance: number; target: 'pickup' | 'dropoff' } | null;
