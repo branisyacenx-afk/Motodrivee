@@ -52,6 +52,14 @@ export interface Zone {
   kind: ZoneKind;
 }
 
+export type CivicBuildingKind = 'bank' | 'kiosk' | 'market' | 'police';
+
+export interface CivicBuilding extends Rect {
+  kind: CivicBuildingKind;
+  name: string;
+  color: string;
+}
+
 export interface Layout {
   bounds: Rect;
   boxes: Box[];
@@ -63,6 +71,7 @@ export interface Layout {
   venues: Venue[];
   fuelStations: Vec2[];
   repairShops: Vec2[];
+  civicBuildings: CivicBuilding[];
 }
 
 export type BikeContactKind = 'wall' | 'car' | 'pedestrian' | 'cone';
