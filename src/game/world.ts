@@ -22,6 +22,7 @@ import { buildVenues } from '@/game/render/venueMeshes';
 import { buildFuelStations } from '@/game/render/fuelStations';
 import { buildRepairShops } from '@/game/render/repairShops';
 import { buildCivicBuildings } from '@/game/render/civicBuildings';
+import { buildPolicePatrols } from '@/game/render/policePatrols';
 import { createDeliveryGuide, type DeliveryGuide } from '@/game/render/deliveryGuide';
 import { createRemoteRiders, type RemoteRiders } from '@/game/render/remoteRiders';
 import { TrafficSignals } from '@/game/render/trafficSignals';
@@ -117,6 +118,7 @@ export class GameWorld {
   private order: ActiveOrder | null = null;
   private offerCooldown = 2;
   private lateWarned = false;
+  private policeFineReadyAt = 0;
   private score = 0;
   private earnings = 0;
   private deliveries = 0;
@@ -177,7 +179,7 @@ export class GameWorld {
     this.cityGroup = buildCity(layout);
     this.trafficSignals = new TrafficSignals();
     this.environment = new DynamicEnvironment();
-    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, buildFuelStations(layout.fuelStations), buildRepairShops(layout.repairShops), buildCivicBuildings(layout.civicBuildings), this.trafficSignals.group, this.environment.group);
+    this.scene.add(this.cityGroup, buildZones(layout.zones), venueGroup, buildFuelStations(layout.fuelStations), buildRepairShops(layout.repairShops), buildCivicBuildings(layout.civicBuildings), buildPolicePatrols(layout.policeZones), this.trafficSignals.group, this.environment.group);
 
     this.guide = createDeliveryGuide();
     this.scene.add(this.guide.group);
@@ -386,6 +388,7 @@ export class GameWorld {
     for (const hit of hits) this.handleHit(hit);
 
     updateTraffic(this.traffic, this.time, dt, { x: this.bike.x, z: this.bike.z, heading: this.bike.heading, speed: this.bike.speed });
+    this.checkPoliceEnforcement();
     this.updateOrders(dt);
 
     if (this.health <= 0) this.recoverBike();
@@ -395,6 +398,21 @@ export class GameWorld {
       this.hudClock = 0;
       this.callbacks.onHud(this.snapshot());
     }
+  }
+
+  private checkPoliceEnforcement(): void {
+    const zone = this.options.layout.policeZones.find((point) => Math.hypot(point.x - this.bike.x, point.z - this.bike.z) < 28);
+    if (!zone || this.time < this.policeFineReadyAt || this.bike.speed * 3.6 <= 60) return;
+    this.policeFineReadyAt = this.time + 18;
+    const fine = 150;
+    if (this.earnings >= fine) {
+      this.earnings -= fine;
+      this.emit({ kind: 'bad', text: `شرطة المرور: تجاوزت السرعة المحددة! غرامة ${formatMoney(fine)}` });
+    } else {
+      this.addScore(-20);
+      this.emit({ kind: 'bad', text: 'شرطة المرور: خفّض سرعتك داخل منطقة المراقبة! -20 نقطة' });
+    }
+    this.callbacks.onHud(this.snapshot());
   }
 
   private handleHit(hit: BikeHit): void {
@@ -552,6 +570,7 @@ export class GameWorld {
       fuel: Math.round(this.fuel),
       nearFuelStation: this.options.layout.fuelStations.some((point) => Math.hypot(point.x - bike.x, point.z - bike.z) < 13),
       nearRepairShop: this.options.layout.repairShops.some((point) => Math.hypot(point.x - bike.x, point.z - bike.z) < 14),
+      nearPoliceZone: this.options.layout.policeZones.some((point) => Math.hypot(point.x - bike.x, point.z - bike.z) < 28),
       order:
         order && target
           ? {
