@@ -53,7 +53,7 @@ function formatClock(totalSeconds: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-export function Hud({ hud, toasts, onAccept, onDecline, onRefuel, onRepair, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
+export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaimed, weeklyClaimed, onAccept, onDecline, onRefuel, onRepair, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
   const lowHealth = hud.health < 35;
   const criticalHealth = hud.health <= 25;
   const lowFuel = hud.fuel < 25;
@@ -111,6 +111,29 @@ export function Hud({ hud, toasts, onAccept, onDecline, onRefuel, onRepair, onPa
           )}
         </div>
       )}
+
+      <div className={`${GLASS_CARD} pointer-events-auto mx-auto grid w-full max-w-sm grid-cols-2 gap-2 px-3 py-2`} aria-label="تقدم التحديات">
+        <div className="min-w-0">
+          <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-600">
+            <span>تحدي اليوم</span>
+            <span className="tabular-nums">{Math.min(dailyDeliveries, 3)}/3</span>
+          </div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full rounded-full bg-emerald-500 transition-[width]" style={{ width: `${Math.min(100, (dailyDeliveries / 3) * 100)}%` }} />
+          </div>
+          <p className="mt-1 truncate text-[10px] font-semibold text-slate-500">{dailyClaimed ? 'مكافأة اليوم استُلمت' : dailyDeliveries >= 3 ? 'اكتمل · استلم 1200 دج' : '3 توصيلات · 1200 دج'}</p>
+        </div>
+        <div className="min-w-0 border-s border-slate-200 ps-2">
+          <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-600">
+            <span>تحدي الأسبوع</span>
+            <span className="tabular-nums">{Math.min(weeklyDeliveries, 15)}/15</span>
+          </div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full rounded-full bg-sky-500 transition-[width]" style={{ width: `${Math.min(100, (weeklyDeliveries / 15) * 100)}%` }} />
+          </div>
+          <p className="mt-1 truncate text-[10px] font-semibold text-slate-500">{weeklyClaimed ? 'مكافأة الأسبوع استُلمت' : weeklyDeliveries >= 15 ? 'اكتمل · استلم 6000 دج' : '15 توصيلة · 6000 دج'}</p>
+        </div>
+      </div>
 
       <div className="pointer-events-auto mx-auto flex w-full max-w-sm flex-col gap-1 sm:gap-2">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
