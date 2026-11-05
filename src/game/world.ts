@@ -119,6 +119,7 @@ export class GameWorld {
   private deliveries = 0;
   private lateDeliveries = 0;
   private health: number = BASE_BIKE.health;
+  private fuel = 100;
   private shiftLeft = SHIFT_SECONDS;
   private time = 0;
   private hudClock = 0;
@@ -325,7 +326,12 @@ export class GameWorld {
     } else {
       // Rain reduces tire grip, slightly extending braking distance and softening cornering response.
       const roadGrip = Math.max(0.78, 1 - this.environmentState.rain * 0.22);
-      stepBikeMotion(this.bike, this.lastInput, this.options.stats, dt, roadGrip);
+      const fuelInput = this.fuel > 0 ? this.lastInput : { ...this.lastInput, throttle: 0 };
+      stepBikeMotion(this.bike, fuelInput, this.options.stats, dt, roadGrip);
+      if (this.fuel > 0 && this.bike.speed > 0.5) {
+        this.fuel = Math.max(0, this.fuel - dt * (0.025 + this.bike.speed / this.options.stats.maxSpeed * 0.12));
+        if (this.fuel === 0) this.emit({ kind: 'bad', text: 'نفد الوقود! توجه إلى محطة وقود' });
+      }
     }
     this.sound.setEngine(Math.min(1, Math.abs(this.bike.speed) / this.options.stats.maxSpeed));
 
@@ -496,6 +502,7 @@ export class GameWorld {
       earnings: round2(this.earnings),
       deliveries: this.deliveries,
       health: Math.round(this.health),
+      fuel: Math.round(this.fuel),
       order:
         order && target
           ? {
