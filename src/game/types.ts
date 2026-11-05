@@ -102,6 +102,7 @@ export interface HudSnapshot {
   earnings: number;
   deliveries: number;
   health: number;
+  fuel: number;
   order: OrderHud | null;
   offer: OfferHud | null;
   turn: { direction: 'left' | 'right' | 'straight' | 'uturn'; distance: number; target: 'pickup' | 'dropoff' } | null;
