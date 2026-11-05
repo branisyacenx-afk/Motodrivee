@@ -94,6 +94,29 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
     ctx.stroke();
     ctx.restore();
 
+    // Police monitoring zones are shown as translucent blue circles on the full map.
+    layout.policeZones.forEach((zone) => {
+      const px = x(zone.x), py = y(zone.z);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, py, 30, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(37, 99, 235, 0.13)';
+      ctx.fill();
+      ctx.setLineDash([6, 5]);
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(px, py, 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    });
+
     if (state.target) {
       const tx = x(state.target.x), ty = y(state.target.z);
       const bx = x(state.x), by = y(state.z);
@@ -251,7 +274,7 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
       </div>
       <footer className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-3 text-xs font-bold text-slate-200">
         <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-sky-500" /> دراجتك</span>
-        <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-red-500" /> الوجهة</span>
+        <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-red-500" /> الوجهة</span>\n        <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full border-2 border-dashed border-blue-500 bg-blue-500/20" /> مناطق مراقبة الشرطة</span>
         <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-full bg-orange-700" /> مطاعم ونقاط تسليم</span>
         <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm bg-[#8fba83]" /> حدائق ومساحات خضراء</span>
       </footer>
