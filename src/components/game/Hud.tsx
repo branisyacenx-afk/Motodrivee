@@ -1,4 +1,4 @@
-import { Bike, Cloud, CloudFog, CloudRain, Gauge, Heart, Moon, Pause, Sun, Timer, Volume2, VolumeX, Wind, ShieldAlert } from 'lucide-react';
+import { Bike, Cloud, CloudFog, CloudRain, Gauge, Heart, Moon, Pause, Sun, Timer, Volume2, VolumeX, Wind, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { EarningsCard, OfferCard, OrderCard, Toasts, TurnCard, GLASS_CARD } from '@/components/game/HudCards';
 import type { GameEvent, HudSnapshot } from '@/game/types';
 
@@ -55,7 +55,9 @@ function formatClock(totalSeconds: number): string {
 
 export function Hud({ hud, toasts, onAccept, onDecline, onRefuel, onRepair, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
   const lowHealth = hud.health < 35;
+  const criticalHealth = hud.health <= 25;
   const lowFuel = hud.fuel < 25;
+  const criticalFuel = hud.fuel <= 15;
   const WeatherIcon = WEATHER_ICON[hud.weather];
   const isNight = hud.gameHour < 6 || hud.gameHour >= 19;
   return (
@@ -92,6 +94,23 @@ export function Hud({ hud, toasts, onAccept, onDecline, onRefuel, onRepair, onPa
           </button>
         </div>
       </div>
+
+      {(criticalFuel || criticalHealth) && (
+        <div className="mx-auto flex max-w-sm flex-wrap justify-center gap-2" role="status" aria-live="polite">
+          {criticalFuel && (
+            <div className="flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-950/95 px-3 py-2 text-xs font-extrabold text-amber-100 shadow-xl">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-300" />
+              الوقود حرج · {hud.fuel}% — ابحث عن محطة
+            </div>
+          )}
+          {criticalHealth && (
+            <div className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-950/95 px-3 py-2 text-xs font-extrabold text-red-100 shadow-xl">
+              <Heart className="h-4 w-4 shrink-0 text-red-300" />
+              حالة الدراجة حرجة · {hud.health}% — توجّه إلى ورشة
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="pointer-events-auto mx-auto flex w-full max-w-sm flex-col gap-1 sm:gap-2">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
