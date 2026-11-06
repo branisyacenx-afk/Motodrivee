@@ -29,7 +29,7 @@ export function TurnCard({ turn, order }: TurnCardProps) {
         </span>
         <div className="min-w-0">
           <p className="text-sm font-bold leading-tight">تجوال حر</p>
-          <p className="text-xs text-slate-500">استكشف المدينة وتسنى الطلبيات</p>
+          <p className="text-xs text-slate-500">استكشف المدينة وانتظر الطلبات</p>
         </div>
       </div>
     );
@@ -95,8 +95,8 @@ export function OrderCard({ order }: OrderCardProps) {
       <div className="mt-1 rounded-md bg-slate-100 px-1.5 py-1">
         <p className="text-[11px] font-semibold text-slate-600">
           {order.progress > 0
-            ? order.phase === 'pickup' ? 'راك تستلم الطلبية… خليك ثابت' : 'راك تسلّم الطلبية… خليك ثابت'
-            : order.phase === 'pickup' ? 'قرّب للمطعم واحبس الدراجة للاستلام' : 'قرّب للزبون واحبس الدراجة للتسليم'}
+            ? order.phase === 'pickup' ? 'تنزل من الدراجة وتستلم الطلبية… ابقَ متوقفاً' : 'تنزل من الدراجة وتسلّم الطلبية… ابقَ متوقفاً'
+            : order.phase === 'pickup' ? 'اقترب من المطعم ثم توقّف للاستلام' : 'اقترب من الزبون ثم توقّف للتسليم'}
         </p>
         {order.progress > 0 && (
           <div
