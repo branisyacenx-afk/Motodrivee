@@ -15,11 +15,6 @@ const PRIMARY_BUTTON =
 const SECONDARY_BUTTON =
   'rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold text-white ring-1 ring-white/15 transition hover:bg-white/20 active:scale-[0.98]';
 
-function bonusLabel(multiplier: number): string {
-  const percent = Math.round((multiplier - 1) * 100);
-  return percent === 0 ? 'أساسي' : `+${percent}%`;
-}
-
 export function BikesPanel({ profile, onUpdate }: PanelProps) {
   const currentLevel = levelFor(profile.xp);
   const selectedBike = VEHICLES.find((vehicle) => vehicle.id === profile.vehicle) ?? VEHICLES[0];
@@ -38,7 +33,7 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
           { label: 'السرعة', value: Math.round(stats.maxSpeed), percent: Math.round((stats.maxSpeed / 30) * 100) },
           { label: 'التسارع', value: `${Math.round(stats.accel * 10) / 10}`, percent: Math.round((stats.accel / 11) * 100) },
           { label: 'المناورة', value: `${Math.round(stats.turnRate * 100) / 100}`, percent: Math.round((stats.turnRate / 2.1) * 100) },
-          { label: 'الحماية', value: `${protection}%`, percent: protection },
+          { label: 'الحماية', value: `${protection}%`, percent: Math.round((protection / 45) * 100) },
         ];
         return (
           <li
@@ -62,10 +57,10 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
                       role="progressbar"
                       aria-label={`${stat.label} ${vehicle.name}`}
                       aria-valuemin={0}
-                      aria-valuemax={200}
-                      aria-valuenow={Math.min(200, stat.percent)}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.min(100, stat.percent)}
                     >
-                      <div className="h-full rounded-full bg-brand-400 transition-all" style={{ width: `${Math.min(100, stat.percent / 2)}%` }} />
+                      <div className="h-full rounded-full bg-brand-400 transition-all" style={{ width: `${Math.min(100, stat.percent)}%` }} />
                     </div>
                   </div>
                 ))}
