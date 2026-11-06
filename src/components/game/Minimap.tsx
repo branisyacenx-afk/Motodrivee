@@ -245,6 +245,7 @@ export function Minimap({ layout, state, onOpen, className = '' }: MinimapProps)
     // Rider stays centered so nearby roads scroll around the bike naturally.
     ctx.save();
     ctx.translate(SIZE / 2, SIZE / 2);
+    // The radar remains north-up, so rotate only the rider marker by its world heading.
     ctx.rotate(state.heading);
     ctx.beginPath();
     ctx.moveTo(0, -12);
