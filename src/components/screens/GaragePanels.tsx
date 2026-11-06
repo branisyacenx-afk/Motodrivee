@@ -20,7 +20,7 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
   const selectedBike = VEHICLES.find((vehicle) => vehicle.id === profile.vehicle) ?? VEHICLES[0];
   return (
     <>
-      <BikePreview paint={PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? '#d7262e'} vehicleId={selectedBike.id} vehicleName={selectedBike.name} riderGender={profile.riderGender} riderJacket={profile.riderJacket} riderHelmet={profile.riderHelmet} />
+      <BikePreview paint={PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? '#d7262e'} vehicleId={selectedBike.id} vehicleName={selectedBike.name} riderGender={profile.riderGender} riderJacket={profile.riderJacket} riderHelmet={profile.riderHelmet} riderOutfit={profile.riderOutfit} />
     <ul className="grid gap-3">
       {VEHICLES.map((vehicle) => {
         const owned = profile.owned.includes(vehicle.id);
