@@ -65,7 +65,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
   const WeatherIcon = WEATHER_ICON[hud.weather];
   const isNight = hud.gameHour < 6 || hud.gameHour >= 19;
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col gap-1.5 p-2 sm:gap-3 sm:p-5 landscape:gap-1 landscape:p-2">
+    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col gap-2 p-2 sm:gap-3 sm:p-4 landscape:gap-2 landscape:p-3">
       <div className="flex items-center justify-between gap-3">
         <div className={`${GLASS_CARD} flex items-center gap-1.5 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2`}>
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-500 text-white sm:h-8 sm:w-8">
@@ -116,7 +116,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
         </div>
       )}
 
-      <div className={`${GLASS_CARD} pointer-events-auto mx-auto grid w-full max-w-sm grid-cols-2 gap-2 px-3 py-2`} aria-label="تقدم التحديات">
+      <div className={`${GLASS_CARD} pointer-events-auto mx-auto grid w-full max-w-[min(42rem,calc(100vw-1rem))] grid-cols-2 gap-3 px-3 py-2.5 sm:px-4 landscape:mt-1`} aria-label="تقدم التحديات">
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-600">
             <span>تحدي اليوم</span>
@@ -139,7 +139,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
         </div>
       </div>
 
-      <div className="pointer-events-auto mx-auto flex w-full max-w-sm flex-col gap-1 sm:gap-2 landscape:max-w-[min(44rem,62vw)] landscape:flex-row landscape:items-start landscape:gap-2">
+      <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-24 landscape:mx-0 landscape:w-[min(25rem,34vw)] landscape:max-w-none landscape:flex-col landscape:gap-3">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
         <TurnCard turn={hud.turn} order={hud.order} />
         <div className="grid grid-cols-[1.2fr_0.8fr] gap-1 sm:gap-2 landscape:min-w-0 landscape:flex-1">
@@ -172,7 +172,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
         </div>
       )}
       <div className="mt-auto flex justify-center">
-        <div className={`${GLASS_CARD} flex items-center gap-2 px-3 py-1.5 text-xs font-bold tabular-nums sm:gap-5 sm:px-6 sm:py-2 sm:text-sm`}>
+        <div className={`${GLASS_CARD} flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 px-3 py-2 text-xs font-bold tabular-nums sm:gap-x-5 sm:px-5 sm:py-2.5 sm:text-sm`}>
           <span className="flex items-center gap-1.5">
             {isNight ? <Moon className="h-4 w-4 text-indigo-500" /> : <Sun className="h-4 w-4 text-amber-500" />}
             {String(hud.gameHour).padStart(2, '0')}:{String(hud.gameMinute).padStart(2, '0')}
