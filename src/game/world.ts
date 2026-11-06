@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BASE_BIKE, CITY, SHIFT_SECONDS, type BikeStats, type VehicleId } from '@/game/config';
+import { BASE_BIKE, CITY, SHIFT_SECONDS, type BikeStats, type RiderOutfitId, type VehicleId } from '@/game/config';
 import { roadX, roadZ } from '@/game/city/layout';
 import { buildRoadRoute } from '@/game/city/route';
 import { createTraffic, updateTraffic, type Traffic } from '@/game/sim/traffic';
@@ -41,6 +41,7 @@ export interface WorldOptions {
   riderGender: 'male' | 'female';
   riderJacket: string;
   riderHelmet: string;
+  riderOutfit: RiderOutfitId;
   network: SharedCity;
   readInput: () => BikeInput;
 }
@@ -212,7 +213,7 @@ export class GameWorld {
     const spawnZ = roadZ(2);
     const assets = createActorAssets();
     this.bike = createBike(spawnX, spawnZ, SPAWN_HEADING);
-    this.bikeRig = assets.bike(options.paintHex, options.vehicleId, { gender: options.riderGender, jacket: options.riderJacket, helmet: options.riderHelmet });
+    this.bikeRig = assets.bike(options.paintHex, options.vehicleId, { gender: options.riderGender, jacket: options.riderJacket, helmet: options.riderHelmet, outfit: options.riderOutfit });
     this.bikeRig.group.rotation.order = 'YXZ';
     this.bikeBeam = new THREE.SpotLight('#fff0c2', 0, 92, Math.PI / 6, 0.48, 1.25);
     this.bikeBeam.position.set(0, 1.0, 0.82);
