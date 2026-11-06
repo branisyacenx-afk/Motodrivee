@@ -119,7 +119,33 @@ export function createCityLayout(): Layout {
         continue;
       }
 
-      if (rand() < 0.2) venues.push(createVenue(block, district, venues.length, rand));
+      const venue = rand() < 0.2 ? createVenue(block, district, venues.length, rand) : null;
+      let venueFootprint: Rect | null = null;
+      if (venue) {
+        venues.push(venue);
+        // Reserve the same footprint used by the 3D restaurant mesh. Remove
+        // trees/buildings that were placed earlier in this block but intersect
+        // the restaurant, so two structures can never occupy the same space.
+        const centerX = venue.x - venue.normal.x * 4.2;
+        const centerZ = venue.z - venue.normal.z * 4.2;
+        const swapsAxes = Math.abs(venue.normal.x) > 0.5;
+        const halfX = swapsAxes ? 5 : 6.5;
+        const halfZ = swapsAxes ? 6.5 : 5;
+        venueFootprint = {
+          minX: centerX - halfX,
+          maxX: centerX + halfX,
+          minZ: centerZ - halfZ,
+          maxZ: centerZ + halfZ,
+        };
+        for (let index = boxes.length - 1; index >= 0; index--) {
+          const box = boxes[index];
+          if (box.kind !== 'boundary' &&
+            box.minX < venueFootprint.maxX && box.maxX > venueFootprint.minX &&
+            box.minZ < venueFootprint.maxZ && box.maxZ > venueFootprint.minZ) {
+            boxes.splice(index, 1);
+          }
+        }
+      }
 
       const nx = 2 + Math.floor(rand() * 2);
       const nz = 2 + Math.floor(rand() * 2);
@@ -131,6 +157,11 @@ export function createCityLayout(): Layout {
         for (let iz = 0; iz < nz; iz++) {
           const cellMinX = block.minX + ix * (cellW + gap);
           const cellMinZ = block.minZ + iz * (cellD + gap);
+          const cellMaxX = cellMinX + cellW;
+          const cellMaxZ = cellMinZ + cellD;
+          if (venueFootprint &&
+            cellMinX < venueFootprint.maxX && cellMaxX > venueFootprint.minX &&
+            cellMinZ < venueFootprint.maxZ && cellMaxZ > venueFootprint.minZ) continue;
           if (nx * nz > 1 && rand() < 0.15) {
             tree(cellMinX + cellW / 2, cellMinZ + cellD / 2);
             continue;
