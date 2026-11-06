@@ -50,7 +50,8 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     const wheelRadius = vehicleId.includes('desert') || vehicleId.includes('rally') ? 0.48 : 0.42;
     for (const z of [-1.02, 1.02]) {
       const wheel = new THREE.Mesh(new THREE.TorusGeometry(wheelRadius, 0.105, 12, 32), rubber);
-      wheel.rotation.x = Math.PI / 2;
+      // A motorcycle wheel lies in the YZ plane; the axle runs across X.
+      wheel.rotation.y = Math.PI / 2;
       wheel.position.set(0, wheelRadius + 0.12, z);
       bike.add(wheel);
       const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.19, 16), metal);
@@ -59,7 +60,7 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
       bike.add(hub);
       for (let i = 0; i < 8; i++) {
         const angle = i * Math.PI / 4;
-        connect(bike, new THREE.Vector3(0, wheelRadius + 0.12, z), new THREE.Vector3(Math.cos(angle) * wheelRadius * 0.82, wheelRadius + 0.12 + Math.sin(angle) * wheelRadius * 0.82, z), 0.012, metal);
+        connect(bike, new THREE.Vector3(0, wheelRadius + 0.12, z), new THREE.Vector3(0, wheelRadius + 0.12 + Math.cos(angle) * wheelRadius * 0.82, z + Math.sin(angle) * wheelRadius * 0.82), 0.012, metal);
       }
     }
     const rear = new THREE.Vector3(0, 0.58, -1.02);
@@ -202,7 +203,7 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.fov = width < 520 ? 38 : 34;
-      const distance = (fitRadius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 0.72;
+      const distance = (fitRadius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.12;
       camera.position.set(distance * 0.72, modelHeight * 0.78 + 0.8, distance * 0.82);
       camera.lookAt(0, modelHeight * 0.48, 0);
       camera.near = 0.1;
