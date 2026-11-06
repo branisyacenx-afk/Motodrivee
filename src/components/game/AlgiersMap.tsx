@@ -259,7 +259,8 @@ export function AlgiersMap({ layout, state, onClose }: AlgiersMapProps) {
     const bx = x(state.x), by = y(state.z);
     ctx.save();
     ctx.translate(bx, by);
-    ctx.rotate(-state.heading);
+    // The full map stays north-up; rotate the marker in world-heading direction.
+    ctx.rotate(state.heading);
     ctx.fillStyle = '#0878d1';
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 4;
