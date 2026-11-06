@@ -65,7 +65,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
   const WeatherIcon = WEATHER_ICON[hud.weather];
   const isNight = hud.gameHour < 6 || hud.gameHour >= 19;
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col gap-2 p-2 sm:gap-3 sm:p-4 landscape:gap-2 landscape:p-3">
+    <div dir="rtl" className="pointer-events-none absolute inset-0 z-20 flex flex-col gap-2 p-2 sm:gap-3 sm:p-4 landscape:gap-2 landscape:p-3">
       <div className="flex items-center justify-between gap-3">
         <div className={`${GLASS_CARD} flex items-center gap-1.5 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2`}>
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-500 text-white sm:h-8 sm:w-8">
@@ -139,7 +139,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
         </div>
       </div>
 
-      <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-24 landscape:mx-0 landscape:w-[min(25rem,34vw)] landscape:max-w-none landscape:flex-col landscape:gap-3">
+      <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-24 landscape:bottom-28 landscape:mx-0 landscape:max-h-[calc(100%-13rem)] landscape:w-[min(25rem,34vw)] landscape:max-w-none landscape:flex-col landscape:gap-3 landscape:overflow-y-auto landscape:overscroll-contain">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
         <TurnCard turn={hud.turn} order={hud.order} />
         <div className="grid grid-cols-[1.2fr_0.8fr] gap-1 sm:gap-2 landscape:min-w-0 landscape:flex-1">
