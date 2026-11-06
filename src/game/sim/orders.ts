@@ -38,7 +38,9 @@ const DELIVERY_BANDS = [
   { min: 760, max: 1050, weight: 10 },
 ] as const;
 const ARRIVAL_RADIUS = 9;
-const STOP_SPEED = 4;
+// Require a genuine near-stop (0.75 m/s ≈ 2.7 km/h), not a slow roll.
+// This prevents pickup/drop-off progress while the rider is still moving.
+const STOP_SPEED = 0.75;
 
 export function requiredWait(phase: ActiveOrder['phase']): number {
   return phase === 'pickup' ? 3 : 1.5;
