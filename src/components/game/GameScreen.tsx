@@ -64,7 +64,8 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
       if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
       }
-      await window.screen.orientation.lock('landscape');
+      const orientation = window.screen.orientation as unknown as { lock?: (value: 'landscape') => Promise<void> };
+      if (orientation.lock) await orientation.lock('landscape');
     } catch {
       // Some browsers require manual rotation or do not expose orientation locking.
     }
