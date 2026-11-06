@@ -112,6 +112,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
           riderGender: loadout.riderGender,
           riderJacket: loadout.riderJacket,
           riderHelmet: loadout.riderHelmet,
+          riderOutfit: loadout.riderOutfit,
           network,
           readInput: input.read,
         },
