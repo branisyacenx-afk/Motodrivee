@@ -695,15 +695,15 @@ export class GameWorld {
 
     // Let the chase camera open up slightly at speed, while keeping the
     // motorcycle framed and readable during quick direction changes.
-    const back = 8.5 + bike.speed * 0.075;
-    const cameraHeight = 3.6 + Math.min(1.0, bike.speed * 0.025);
+    const back = 6.4 + bike.speed * 0.05;
+    const cameraHeight = 3.0 + Math.min(0.75, bike.speed * 0.02);
     const desired = new THREE.Vector3(bike.x - forwardX * back, cameraHeight, bike.z - forwardZ * back);
-    const lookAhead = 6 + Math.min(4, bike.speed * 0.12);
+    const lookAhead = 4.8 + Math.min(3.2, bike.speed * 0.09);
     const sideX = Math.cos(bike.heading);
     const sideZ = -Math.sin(bike.heading);
     const desiredTarget = new THREE.Vector3(
       bike.x + forwardX * lookAhead + sideX * bike.steering * 0.65,
-      1.4,
+      1.2,
       bike.z + forwardZ * lookAhead + sideZ * bike.steering * 0.65,
     );
     if (snap) {
@@ -715,7 +715,7 @@ export class GameWorld {
       this.cameraTarget.lerp(desiredTarget, 1 - Math.exp(-5.5 * dt));
     }
     this.camera.lookAt(this.cameraTarget);
-    const fov = 56 + Math.min(12, bike.speed * 0.35);
+    const fov = 52 + Math.min(9, bike.speed * 0.28);
     if (Math.abs(this.camera.fov - fov) > 0.01) {
       this.camera.fov = fov;
       this.camera.updateProjectionMatrix();
