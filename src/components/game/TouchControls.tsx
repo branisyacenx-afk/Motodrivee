@@ -16,13 +16,13 @@ interface PadDef {
 }
 
 const STEER_PADS: PadDef[] = [
-  { control: 'left', label: 'يسار', icon: ArrowLeft, tone: 'bg-white text-slate-900', size: 'h-[68px] w-[68px]' },
+  { control: 'left', label: 'يسار', icon: ArrowLeft, tone: 'bg-white text-slate-900', size: 'h-[68px] w-[68px] landscape:h-14 landscape:w-14' },
   { control: 'right', label: 'يمين', icon: ArrowRight, tone: 'bg-white text-slate-900', size: 'h-[68px] w-[68px]' },
 ];
 
 const PEDAL_PADS: PadDef[] = [
   { control: 'brake', label: 'فرامل', icon: Square, tone: 'bg-slate-900 text-white', size: 'h-[68px] w-[68px]' },
-  { control: 'gas', label: 'غاز', icon: ArrowUp, tone: 'bg-brand-500 text-white', size: 'h-[80px] w-[80px]' },
+  { control: 'gas', label: 'غاز', icon: ArrowUp, tone: 'bg-brand-500 text-white', size: 'h-[80px] w-[80px] landscape:h-16 landscape:w-16' },
 ];
 
 export function TouchControls({ onControl }: TouchControlsProps) {
@@ -80,7 +80,7 @@ export function TouchControls({ onControl }: TouchControlsProps) {
   );
 
   return (
-    <div dir="ltr" className="pointer-events-none absolute inset-x-0 bottom-20 z-10 flex items-end justify-between px-4 sm:px-8">
+    <div dir="ltr" className="pointer-events-none absolute inset-x-0 bottom-20 z-10 flex items-end justify-between px-4 sm:px-8 landscape:bottom-3 landscape:px-6">
       <div className="pointer-events-auto flex gap-3">{STEER_PADS.map(renderPad)}</div>
       <div className="pointer-events-auto flex items-end gap-3">{PEDAL_PADS.map(renderPad)}</div>
     </div>
