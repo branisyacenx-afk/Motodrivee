@@ -35,7 +35,7 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 50);
     camera.position.set(4.4, 2.8, 4.8);
-    camera.lookAt(0, 0.85, 0);
+    camera.lookAt(0, 1.05, 0);
     scene.add(new THREE.HemisphereLight(0xdcecff, 0x263044, 2.1));
     const key = new THREE.DirectionalLight(0xffffff, 2.6);
     key.position.set(3, 6, 4);
@@ -186,11 +186,27 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0.03;
     scene.add(floor);
+    // Fit the complete motorcycle and rider instead of clipping larger models on narrow phones.
+    const bounds = new THREE.Box3().setFromObject(bike);
+    const center = bounds.getCenter(new THREE.Vector3());
+    const size = bounds.getSize(new THREE.Vector3());
+    bike.position.x -= center.x;
+    bike.position.z -= center.z;
+    bike.position.y -= bounds.min.y;
+    const modelHeight = Math.max(size.y, 2.1);
+    const modelLength = Math.max(size.z, 2.4);
+    const fitRadius = Math.max(modelHeight, modelLength) * 0.62;
     const resize = () => {
       const width = Math.max(1, element.clientWidth);
       const height = Math.max(1, element.clientHeight);
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
+      camera.fov = width < 520 ? 38 : 34;
+      const distance = (fitRadius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 0.72;
+      camera.position.set(distance * 0.72, modelHeight * 0.78 + 0.8, distance * 0.82);
+      camera.lookAt(0, modelHeight * 0.48, 0);
+      camera.near = 0.1;
+      camera.far = Math.max(50, distance * 4);
       camera.updateProjectionMatrix();
     };
     const observer = new ResizeObserver(resize);
