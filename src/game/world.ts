@@ -29,7 +29,7 @@ import { TrafficSignals } from '@/game/render/trafficSignals';
 import { DynamicEnvironment, type EnvironmentState } from '@/game/render/dynamicEnvironment';
 import type { SharedCity } from '@/lib/sharedCity';
 import { createSoundBoard, type Cue, type SoundBoard } from '@/game/audio';
-import type { GameEvent, HudSnapshot, Layout, ShiftSummary, Vec2 } from '@/game/types';
+import type { Box, GameEvent, HudSnapshot, Layout, ShiftSummary, Vec2 } from '@/game/types';
 import { formatMoney } from '@/lib/money';
 
 export interface WorldOptions {
@@ -92,6 +92,7 @@ export class GameWorld {
   private readonly interactionCustomer: PedestrianModel;
   private readonly handoffPackage: THREE.Mesh;
   private interaction: { kind: 'pickup' | 'dropoff'; left: number; order: ActiveOrder } | null = null;
+  private readonly collisionBoxes: Box[];
   private readonly traffic: Traffic;
   private readonly trafficSignals: TrafficSignals;
   private readonly environment: DynamicEnvironment;
@@ -140,6 +141,28 @@ export class GameWorld {
     private readonly callbacks: WorldCallbacks,
   ) {
     const { layout } = options;
+    // Restaurant meshes are separate from city block meshes, so give each
+    // restaurant its own invisible collision footprint as well.
+    this.collisionBoxes = [
+      ...layout.boxes,
+      ...layout.venues.map((venue): Box => {
+        const centerX = venue.x - venue.normal.x * 4.2;
+        const centerZ = venue.z - venue.normal.z * 4.2;
+        const swapsAxes = Math.abs(venue.normal.x) > 0.5;
+        const halfX = swapsAxes ? 5 : 6.5;
+        const halfZ = swapsAxes ? 6.5 : 5;
+        return {
+          minX: centerX - halfX,
+          maxX: centerX + halfX,
+          minZ: centerZ - halfZ,
+          maxZ: centerZ + halfZ,
+          height: 9,
+          color: venue.color,
+          kind: 'building',
+          seed: 0,
+        };
+      }),
+    ];
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     // Touch-first devices have a tighter GPU budget; cap render resolution and
     // shadow-map size to keep the game responsive without changing simulation quality.
@@ -384,7 +407,7 @@ export class GameWorld {
     }
     this.sound.setEngine(Math.min(1, Math.abs(this.bike.speed) / this.options.stats.maxSpeed));
 
-    const hits = resolveBikeContacts(this.bike, this.options.layout.boxes, this.traffic, this.options.layout.cones);
+    const hits = resolveBikeContacts(this.bike, this.collisionBoxes, this.traffic, this.options.layout.cones);
     for (const hit of hits) this.handleHit(hit);
 
     updateTraffic(this.traffic, this.time, dt, { x: this.bike.x, z: this.bike.z, heading: this.bike.heading, speed: this.bike.speed });
