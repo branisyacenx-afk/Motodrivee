@@ -17,11 +17,11 @@ interface PadDef {
 
 const STEER_PADS: PadDef[] = [
   { control: 'left', label: 'يسار', icon: ArrowLeft, tone: 'bg-white text-slate-900', size: 'h-[clamp(76px,12vh,96px)] w-[clamp(76px,12vh,96px)] landscape:h-[clamp(76px,12vh,96px)] landscape:w-[clamp(76px,12vh,96px)]' },
-  { control: 'right', label: 'يمين', icon: ArrowRight, tone: 'bg-white text-slate-900', size: 'h-[68px] w-[68px] landscape:h-14 landscape:w-14' },
+  { control: 'right', label: 'يمين', icon: ArrowRight, tone: 'bg-white text-slate-900', size: 'h-[clamp(76px,12vh,96px)] w-[clamp(76px,12vh,96px)] landscape:h-[clamp(76px,12vh,96px)] landscape:w-[clamp(76px,12vh,96px)]' },
 ];
 
 const PEDAL_PADS: PadDef[] = [
-  { control: 'brake', label: 'فرامل', icon: Square, tone: 'bg-slate-900 text-white', size: 'h-[68px] w-[68px] landscape:h-14 landscape:w-14' },
+  { control: 'brake', label: 'فرامل', icon: Square, tone: 'bg-slate-900 text-white', size: 'h-[clamp(76px,12vh,96px)] w-[clamp(76px,12vh,96px)] landscape:h-[clamp(76px,12vh,96px)] landscape:w-[clamp(76px,12vh,96px)]' },
   { control: 'gas', label: 'غاز', icon: ArrowUp, tone: 'bg-brand-500 text-white', size: 'h-[clamp(88px,14vh,108px)] w-[clamp(88px,14vh,108px)] landscape:h-[clamp(88px,14vh,108px)] landscape:w-[clamp(88px,14vh,108px)]' },
 ];
 
@@ -75,12 +75,12 @@ export function TouchControls({ onControl }: TouchControlsProps) {
       >
         <Icon className="h-9 w-9 landscape:h-9 landscape:w-9" strokeWidth={2.6} />
       </button>
-      <span className="rounded-full bg-black/45 px-2 py-0.5 text-[11px] font-bold text-white backdrop-blur-sm landscape:text-[9px]">{label}</span>
+      <span className="rounded-full bg-black/45 px-2 py-0.5 text-[11px] font-bold text-white backdrop-blur-sm landscape:text-[11px]">{label}</span>
     </div>
   );
 
   return (
-    <div dir="ltr" className="pointer-events-none absolute inset-x-0 bottom-[5.75rem] z-30 flex items-end justify-between px-4 sm:px-8 landscape:bottom-[5.75rem] landscape:px-8">
+    <div dir="ltr" className="pointer-events-none absolute inset-x-0 bottom-[6.75rem] z-40 flex items-end justify-between px-4 sm:px-8 landscape:bottom-[6.75rem] landscape:px-8">
       <div className="pointer-events-auto flex gap-3 sm:gap-5">{STEER_PADS.map(renderPad)}</div>
       <div className="pointer-events-auto flex items-end gap-3 sm:gap-5">{PEDAL_PADS.map(renderPad)}</div>
     </div>
