@@ -1,6 +1,7 @@
 import { ChevronLeft, Coins, Flag, Gift, Store, Trophy, Target, CheckCircle2, CalendarDays } from 'lucide-react';
 import { careerRank, dailyRewardPreview, DAILY_CHALLENGE_REWARD, DAILY_DELIVERY_GOAL, WEEKLY_CHALLENGE_REWARD, WEEKLY_DELIVERY_GOAL, levelFor, levelProgress, todayKey, weekKey, type Profile } from '@/lib/profile';
 import { formatMoney } from '@/lib/money';
+import { VEHICLES } from '@/game/config';
 
 interface MenuScreenProps {
   profile: Profile;
@@ -55,7 +56,7 @@ export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimD
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/30"><div className="h-full rounded-full bg-emerald-400 transition-[width]" style={{ width: `${progress}%` }} /></div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-200 sm:grid-cols-3">
-            <span>توصيلات: <b className="text-white">{profile.totalDeliveries}</b></span><span>إجمالي الأرباح: <b className="text-white">{formatMoney(profile.totalEarned)}</b></span><span>الدراجات: <b className="text-white">{profile.owned.length}/3</b></span>
+            <span>توصيلات: <b className="text-white">{profile.totalDeliveries}</b></span><span>إجمالي الأرباح: <b className="text-white">{formatMoney(profile.totalEarned)}</b></span><span>الدراجات المملوكة: <b className="text-white">{profile.owned.length}/{VEHICLES.length}</b></span>
           </div>
         </section>
         <section aria-label="تحدي اليوم" className="mt-4 max-w-xl rounded-2xl bg-slate-950/80 p-4 ring-1 ring-amber-300/30">
