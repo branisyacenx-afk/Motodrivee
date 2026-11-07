@@ -17,7 +17,7 @@ interface PadDef {
 
 const STEER_PADS: PadDef[] = [
   { control: 'left', label: 'يسار', icon: ArrowLeft, tone: 'bg-white text-slate-900', size: 'h-[clamp(56px,15vw,72px)] w-[clamp(56px,15vw,72px)] sm:h-[clamp(76px,12vh,96px)] sm:w-[clamp(76px,12vh,96px)]' },
-  { control: 'right', label: 'يمين', icon: ArrowRight, tone: 'bg-white text-slate-900', size: 'h-[clamp(76px,12vh,96px)] w-[clamp(76px,12vh,96px)] landscape:h-[clamp(76px,12vh,96px)] landscape:w-[clamp(76px,12vh,96px)]' },
+  { control: 'right', label: 'يمين', icon: ArrowRight, tone: 'bg-white text-slate-900', size: 'h-[clamp(56px,15vw,72px)] w-[clamp(56px,15vw,72px)] sm:h-[clamp(76px,12vh,96px)] sm:w-[clamp(76px,12vh,96px)]' },
 ];
 
 const PEDAL_PADS: PadDef[] = [
