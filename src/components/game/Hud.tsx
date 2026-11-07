@@ -116,7 +116,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
         </div>
       )}
 
-      <div className={`${GLASS_CARD} pointer-events-auto mx-auto grid w-full max-w-[min(42rem,calc(100vw-1rem))] grid-cols-2 gap-3 px-3 py-2.5 sm:px-4 landscape:mt-1 max-[600px]:absolute max-[600px]:left-1/2 max-[600px]:top-[3.75rem] max-[600px]:w-[min(72vw,18rem)] max-[600px]:-translate-x-1/2 max-[600px]:gap-2 max-[600px]:px-2 max-[600px]:py-1.5`} aria-label="تقدم التحديات">
+      <div className={`${GLASS_CARD} pointer-events-auto mx-auto grid w-full max-w-[min(42rem,calc(100vw-1rem))] grid-cols-2 gap-3 px-3 py-2.5 sm:px-4 landscape:absolute landscape:left-1/2 landscape:top-[5.5rem] landscape:z-20 landscape:mt-0 landscape:w-[min(56vw,42rem)] landscape:max-w-none landscape:-translate-x-1/2 landscape:gap-2 landscape:px-3 landscape:py-2 max-[600px]:absolute max-[600px]:left-1/2 max-[600px]:top-[3.75rem] max-[600px]:w-[min(72vw,18rem)] max-[600px]:-translate-x-1/2 max-[600px]:gap-2 max-[600px]:px-2 max-[600px]:py-1.5`} aria-label="تقدم التحديات">
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-600">
             <span>تحدي اليوم</span>
@@ -139,7 +139,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
         </div>
       </div>
 
-      <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-24 landscape:bottom-28 landscape:mx-0 landscape:max-h-[calc(100%-13rem)] landscape:w-[min(25rem,34vw)] landscape:max-w-none landscape:flex-col landscape:gap-3 landscape:overflow-y-auto landscape:overscroll-contain max-[600px]:absolute max-[600px]:right-2 max-[600px]:top-[7.25rem] max-[600px]:mx-0 max-[600px]:w-[min(14rem,calc(100vw-9rem))] max-[600px]:max-w-none max-[600px]:gap-1">
+      <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-[9rem] landscape:bottom-[5.75rem] landscape:mx-0 landscape:max-h-none landscape:w-[min(22rem,28vw)] landscape:max-w-none landscape:flex-col landscape:gap-2 landscape:overflow-y-auto landscape:overscroll-contain max-[600px]:absolute max-[600px]:right-2 max-[600px]:top-[7.25rem] max-[600px]:mx-0 max-[600px]:w-[min(14rem,calc(100vw-9rem))] max-[600px]:max-w-none max-[600px]:gap-1">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
         <TurnCard turn={hud.turn} order={hud.order} />
         <div className="grid grid-cols-[1.2fr_0.8fr] gap-1 sm:gap-2 landscape:min-w-0 landscape:flex-1 max-[600px]:grid-cols-1">
@@ -171,7 +171,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
           </button>
         </div>
       )}
-      <div className="mt-auto flex justify-center max-[600px]:absolute max-[600px]:bottom-[5.5rem] max-[600px]:left-1/2 max-[600px]:w-[min(90vw,24rem)] max-[600px]:-translate-x-1/2">
+      <div className="mt-auto flex justify-center landscape:absolute landscape:bottom-2 landscape:left-1/2 landscape:z-30 landscape:w-auto landscape:-translate-x-1/2 max-[600px]:absolute max-[600px]:bottom-[5.5rem] max-[600px]:left-1/2 max-[600px]:w-[min(90vw,24rem)] max-[600px]:-translate-x-1/2">
         <div className={`${GLASS_CARD} flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 px-3 py-2 text-xs font-bold tabular-nums sm:gap-x-5 sm:px-5 sm:py-2.5 sm:text-sm max-[600px]:gap-x-2 max-[600px]:px-2 max-[600px]:py-1.5 max-[600px]:text-[10px]`}>
           <span className="flex items-center gap-1.5">
             {isNight ? <Moon className="h-4 w-4 text-indigo-500" /> : <Sun className="h-4 w-4 text-amber-500" />}
