@@ -139,7 +139,7 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
         </div>
       </div>
 
-      <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-[9rem] landscape:bottom-[5.75rem] landscape:mx-0 landscape:max-h-none landscape:w-[min(22rem,28vw)] landscape:max-w-none landscape:flex-col landscape:gap-2 landscape:overflow-y-auto landscape:overscroll-contain max-[600px]:absolute max-[600px]:right-2 max-[600px]:top-[7.25rem] max-[600px]:mx-0 max-[600px]:w-[min(14rem,calc(100vw-9rem))] max-[600px]:max-w-none max-[600px]:gap-1">
+      <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-[9rem] landscape:bottom-[8.75rem] landscape:mx-0 landscape:max-h-none landscape:w-[min(19rem,25vw)] landscape:max-w-none landscape:flex-col landscape:gap-2 landscape:overflow-y-auto landscape:overscroll-contain max-[600px]:absolute max-[600px]:right-2 max-[600px]:top-[8.5rem] max-[600px]:bottom-[8rem] max-[600px]:mx-0 max-[600px]:w-[min(12rem,calc(100vw-8.5rem))] max-[600px]:max-w-none max-[600px]:gap-1 max-[600px]:overflow-y-auto max-[600px]:overscroll-contain">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
         <TurnCard turn={hud.turn} order={hud.order} />
         <div className="grid grid-cols-[1.2fr_0.8fr] gap-1 sm:gap-2 landscape:min-w-0 landscape:flex-1 max-[600px]:grid-cols-1">
