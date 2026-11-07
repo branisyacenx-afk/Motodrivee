@@ -407,8 +407,13 @@ export class GameWorld {
     }
     this.sound.setEngine(Math.min(1, Math.abs(this.bike.speed) / this.options.stats.maxSpeed));
 
-    const hits = resolveBikeContacts(this.bike, this.collisionBoxes, this.traffic, this.options.layout.cones);
-    for (const hit of hits) this.handleHit(hit);
+    // The bike is locked in place during the handoff animation. Ignore contact
+    // resolution for those seconds so passing traffic or nearby props cannot
+    // shove the parked bike out of the pickup/drop-off scene.
+    if (!this.interaction) {
+      const hits = resolveBikeContacts(this.bike, this.collisionBoxes, this.traffic, this.options.layout.cones);
+      for (const hit of hits) this.handleHit(hit);
+    }
 
     updateTraffic(this.traffic, this.time, dt, { x: this.bike.x, z: this.bike.z, heading: this.bike.heading, speed: this.bike.speed });
     this.checkPoliceEnforcement();
