@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Bike, Paintbrush, Wallet, Wrench } from 'lucide-react';
+import { Bike, Paintbrush, Shirt, Wallet, Wrench } from 'lucide-react';
 import { ScreenHeader } from '@/components/screens/ScreenHeader';
-import { BikesPanel, PaintPanel, UpgradesPanel } from '@/components/screens/GaragePanels';
+import { BikesPanel, PaintPanel, RiderOutfitsPanel, UpgradesPanel } from '@/components/screens/GaragePanels';
 import { formatMoney } from '@/lib/money';
 import type { Profile } from '@/lib/profile';
 
@@ -14,6 +14,7 @@ interface GarageScreenProps {
 const TABS = [
   { id: 'bikes', label: 'الدراجات', icon: Bike },
   { id: 'paint', label: 'الصبغة', icon: Paintbrush },
+  { id: 'outfits', label: 'الملابس', icon: Shirt },
   { id: 'upgrades', label: 'التحسينات', icon: Wrench },
 ] as const;
 
@@ -49,7 +50,7 @@ export function GarageScreen({ profile, onUpdate, onBack }: GarageScreenProps) {
           />
         </label>
 
-        <div role="tablist" className="mt-6 grid grid-cols-3 gap-1 rounded-2xl bg-white/5 p-1 ring-1 ring-white/10">
+        <div role="tablist" className="mt-6 grid grid-cols-2 gap-1 rounded-2xl sm:grid-cols-4 bg-white/5 p-1 ring-1 ring-white/10">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -70,6 +71,7 @@ export function GarageScreen({ profile, onUpdate, onBack }: GarageScreenProps) {
         <div key={tab} className="mt-6 animate-rise-in">
           {tab === 'bikes' && <BikesPanel profile={profile} onUpdate={onUpdate} />}
           {tab === 'paint' && <PaintPanel profile={profile} onUpdate={onUpdate} />}
+          {tab === 'outfits' && <RiderOutfitsPanel profile={profile} onUpdate={onUpdate} />}
           {tab === 'upgrades' && <UpgradesPanel profile={profile} onUpdate={onUpdate} />}
         </div>
       </main>

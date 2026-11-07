@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createLogoTexture } from '@/game/render/textures';
-import type { VehicleId } from '@/game/config';
+import { RIDER_OUTFITS, type RiderOutfitId, type VehicleId } from '@/game/config';
 
 type Vec = readonly [number, number, number];
 
@@ -20,7 +20,7 @@ export interface PedestrianModel {
 }
 
 export interface ActorAssets {
-  bike(paintHex: string, vehicleId: VehicleId, rider?: { gender: 'male' | 'female'; jacket: string; helmet: string }): BikeModel;
+  bike(paintHex: string, vehicleId: VehicleId, rider?: { gender: 'male' | 'female'; jacket: string; helmet: string; outfit: RiderOutfitId }): BikeModel;
   car(color: string): THREE.Group;
   pedestrian(shirt: string, skin: string, isChild?: boolean): PedestrianModel;
   cone(): THREE.Group;
@@ -182,8 +182,6 @@ export function createActorAssets(): ActorAssets {
   const chrome = new THREE.MeshStandardMaterial({ color: '#c9ced6', roughness: 0.28, metalness: 0.85 });
   const black = new THREE.MeshStandardMaterial({ color: '#1b1e22', roughness: 0.6 });
   const trimMat = new THREE.MeshStandardMaterial({ color: '#1a1c20', roughness: 0.7 });
-  const pants = new THREE.MeshStandardMaterial({ color: '#23272e', roughness: 0.8 });
-  const boot = new THREE.MeshStandardMaterial({ color: '#16130f', roughness: 0.55 });
   const visor = new THREE.MeshStandardMaterial({ color: '#0d1620', roughness: 0.1, metalness: 0.4 });
   const brake = new THREE.MeshBasicMaterial({ color: '#ff3b30', toneMapped: false });
   const headlight = new THREE.MeshBasicMaterial({ color: '#fff1c4', toneMapped: false });
@@ -208,9 +206,13 @@ export function createActorAssets(): ActorAssets {
   let pedParts: ReturnType<typeof buildPedestrianParts> | null = null;
 
   return {
-    bike(paintHex, vehicleId, rider = { gender: 'male', jacket: '#f3f3f0', helmet: '#f7f7f5' }) {
+    bike(paintHex, vehicleId, rider = { gender: 'male', jacket: '#f3f3f0', helmet: '#f7f7f5', outfit: 'custom' }) {
+      const outfit = RIDER_OUTFITS.find((item) => item.id === rider.outfit) ?? RIDER_OUTFITS[0];
       const riderJacketMat = materialFor(rider.jacket, 0.7, 0);
       const riderHelmetMat = materialFor(rider.helmet, 0.3, 0.1);
+      const riderPantsMat = materialFor(outfit.trousers, 0.8, 0);
+      const riderBootMat = materialFor(outfit.boots, 0.55, 0);
+      const riderAccentMat = outfit.accent ? materialFor(outfit.accent, 0.45, 0.05) : null;
       const group = new THREE.Group();
       const paint = materialFor(paintHex, 0.35, 0.2);
       const paintGeo = merge([
@@ -239,18 +241,28 @@ export function createActorAssets(): ActorAssets {
       const torsoMesh = new THREE.Mesh(riderTorso, riderJacketMat);
       torsoMesh.scale.x = rider.gender === 'female' ? 0.88 : 1.08;
       group.add(torsoMesh);
+      if (riderAccentMat) {
+        const accentParts = outfit.id === 'night' || outfit.id === 'courier'
+          ? [box(0.34, 0.035, 0.025, 0, 1.27, 0.13), box(0.34, 0.035, 0.025, 0, 1.13, 0.22)]
+          : outfit.id === 'sport'
+            ? [box(0.17, 0.13, 0.16, -0.19, 1.39, 0.01), box(0.17, 0.13, 0.16, 0.19, 1.39, 0.01)]
+            : outfit.id === 'desert'
+              ? [box(0.34, 0.09, 0.2, 0, 1.43, -0.01)]
+              : [box(0.1, 0.14, 0.025, 0.1, 1.28, 0.16)];
+        group.add(new THREE.Mesh(merge(accentParts), riderAccentMat));
+      }
       group.add(new THREE.Mesh(merge([
         limb([-0.13, 0.98, -0.25], [-0.14, 0.6, 0.12], 0.09),
         limb([-0.14, 0.6, 0.12], [-0.13, 0.36, 0.36], 0.08),
         limb([0.13, 0.98, -0.25], [0.14, 0.6, 0.12], 0.09),
         limb([0.14, 0.6, 0.12], [0.13, 0.36, 0.36], 0.08),
-      ]), pants));
+      ]), riderPantsMat));
       group.add(new THREE.Mesh(merge([
         box(0.12, 0.1, 0.24, -0.13, 0.34, 0.4),
         box(0.12, 0.1, 0.24, 0.13, 0.34, 0.4),
         ball(0.065, -0.2, 1.06, 0.6),
         ball(0.065, 0.2, 1.06, 0.6),
-      ]), boot));
+      ]), riderBootMat));
       group.add(new THREE.Mesh(merge([ball(0.165, 0, 1.6, 0.1) ]), riderHelmetMat));
       group.add(new THREE.Mesh(box(0.22, 0.1, 0.03, 0, 1.6, 0.27), visor));
       const bikeHeadlight = headlight.clone();

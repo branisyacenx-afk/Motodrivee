@@ -36,6 +36,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
     riderGender: profile.riderGender,
     riderJacket: profile.riderJacket,
     riderHelmet: profile.riderHelmet,
+    riderOutfit: profile.riderOutfit,
   }));
   const [hud, setHud] = useState<HudSnapshot | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -111,6 +112,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
           riderGender: loadout.riderGender,
           riderJacket: loadout.riderJacket,
           riderHelmet: loadout.riderHelmet,
+          riderOutfit: loadout.riderOutfit,
           network,
           readInput: input.read,
         },
