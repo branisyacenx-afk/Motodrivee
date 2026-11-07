@@ -16,13 +16,13 @@ interface PadDef {
 }
 
 const STEER_PADS: PadDef[] = [
-  { control: 'left', label: 'يسار', icon: ArrowLeft, tone: 'bg-white text-slate-900', size: 'h-[clamp(76px,12vh,96px)] w-[clamp(76px,12vh,96px)] landscape:h-[clamp(76px,12vh,96px)] landscape:w-[clamp(76px,12vh,96px)]' },
-  { control: 'right', label: 'يمين', icon: ArrowRight, tone: 'bg-white text-slate-900', size: 'h-[clamp(76px,12vh,96px)] w-[clamp(76px,12vh,96px)] landscape:h-[clamp(76px,12vh,96px)] landscape:w-[clamp(76px,12vh,96px)]' },
+  { control: 'left', label: 'يسار', icon: ArrowLeft, tone: 'bg-white text-slate-900', size: 'h-[clamp(56px,15vw,72px)] w-[clamp(56px,15vw,72px)] sm:h-[clamp(68px,10vh,76px)] sm:w-[clamp(68px,10vh,76px)] landscape:h-[68px] landscape:w-[68px]' },
+  { control: 'right', label: 'يمين', icon: ArrowRight, tone: 'bg-white text-slate-900', size: 'h-[clamp(56px,15vw,72px)] w-[clamp(56px,15vw,72px)] sm:h-[clamp(68px,10vh,76px)] sm:w-[clamp(68px,10vh,76px)] landscape:h-[68px] landscape:w-[68px]' },
 ];
 
 const PEDAL_PADS: PadDef[] = [
-  { control: 'brake', label: 'فرامل', icon: Square, tone: 'bg-slate-900 text-white', size: 'h-[clamp(76px,12vh,96px)] w-[clamp(76px,12vh,96px)] landscape:h-[clamp(76px,12vh,96px)] landscape:w-[clamp(76px,12vh,96px)]' },
-  { control: 'gas', label: 'غاز', icon: ArrowUp, tone: 'bg-brand-500 text-white', size: 'h-[clamp(88px,14vh,108px)] w-[clamp(88px,14vh,108px)] landscape:h-[clamp(88px,14vh,108px)] landscape:w-[clamp(88px,14vh,108px)]' },
+  { control: 'brake', label: 'فرامل', icon: Square, tone: 'bg-slate-900 text-white', size: 'h-[clamp(56px,15vw,72px)] w-[clamp(56px,15vw,72px)] sm:h-[clamp(68px,10vh,76px)] sm:w-[clamp(68px,10vh,76px)] landscape:h-[68px] landscape:w-[68px]' },
+  { control: 'gas', label: 'غاز', icon: ArrowUp, tone: 'bg-brand-500 text-white', size: 'h-[clamp(66px,17vw,82px)] w-[clamp(66px,17vw,82px)] sm:h-[clamp(76px,11vh,88px)] sm:w-[clamp(76px,11vh,88px)] landscape:h-[76px] landscape:w-[76px]' },
 ];
 
 export function TouchControls({ onControl }: TouchControlsProps) {
@@ -73,16 +73,16 @@ export function TouchControls({ onControl }: TouchControlsProps) {
         className={`${tone} ${size} flex touch-none select-none items-center justify-center rounded-full shadow-xl ring-1 ring-black/10 transition-transform active:scale-95 active:brightness-90`}
         {...bind(control)}
       >
-        <Icon className="h-9 w-9 landscape:h-9 landscape:w-9" strokeWidth={2.6} />
+        <Icon className="h-6 w-6 sm:h-7 sm:w-7 landscape:h-7 landscape:w-7" strokeWidth={2.6} />
       </button>
-      <span className="rounded-full bg-black/45 px-2 py-0.5 text-[11px] font-bold text-white backdrop-blur-sm landscape:text-[11px]">{label}</span>
+      <span className="rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm landscape:text-[10px]">{label}</span>
     </div>
   );
 
   return (
-    <div dir="ltr" className="pointer-events-none absolute inset-x-0 bottom-[6.75rem] z-40 flex items-end justify-between px-4 sm:px-8 landscape:bottom-[6.75rem] landscape:px-8">
-      <div className="pointer-events-auto flex gap-3 sm:gap-5">{STEER_PADS.map(renderPad)}</div>
-      <div className="pointer-events-auto flex items-end gap-3 sm:gap-5">{PEDAL_PADS.map(renderPad)}</div>
+    <div dir="ltr" className="pointer-events-none absolute inset-x-0 bottom-2 z-40 flex items-end justify-between px-2 sm:bottom-[5.5rem] sm:px-8 landscape:bottom-[5.25rem] landscape:px-6">
+      <div className="pointer-events-auto flex gap-2 sm:gap-5">{STEER_PADS.map(renderPad)}</div>
+      <div className="pointer-events-auto flex items-end gap-2 sm:gap-5">{PEDAL_PADS.map(renderPad)}</div>
     </div>
   );
 }
