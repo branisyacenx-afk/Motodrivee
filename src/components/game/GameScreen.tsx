@@ -164,24 +164,6 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
     <div className="fixed inset-0 overflow-hidden bg-sky-200 select-none">
       <div ref={containerRef} className="absolute inset-0" />
 
-      {isPortraitMobile && (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slate-950/95 px-6 text-center text-white">
-          <div className="flex max-w-sm flex-col items-center">
-            <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-500/15 text-brand-400 ring-1 ring-brand-400/30">
-              <svg viewBox="0 0 24 24" className="h-12 w-12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="7" width="18" height="10" rx="2" />
-                <path d="M8 4 5 7m11-3 3 3M5 17l3 3m11-3-3 3" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-black">سويفت دروب أصبحت أفقية</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-300">لرؤية الطريق والتحكم بالدراجة بشكل أفضل، أدر هاتفك إلى الوضع الأفقي. يمكنك أيضاً الضغط على الزر لمحاولة تدوير الشاشة تلقائياً.</p>
-            <button type="button" onClick={requestLandscape} className="mt-6 w-full rounded-2xl bg-brand-500 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-600 active:scale-[0.98]">
-              تدوير الشاشة إلى الوضع الأفقي
-            </button>
-            <p className="mt-3 text-[11px] text-slate-500">إذا لم تتغير الشاشة تلقائياً، أدر الهاتف يدوياً.</p>
-          </div>
-        </div>
-      )}
 
       {gameError && (
         <div className="absolute inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-2xl border border-red-300/30 bg-slate-950/95 p-5 text-center text-white shadow-2xl">
