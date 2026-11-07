@@ -44,32 +44,6 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
   const [muted, setMuted] = useState(false);
   const [gameError, setGameError] = useState<string | null>(null);
   const [isTouch] = useState(() => window.matchMedia('(pointer: coarse)').matches);
-  const [isPortraitMobile, setIsPortraitMobile] = useState(() => window.matchMedia('(pointer: coarse) and (orientation: portrait)').matches);
-
-  useEffect(() => {
-    const query = window.matchMedia('(pointer: coarse) and (orientation: portrait)');
-    const updateOrientation = () => setIsPortraitMobile(query.matches);
-    query.addEventListener('change', updateOrientation);
-    window.addEventListener('orientationchange', updateOrientation);
-    window.addEventListener('resize', updateOrientation);
-    return () => {
-      query.removeEventListener('change', updateOrientation);
-      window.removeEventListener('orientationchange', updateOrientation);
-      window.removeEventListener('resize', updateOrientation);
-    };
-  }, []);
-
-  const requestLandscape = async () => {
-    try {
-      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen();
-      }
-      const orientation = window.screen.orientation as unknown as { lock?: (value: 'landscape') => Promise<void> };
-      if (orientation.lock) await orientation.lock('landscape');
-    } catch {
-      // Some browsers require manual rotation or do not expose orientation locking.
-    }
-  };
 
   useEffect(() => {
     onFinishRef.current = onFinish;
@@ -146,8 +120,8 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
   }, [layout, loadout]);
 
   useEffect(() => {
-    worldRef.current?.setPaused(paused || mapOpen || isPortraitMobile);
-  }, [paused, mapOpen, isPortraitMobile]);
+    worldRef.current?.setPaused(paused || mapOpen);
+  }, [paused, mapOpen]);
 
   useEffect(() => {
     worldRef.current?.setMuted(muted);
@@ -242,7 +216,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
               state={hud.minimap}
               onOpen={() => setMapOpen(true)}
               className={isTouch
-                ? 'absolute left-4 top-[38%] z-20 w-28'
+                ? 'absolute left-2 top-[7.25rem] z-30 w-[clamp(5.25rem,18vw,7rem)]'
                 : 'absolute bottom-20 left-6 z-20 w-44 md:w-52'}
             />
           )}
