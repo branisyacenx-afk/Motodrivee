@@ -21,7 +21,7 @@ const STEER_PADS: PadDef[] = [
 ];
 
 const PEDAL_PADS: PadDef[] = [
-  { control: 'brake', label: 'فرامل', icon: Square, tone: 'bg-slate-900 text-white', size: 'h-[clamp(76px,12vh,96px)] w-[clamp(76px,12vh,96px)] landscape:h-[clamp(76px,12vh,96px)] landscape:w-[clamp(76px,12vh,96px)]' },
+  { control: 'brake', label: 'فرامل', icon: Square, tone: 'bg-slate-900 text-white', size: 'h-[clamp(56px,15vw,72px)] w-[clamp(56px,15vw,72px)] sm:h-[clamp(76px,12vh,96px)] sm:w-[clamp(76px,12vh,96px)]' },
   { control: 'gas', label: 'غاز', icon: ArrowUp, tone: 'bg-brand-500 text-white', size: 'h-[clamp(66px,17vw,82px)] w-[clamp(66px,17vw,82px)] sm:h-[clamp(88px,14vh,108px)] sm:w-[clamp(88px,14vh,108px)]' },
 ];
 
