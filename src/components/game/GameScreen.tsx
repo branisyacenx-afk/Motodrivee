@@ -198,7 +198,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
               state={hud.minimap}
               onOpen={() => setMapOpen(true)}
               className={isTouch
-                ? 'absolute left-2 top-[7.25rem] z-30 w-[clamp(5.25rem,18vw,7rem)]'
+                ? 'absolute left-3 top-[6.75rem] z-30 w-[clamp(5rem,8vw,6rem)] landscape:left-4 landscape:top-[6.75rem] landscape:w-[5.5rem]'
                 : 'absolute bottom-20 left-6 z-20 w-44 md:w-52'}
             />
           )}
