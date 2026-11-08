@@ -15,10 +15,12 @@ export const SHIFT_TASKS: readonly ShiftTask[] = [
     passed: (summary) => summary.deliveries >= 3,
   },
   {
-    id: 'five-thousand',
-    title: 'اجمع 5000 نقطة',
+    id: 'shift-score-1800',
+    title: 'اجمع 1800 نقطة في وردية وحدة',
     reward: 2500,
-    passed: (summary) => summary.score >= 5000,
+    // Shift score is awarded per completed delivery and capped by its remaining time.
+    // 1,800 keeps this as a demanding but reachable goal in a 10-minute shift.
+    passed: (summary) => summary.score >= 1800,
   },
   {
     id: 'on-time',
