@@ -78,12 +78,34 @@ export function SummaryScreen({ summary, profile, onPlayAgain, onLeaderboard, on
             <ul className="mt-3 flex flex-col gap-2.5">
               {SHIFT_TASKS.map((task) => {
                 const done = task.passed(summary);
+                const progress = Math.min(task.target, Math.max(0, Math.floor(task.progress(summary))));
+                const percent = Math.round((progress / task.target) * 100);
                 return (
-                  <li key={task.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className={done ? 'text-white' : 'text-slate-400'}>{task.title}</span>
-                    <span className={`shrink-0 font-bold tabular-nums ${done ? 'text-emerald-300' : 'text-slate-500'}`}>
-                      {done ? `+${formatMoney(task.reward)}` : 'لم تكتمل'}
-                    </span>
+                  <li key={task.id} className="rounded-xl bg-black/20 p-3">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className={done ? 'font-semibold text-white' : 'text-slate-300'}>{task.title}</span>
+                      <span className={`shrink-0 font-bold tabular-nums ${done ? 'text-emerald-300' : 'text-slate-400'}`}>
+                        {done ? `+${formatMoney(task.reward)}` : 'لم تكتمل'}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div
+                        role="progressbar"
+                        aria-label={`تقدم ${task.title}`}
+                        aria-valuemin={0}
+                        aria-valuemax={task.target}
+                        aria-valuenow={progress}
+                        className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10"
+                      >
+                        <div
+                          className={`h-full rounded-full transition-[width] ${done ? 'bg-emerald-400' : 'bg-brand-400'}`}
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                      <span className="min-w-12 text-left text-xs font-bold tabular-nums text-slate-400">
+                        {progress.toLocaleString('ar-DZ')} / {task.target.toLocaleString('ar-DZ')}
+                      </span>
+                    </div>
                   </li>
                 );
               })}
