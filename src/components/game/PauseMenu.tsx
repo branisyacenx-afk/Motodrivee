@@ -13,8 +13,8 @@ export function PauseMenu({ onResume, onEndShift }: PauseMenuProps) {
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
           <Pause className="h-6 w-6 text-slate-700" />
         </span>
-        <h2 className="mt-4 text-2xl font-bold">الوردية واقفة</h2>
-        <p className="mt-1 text-sm text-slate-500">التوقيت واقف حتى ترجع تكمل.</p>
+        <h2 className="mt-4 text-2xl font-bold">اللعبة متوقفة مؤقتاً</h2>
+        <p className="mt-1 text-sm text-slate-500">العالم مفتوح؛ يمكنك العودة للقيادة في أي وقت.</p>
         <div className="mt-6 flex flex-col gap-2">
           <button
             type="button"
@@ -30,7 +30,7 @@ export function PauseMenu({ onResume, onEndShift }: PauseMenuProps) {
             className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
           >
             <Flag className="h-4 w-4" />
-            وقف الوردية
+            إنهاء الجلسة
           </button>
         </div>
       </div>
