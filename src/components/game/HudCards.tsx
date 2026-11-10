@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ArrowUp, Check, MapPin, RotateCcw, Timer, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, Check, RotateCcw, X } from 'lucide-react';
 import { formatMoney } from '@/lib/money';
 import type { GameEvent, HudSnapshot, OfferHud, OrderHud } from '@/game/types';
 
