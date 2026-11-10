@@ -49,12 +49,6 @@ const LINK_LABEL: Record<HudSnapshot['link'], string> = {
   offline: 'بلا اتصال',
 };
 
-function formatClock(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
 export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepair, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
   const lowHealth = hud.health < 35;
   const criticalHealth = hud.health <= 25;
