@@ -109,7 +109,6 @@ export interface HudSnapshot {
   gameHour: number;
   gameMinute: number;
   weather: 'clear' | 'cloudy' | 'rain' | 'fog' | 'wind';
-  shiftLeft: number;
   score: number;
   earnings: number;
   deliveries: number;
