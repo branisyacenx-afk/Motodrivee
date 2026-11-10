@@ -9,7 +9,6 @@ export const CITY = {
   seed: 20251,
 } as const;
 
-export const SHIFT_SECONDS = 600;
 
 // The motorcycle uses a 10-litre tank; fuel is sold at a fixed Algerian-dinar price.
 export const FUEL_TANK_LITERS = 10;
