@@ -179,10 +179,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
           <Hud
             hud={hud}
             toasts={toasts}
-            dailyDeliveries={profile.dailyDeliveries}
-            weeklyDeliveries={profile.weeklyDeliveries}
-            dailyClaimed={profile.dailyChallengeClaimed}
-            weeklyClaimed={profile.weeklyChallengeClaimed}
+            wallet={profile.wallet}
             onAccept={() => worldRef.current?.acceptOffer()}
             onDecline={() => worldRef.current?.declineOffer()}
             onRefuel={() => worldRef.current?.refuel()}
