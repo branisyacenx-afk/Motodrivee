@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BASE_BIKE, CITY, SHIFT_SECONDS, type BikeStats, type VehicleId } from '@/game/config';
+import { BASE_BIKE, CITY, FUEL_PRICE_PER_LITER, FUEL_TANK_LITERS, SHIFT_SECONDS, type BikeStats, type VehicleId } from '@/game/config';
 import { roadX, roadZ } from '@/game/city/layout';
 import { buildRoadRoute } from '@/game/city/route';
 import { createTraffic, updateTraffic, type Traffic } from '@/game/sim/traffic';
@@ -38,6 +38,7 @@ export interface WorldOptions {
   paintHex: string;
   vehicleId: VehicleId;
   playerName: string;
+  wallet: number;
   riderGender: 'male' | 'female';
   riderJacket: string;
   riderHelmet: string;
@@ -49,6 +50,7 @@ export interface WorldCallbacks {
   onHud: (hud: HudSnapshot) => void;
   onEvent: (event: GameEvent) => void;
   onDelivery: (pay: number, onTime: boolean) => void;
+  onSpend: (amount: number) => void;
   onEnd: (summary: ShiftSummary) => void;
   onError?: (message: string) => void;
 }
@@ -122,6 +124,7 @@ export class GameWorld {
   private policeFineReadyAt = 0;
   private score = 0;
   private earnings = 0;
+  private wallet = 0;
   private deliveries = 0;
   private lateDeliveries = 0;
   private health: number = BASE_BIKE.health;
@@ -141,6 +144,7 @@ export class GameWorld {
     private readonly callbacks: WorldCallbacks,
   ) {
     const { layout } = options;
+    this.wallet = Number.isFinite(options.wallet) ? Math.max(0, options.wallet) : 0;
     // Restaurant meshes are separate from city block meshes, so give each
     // restaurant its own invisible collision footprint as well.
     this.collisionBoxes = [
@@ -289,14 +293,23 @@ export class GameWorld {
       this.emit({ kind: 'info', text: 'خزان الوقود ممتلئ بالفعل' });
       return;
     }
-    const cost = Math.ceil((100 - this.fuel) * 2);
-    if (this.earnings < cost) {
-      this.emit({ kind: 'bad', text: `تحتاج ${formatMoney(cost)} للتعبئة` });
+
+    const currentLiters = (this.fuel / 100) * FUEL_TANK_LITERS;
+    const missingLiters = Math.max(0, FUEL_TANK_LITERS - currentLiters);
+    // Sell fuel in 0.1-litre increments so every purchase has an exact price.
+    const affordableLiters = Math.floor((this.wallet / FUEL_PRICE_PER_LITER) * 10) / 10;
+    const litersToBuy = Math.min(missingLiters, affordableLiters);
+    if (litersToBuy < 0.1) {
+      this.emit({ kind: 'bad', text: `تحتاج إلى 50 دج على الأقل لشراء 0.1 لتر` });
       return;
     }
-    this.earnings -= cost;
-    this.fuel = 100;
-    this.emit({ kind: 'good', text: `تم ملء الخزان بنجاح · ${formatMoney(cost)}` });
+
+    const cost = Math.round(litersToBuy * FUEL_PRICE_PER_LITER);
+    const litersAdded = cost / FUEL_PRICE_PER_LITER;
+    this.wallet = Math.max(0, this.wallet - cost);
+    this.fuel = Math.min(100, this.fuel + (litersAdded / FUEL_TANK_LITERS) * 100);
+    this.callbacks.onSpend(cost);
+    this.emit({ kind: 'good', text: `تمت إضافة ${litersAdded.toFixed(1)} لتر · ${formatMoney(cost)}` });
     this.callbacks.onHud(this.snapshot());
   }
 
@@ -312,11 +325,12 @@ export class GameWorld {
       return;
     }
     const cost = Math.ceil((100 - this.health) * 3);
-    if (this.earnings < cost) {
+    if (this.wallet < cost) {
       this.emit({ kind: 'bad', text: `تحتاج ${formatMoney(cost)} لإصلاح الدراجة` });
       return;
     }
-    this.earnings -= cost;
+    this.wallet -= cost;
+    this.callbacks.onSpend(cost);
     this.health = 100;
     this.emit({ kind: 'good', text: `تم إصلاح الدراجة بالكامل · ${formatMoney(cost)}` });
     this.callbacks.onHud(this.snapshot());
@@ -433,8 +447,9 @@ export class GameWorld {
     if (!zone || this.time < this.policeFineReadyAt || this.bike.speed * 3.6 <= 60) return;
     this.policeFineReadyAt = this.time + 18;
     const fine = 150;
-    if (this.earnings >= fine) {
-      this.earnings -= fine;
+    if (this.wallet >= fine) {
+      this.wallet -= fine;
+      this.callbacks.onSpend(fine);
       this.emit({ kind: 'bad', text: `شرطة المرور: تجاوزت السرعة المحددة! غرامة ${formatMoney(fine)}` });
     } else {
       this.addScore(-20);
@@ -523,6 +538,7 @@ export class GameWorld {
     const onTime = order.lateSeconds <= 0;
     const pay = onTime ? order.pay : Math.round(order.pay / 2);
     this.earnings += pay;
+    this.wallet += pay;
     this.callbacks.onDelivery(pay, onTime);
     if (onTime) {
       this.addScore(100 + Math.round(order.timeLeft * 2));
