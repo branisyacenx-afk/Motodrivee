@@ -11,6 +11,10 @@ export const CITY = {
 
 export const SHIFT_SECONDS = 600;
 
+// The motorcycle uses a 10-litre tank; fuel is sold at a fixed Algerian-dinar price.
+export const FUEL_TANK_LITERS = 10;
+export const FUEL_PRICE_PER_LITER = 500;
+
 export const ALGIERS_DISTRICTS = ['باب الوادي', 'حسين داي', 'القبة', 'الحراش', 'بئر مراد رايس', 'حيدرة'] as const;
 
 export const BASE_BIKE = {
