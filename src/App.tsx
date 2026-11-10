@@ -5,7 +5,7 @@ import { LeaderboardScreen } from '@/components/screens/LeaderboardScreen';
 import { MenuScreen } from '@/components/screens/MenuScreen';
 import { SummaryScreen } from '@/components/screens/SummaryScreen';
 import type { ShiftSummary } from '@/game/types';
-import { claimDaily, claimDailyChallenge, claimWeeklyChallenge, creditDelivery, creditShift, loadProfile, saveProfile, todayKey, weekKey, type Profile } from '@/lib/profile';
+import { claimDaily, claimDailyChallenge, claimWeeklyChallenge, creditDelivery, creditShift, debitWallet, loadProfile, saveProfile, todayKey, weekKey, type Profile } from '@/lib/profile';
 
 type Screen = 'menu' | 'garage' | 'leaderboard' | 'play' | 'summary';
 
@@ -35,7 +35,7 @@ function App() {
       />}
       {screen === 'garage' && <GarageScreen profile={profile} onUpdate={setProfile} onBack={() => setScreen('menu')} />}
       {screen === 'leaderboard' && <LeaderboardScreen onBack={() => setScreen('menu')} />}
-      {screen === 'play' && <GameScreen profile={profile} onFinish={handleFinish} onDelivery={(pay, onTime) => setProfile((prev) => creditDelivery(prev, pay, onTime))} />}
+      {screen === 'play' && <GameScreen profile={profile} onFinish={handleFinish} onDelivery={(pay, onTime) => setProfile((prev) => creditDelivery(prev, pay, onTime))} onSpend={(amount) => setProfile((prev) => debitWallet(prev, amount) ?? prev)} />}
       {screen === 'summary' && summary && <SummaryScreen summary={summary} profile={profile} onPlayAgain={() => setScreen('play')} onLeaderboard={() => setScreen('leaderboard')} onMenu={() => setScreen('menu')} />}
     </div>
   );
