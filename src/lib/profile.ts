@@ -202,6 +202,13 @@ export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
   return { ...profile, wallet: profile.wallet - cost, upgrades: { ...profile.upgrades, [id]: level + 1 } };
 }
 
+export function debitWallet(profile: Profile, amount: number): Profile | null {
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  const cost = Math.ceil(amount);
+  if (profile.wallet < cost) return null;
+  return { ...profile, wallet: profile.wallet - cost };
+}
+
 export function creditDelivery(profile: Profile, pay: number, onTime = true): Profile {
   const reward = Math.max(0, Math.round(pay));
   const today = todayKey();

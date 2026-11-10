@@ -16,23 +16,26 @@ interface GameScreenProps {
   profile: Profile;
   onFinish: (summary: ShiftSummary) => void;
   onDelivery: (pay: number, onTime: boolean) => void;
+  onSpend: (amount: number) => void;
 }
 
 const TOAST_LIFE_MS = 2600;
 const MAX_TOASTS = 3;
 
-export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
+export function GameScreen({ profile, onFinish, onDelivery, onSpend }: GameScreenProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<GameWorld | null>(null);
   const inputRef = useRef<ReturnType<typeof createInputController> | null>(null);
   const onFinishRef = useRef(onFinish);
   const onDeliveryRef = useRef(onDelivery);
+  const onSpendRef = useRef(onSpend);
   const layout = useMemo(() => createCityLayout(), []);
   const [loadout] = useState(() => ({
     stats: getBikeStats(profile.vehicle, profile.upgrades),
     paintHex: PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? PAINTS[0].hex,
     vehicleId: profile.vehicle,
     playerName: profile.name,
+    wallet: profile.wallet,
     riderGender: profile.riderGender,
     riderJacket: profile.riderJacket,
     riderHelmet: profile.riderHelmet,
@@ -48,7 +51,8 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
   useEffect(() => {
     onFinishRef.current = onFinish;
     onDeliveryRef.current = onDelivery;
-  }, [onFinish, onDelivery]);
+    onSpendRef.current = onSpend;
+  }, [onFinish, onDelivery, onSpend]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -82,6 +86,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
           paintHex: loadout.paintHex,
           vehicleId: loadout.vehicleId,
           playerName: loadout.playerName,
+          wallet: loadout.wallet,
           riderGender: loadout.riderGender,
           riderJacket: loadout.riderJacket,
           riderHelmet: loadout.riderHelmet,
@@ -91,6 +96,7 @@ export function GameScreen({ profile, onFinish, onDelivery }: GameScreenProps) {
         {
           onHud: setHud,
           onDelivery: (pay, onTime) => onDeliveryRef.current(pay, onTime),
+          onSpend: (amount) => onSpendRef.current(amount),
           onEvent: (event: GameEvent) => {
             const id = ++nextToastId;
             setToasts((prev) => [...prev.slice(-(MAX_TOASTS - 1)), { ...event, id }]);
