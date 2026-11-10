@@ -1,5 +1,6 @@
-import { Bike, Cloud, CloudFog, CloudRain, Gauge, Heart, Moon, Pause, Sun, Timer, Volume2, VolumeX, Wind, ShieldAlert, AlertTriangle } from 'lucide-react';
-import { EarningsCard, OfferCard, OrderCard, Toasts, TurnCard, GLASS_CARD } from '@/components/game/HudCards';
+import { Bike, Cloud, CloudFog, CloudRain, Gauge, Heart, Moon, Pause, Sun, Volume2, VolumeX, Wallet, Wind, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { OfferCard, OrderCard, Toasts, TurnCard, GLASS_CARD } from '@/components/game/HudCards';
+import { formatMoney } from '@/lib/money';
 import type { GameEvent, HudSnapshot } from '@/game/types';
 
 export interface ToastItem extends GameEvent {
@@ -9,10 +10,7 @@ export interface ToastItem extends GameEvent {
 interface HudProps {
   hud: HudSnapshot;
   toasts: ToastItem[];
-  dailyDeliveries: number;
-  weeklyDeliveries: number;
-  dailyClaimed: boolean;
-  weeklyClaimed: boolean;
+  wallet: number;
   onAccept: () => void;
   onDecline: () => void;
   onRefuel: () => void;
@@ -57,7 +55,7 @@ function formatClock(totalSeconds: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaimed, weeklyClaimed, onAccept, onDecline, onRefuel, onRepair, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
+export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepair, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
   const lowHealth = hud.health < 35;
   const criticalHealth = hud.health <= 25;
   const lowFuel = hud.fuel < 25;
@@ -99,6 +97,20 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
         </div>
       </div>
 
+      <div className={`${GLASS_CARD} pointer-events-auto absolute left-3 top-[15rem] z-30 flex flex-col gap-1.5 px-2.5 py-2 text-[11px] font-bold shadow-lg landscape:left-4 landscape:top-[12.5rem] max-[600px]:left-2`} aria-label="الوقت والطقس ورصيد اللاعب">
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          {isNight ? <Moon className="h-3.5 w-3.5 text-indigo-500" /> : <Sun className="h-3.5 w-3.5 text-amber-500" />}
+          <span className="tabular-nums">{String(hud.gameHour).padStart(2, '0')}:{String(hud.gameMinute).padStart(2, '0')}</span>
+          <span className="h-3 w-px bg-slate-300" />
+          <WeatherIcon className="h-3.5 w-3.5 text-sky-600" />
+          <span>{WEATHER_LABEL[hud.weather]}</span>
+        </div>
+        <div className="flex items-center gap-2 border-t border-slate-200 pt-1 text-emerald-700">
+          <Wallet className="h-3.5 w-3.5" />
+          <span className="tabular-nums">{formatMoney(wallet)}</span>
+        </div>
+      </div>
+
       {(criticalFuel || criticalHealth) && (
         <div className="mx-auto flex max-w-sm flex-wrap justify-center gap-2" role="status" aria-live="polite">
           {criticalFuel && (
@@ -116,35 +128,11 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
         </div>
       )}
 
-      <div className={`${GLASS_CARD} pointer-events-auto mx-auto grid w-full max-w-[min(42rem,calc(100vw-1rem))] grid-cols-2 gap-3 px-3 py-2.5 sm:px-4 landscape:absolute landscape:left-1/2 landscape:top-[5.5rem] landscape:z-20 landscape:mt-0 landscape:w-[min(56vw,42rem)] landscape:max-w-none landscape:-translate-x-1/2 landscape:gap-2 landscape:px-3 landscape:py-2 max-[600px]:absolute max-[600px]:left-1/2 max-[600px]:top-[3.75rem] max-[600px]:w-[min(72vw,18rem)] max-[600px]:-translate-x-1/2 max-[600px]:gap-2 max-[600px]:px-2 max-[600px]:py-1.5`} aria-label="تقدم التحديات">
-        <div className="min-w-0">
-          <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-600">
-            <span>تحدي اليوم</span>
-            <span className="tabular-nums">{Math.min(dailyDeliveries, 3)}/3</span>
-          </div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full rounded-full bg-emerald-500 transition-[width]" style={{ width: `${Math.min(100, (dailyDeliveries / 3) * 100)}%` }} />
-          </div>
-          <p className="mt-1 truncate text-[10px] font-semibold text-slate-500">{dailyClaimed ? 'مكافأة اليوم استُلمت' : dailyDeliveries >= 3 ? 'اكتمل · استلم 1200 دج' : '3 توصيلات · 1200 دج'}</p>
-        </div>
-        <div className="min-w-0 border-s border-slate-200 ps-2">
-          <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-600">
-            <span>تحدي الأسبوع</span>
-            <span className="tabular-nums">{Math.min(weeklyDeliveries, 15)}/15</span>
-          </div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full rounded-full bg-sky-500 transition-[width]" style={{ width: `${Math.min(100, (weeklyDeliveries / 15) * 100)}%` }} />
-          </div>
-          <p className="mt-1 truncate text-[10px] font-semibold text-slate-500">{weeklyClaimed ? 'مكافأة الأسبوع استُلمت' : weeklyDeliveries >= 15 ? 'اكتمل · استلم 6000 دج' : '15 توصيلة · 6000 دج'}</p>
-        </div>
-      </div>
-
       <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-[9rem] landscape:bottom-[8.75rem] landscape:mx-0 landscape:max-h-none landscape:w-[min(19rem,25vw)] landscape:max-w-none landscape:flex-col landscape:gap-2 landscape:overflow-y-auto landscape:overscroll-contain max-[600px]:absolute max-[600px]:right-2 max-[600px]:top-[8.5rem] max-[600px]:bottom-[8rem] max-[600px]:mx-0 max-[600px]:w-[min(12rem,calc(100vw-8.5rem))] max-[600px]:max-w-none max-[600px]:gap-1 max-[600px]:overflow-y-auto max-[600px]:overscroll-contain">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
-        <TurnCard turn={hud.turn} order={hud.order} />
+        {hud.order && <TurnCard turn={hud.turn} order={hud.order} /> }
         <div className="grid grid-cols-[1.2fr_0.8fr] gap-1 sm:gap-2 landscape:min-w-0 landscape:flex-1 max-[600px]:grid-cols-1">
-          <OrderCard order={hud.order} />
-          <EarningsCard earnings={hud.earnings} score={hud.score} deliveries={hud.deliveries} />
+          {hud.order && <OrderCard order={hud.order} /> }
         </div>
         {hud.offer && <OfferCard offer={hud.offer} onAccept={onAccept} onDecline={onDecline} />}
       </div>
@@ -171,46 +159,12 @@ export function Hud({ hud, toasts, dailyDeliveries, weeklyDeliveries, dailyClaim
           </button>
         </div>
       )}
-      <div className="mt-auto flex justify-center landscape:absolute landscape:bottom-2 landscape:left-1/2 landscape:z-30 landscape:w-auto landscape:-translate-x-1/2 max-[600px]:absolute max-[600px]:bottom-[5.5rem] max-[600px]:left-1/2 max-[600px]:w-[min(90vw,24rem)] max-[600px]:-translate-x-1/2">
-        <div className={`${GLASS_CARD} flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 px-3 py-2 text-xs font-bold tabular-nums sm:gap-x-5 sm:px-5 sm:py-2.5 sm:text-sm max-[600px]:gap-x-2 max-[600px]:px-2 max-[600px]:py-1.5 max-[600px]:text-[10px]`}>
-          <span className="flex items-center gap-1.5">
-            {isNight ? <Moon className="h-4 w-4 text-indigo-500" /> : <Sun className="h-4 w-4 text-amber-500" />}
-            {String(hud.gameHour).padStart(2, '0')}:{String(hud.gameMinute).padStart(2, '0')}
-          </span>
-          <span className="h-4 w-px bg-slate-300" />
-          <span className="flex items-center gap-1.5">
-            <WeatherIcon className="h-4 w-4 text-sky-600" />
-            {WEATHER_LABEL[hud.weather]}
-          </span>
-          <span className="h-4 w-px bg-slate-300" />
-          <span className="flex items-center gap-1.5">
-            <Gauge className="h-4 w-4 text-slate-500" />
-            {hud.speedKmh} كم/س
-          </span>
-          <span className="h-4 w-px bg-slate-300" />
-          <span className="flex items-center gap-1.5">
-            <Timer className="h-4 w-4 text-slate-500" />
-            {formatClock(hud.shiftLeft)}
-          </span>
-          <span className="h-4 w-px bg-slate-300" />
-          <span className="flex items-center gap-1.5" aria-label={'الوقود ' + hud.fuel + '%'}>
-            <span className={lowFuel ? 'font-extrabold text-brand-600' : 'font-extrabold text-amber-700'}>⛽</span>
-            <span className="w-12 overflow-hidden rounded-full bg-slate-200 sm:w-20">
-              <span className={lowFuel ? 'block h-1.5 rounded-full bg-brand-500' : 'block h-1.5 rounded-full bg-amber-500'} style={{ width: hud.fuel + '%' }} />
-            </span>
-            <span className={lowFuel ? 'text-brand-600' : ''}>{hud.fuel}%</span>
-          </span>
-          <span className="h-4 w-px bg-slate-300" />
-          <span className="flex items-center gap-1.5">
-            <Heart className={`h-4 w-4 ${lowHealth ? 'text-brand-500' : 'text-emerald-600'}`} />
-            <span className="w-12 overflow-hidden rounded-full bg-slate-200 sm:w-20">
-              <span
-                className={`block h-1.5 rounded-full transition-[width] duration-200 ${lowHealth ? 'bg-brand-500' : 'bg-emerald-500'}`}
-                style={{ width: `${hud.health}%` }}
-              />
-            </span>
-          </span>
-        </div>
+      <div className={`${GLASS_CARD} pointer-events-none absolute bottom-[5.5rem] left-1/2 z-20 flex -translate-x-1/2 items-center justify-center gap-3 px-3 py-2 text-[11px] font-bold tabular-nums sm:gap-5 sm:px-5 landscape:bottom-2 max-[600px]:bottom-[5.5rem]`}>
+        <span className="flex items-center gap-1.5"><Gauge className="h-4 w-4 text-slate-500" />{hud.speedKmh} كم/س</span>
+        <span className="h-4 w-px bg-slate-300" />
+        <span className="flex items-center gap-1.5" aria-label={'الوقود ' + hud.fuel + '%'}><span className={lowFuel ? 'font-extrabold text-brand-600' : 'font-extrabold text-amber-700'}>⛽</span><span className="w-10 overflow-hidden rounded-full bg-slate-200"><span className={lowFuel ? 'block h-1.5 rounded-full bg-brand-500' : 'block h-1.5 rounded-full bg-amber-500'} style={{ width: hud.fuel + '%' }} /></span><span>{hud.fuel}%</span></span>
+        <span className="h-4 w-px bg-slate-300" />
+        <span className="flex items-center gap-1.5"><Heart className={`h-4 w-4 ${lowHealth ? 'text-brand-500' : 'text-emerald-600'}`} /><span className="w-10 overflow-hidden rounded-full bg-slate-200"><span className={`block h-1.5 rounded-full ${lowHealth ? 'bg-brand-500' : 'bg-emerald-500'}`} style={{ width: `${hud.health}%` }} /></span><span>{hud.health}%</span></span>
       </div>
     </div>
   );
