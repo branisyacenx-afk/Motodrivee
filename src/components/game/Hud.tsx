@@ -58,7 +58,7 @@ export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepa
   const isNight = hud.gameHour < 6 || hud.gameHour >= 19;
   return (
     <div dir="rtl" className="pointer-events-none absolute inset-0 z-20 flex flex-col gap-2 p-2 sm:gap-3 sm:p-4 landscape:gap-2 landscape:p-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-row-reverse items-center justify-between gap-3">
         <div className={`${GLASS_CARD} flex items-center gap-1.5 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2`}>
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-500 text-white sm:h-8 sm:w-8">
             <Bike className="h-5 w-5" />
@@ -76,31 +76,31 @@ export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepa
             type="button"
             onClick={onToggleMute}
             aria-label={muted ? 'تشغيل الصوت' : 'كتم الصوت'}
-            className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-lg ring-1 ring-black/5 transition hover:bg-slate-100 active:scale-95"
+            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-xl ring-1 ring-black/5 transition hover:bg-slate-100 active:scale-95 landscape:h-14 landscape:w-14"
           >
-            {muted ? <VolumeX className="h-5 w-5 text-slate-900" /> : <Volume2 className="h-5 w-5 text-slate-900" />}
+            {muted ? <VolumeX className="h-6 w-6 text-slate-900" /> : <Volume2 className="h-6 w-6 text-slate-900" />}
           </button>
           <button
             type="button"
             onClick={onPause}
             aria-label="وقف اللعبة"
-            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-lg ring-1 ring-black/5 transition hover:bg-slate-100 active:scale-95"
+            className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-xl ring-1 ring-black/5 transition hover:bg-slate-100 active:scale-95 landscape:h-14 landscape:w-14"
           >
-            <Pause className="h-5 w-5 text-slate-900" />
+            <Pause className="h-6 w-6 text-slate-900" />
           </button>
         </div>
       </div>
 
-      <div className={`${GLASS_CARD} pointer-events-auto absolute left-3 top-[15rem] z-30 flex flex-col gap-1.5 px-2.5 py-2 text-[11px] font-bold shadow-lg landscape:left-4 landscape:top-[12.5rem] max-[600px]:left-2`} aria-label="الوقت والطقس ورصيد اللاعب">
+      <div className={`${GLASS_CARD} pointer-events-auto absolute left-3 top-[17rem] z-30 flex flex-col gap-2 px-3 py-2.5 text-xs font-bold shadow-lg landscape:left-4 landscape:top-[calc(0.75rem+clamp(7rem,32vh,11rem)+0.75rem)] max-[600px]:left-2 max-[600px]:top-[17rem] max-[600px]:landscape:top-[calc(0.75rem+clamp(7rem,32vh,11rem)+0.75rem)]`} aria-label="الوقت والطقس ورصيد اللاعب">
         <div className="flex items-center gap-2 whitespace-nowrap">
-          {isNight ? <Moon className="h-3.5 w-3.5 text-indigo-500" /> : <Sun className="h-3.5 w-3.5 text-amber-500" />}
+          {isNight ? <Moon className="h-4 w-4 text-indigo-500" /> : <Sun className="h-4 w-4 text-amber-500" />}
           <span className="tabular-nums">{String(hud.gameHour).padStart(2, '0')}:{String(hud.gameMinute).padStart(2, '0')}</span>
           <span className="h-3 w-px bg-slate-300" />
-          <WeatherIcon className="h-3.5 w-3.5 text-sky-600" />
+          <WeatherIcon className="h-4 w-4 text-sky-600" />
           <span>{WEATHER_LABEL[hud.weather]}</span>
         </div>
         <div className="flex items-center gap-2 border-t border-slate-200 pt-1 text-emerald-700">
-          <Wallet className="h-3.5 w-3.5" />
+          <Wallet className="h-4 w-4" />
           <span className="tabular-nums">{formatMoney(wallet)}</span>
         </div>
       </div>
@@ -122,10 +122,10 @@ export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepa
         </div>
       )}
 
-      <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-[9rem] landscape:bottom-[8.75rem] landscape:mx-0 landscape:max-h-none landscape:w-[min(19rem,25vw)] landscape:max-w-none landscape:flex-col landscape:gap-2 landscape:overflow-y-auto landscape:overscroll-contain max-[600px]:absolute max-[600px]:right-2 max-[600px]:top-[8.5rem] max-[600px]:bottom-[8rem] max-[600px]:mx-0 max-[600px]:w-[min(12rem,calc(100vw-8.5rem))] max-[600px]:max-w-none max-[600px]:gap-1 max-[600px]:overflow-y-auto max-[600px]:overscroll-contain">
+      <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-[18vh] landscape:bottom-auto landscape:mx-0 landscape:max-h-[66vh] landscape:w-[min(22rem,34vw)] landscape:max-w-none landscape:flex-col landscape:gap-2 landscape:overflow-y-auto landscape:overscroll-contain max-[600px]:absolute max-[600px]:right-2 max-[600px]:top-[6rem] max-[600px]:bottom-auto max-[600px]:mx-0 max-[600px]:w-[min(22rem,calc(100vw-10rem))] max-[600px]:max-w-none max-[600px]:gap-2 max-[600px]:overflow-visible max-[600px]:landscape:top-[18vh] max-[600px]:landscape:w-[min(22rem,42vw)]">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
         {hud.order && <TurnCard turn={hud.turn} order={hud.order} /> }
-        <div className="grid grid-cols-[1.2fr_0.8fr] gap-1 sm:gap-2 landscape:min-w-0 landscape:flex-1 max-[600px]:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-2">
           {hud.order && <OrderCard order={hud.order} /> }
         </div>
         {hud.offer && <OfferCard offer={hud.offer} onAccept={onAccept} onDecline={onDecline} />}
@@ -153,12 +153,12 @@ export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepa
           </button>
         </div>
       )}
-      <div className={`${GLASS_CARD} pointer-events-none absolute bottom-[5.5rem] left-1/2 z-20 flex -translate-x-1/2 items-center justify-center gap-3 px-3 py-2 text-[11px] font-bold tabular-nums sm:gap-5 sm:px-5 landscape:bottom-2 max-[600px]:bottom-[5.5rem]`}>
-        <span className="flex items-center gap-1.5"><Gauge className="h-4 w-4 text-slate-500" />{hud.speedKmh} كم/س</span>
+      <div className={`${GLASS_CARD} pointer-events-none absolute bottom-[7.5rem] left-1/2 z-20 flex min-h-14 w-[min(92vw,36rem)] -translate-x-1/2 items-center justify-center gap-3 rounded-2xl px-4 py-3 text-xs font-extrabold tabular-nums shadow-xl sm:gap-6 sm:px-6 landscape:bottom-3 landscape:w-[min(42vw,36rem)] landscape:min-h-[4.5rem] landscape:gap-4 landscape:px-5 max-[600px]:bottom-[7.5rem] max-[600px]:landscape:bottom-3 max-[600px]:landscape:w-[min(42vw,36rem)]`}>
+        <span className="flex items-center gap-1.5"><Gauge className="h-5 w-5 text-slate-500" />{hud.speedKmh} كم/س</span>
         <span className="h-4 w-px bg-slate-300" />
         <span className="flex items-center gap-1.5" aria-label={'الوقود ' + hud.fuel + '%'}><span className={lowFuel ? 'font-extrabold text-brand-600' : 'font-extrabold text-amber-700'}>⛽</span><span className="w-10 overflow-hidden rounded-full bg-slate-200"><span className={lowFuel ? 'block h-1.5 rounded-full bg-brand-500' : 'block h-1.5 rounded-full bg-amber-500'} style={{ width: hud.fuel + '%' }} /></span><span>{hud.fuel}%</span></span>
         <span className="h-4 w-px bg-slate-300" />
-        <span className="flex items-center gap-1.5"><Heart className={`h-4 w-4 ${lowHealth ? 'text-brand-500' : 'text-emerald-600'}`} /><span className="w-10 overflow-hidden rounded-full bg-slate-200"><span className={`block h-1.5 rounded-full ${lowHealth ? 'bg-brand-500' : 'bg-emerald-500'}`} style={{ width: `${hud.health}%` }} /></span><span>{hud.health}%</span></span>
+        <span className="flex items-center gap-1.5"><Heart className={`h-5 w-5 ${lowHealth ? 'text-brand-500' : 'text-emerald-600'}`} /><span className="w-10 overflow-hidden rounded-full bg-slate-200"><span className={`block h-1.5 rounded-full ${lowHealth ? 'bg-brand-500' : 'bg-emerald-500'}`} style={{ width: `${hud.health}%` }} /></span><span>{hud.health}%</span></span>
       </div>
     </div>
   );
