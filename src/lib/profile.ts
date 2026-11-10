@@ -1,4 +1,4 @@
-import { UPGRADES, VEHICLES, type PaintId, type UpgradeId, type VehicleId } from '@/game/config';
+import { RIDER_OUTFITS, UPGRADES, VEHICLES, type PaintId, type RiderOutfitId, type UpgradeId, type VehicleId } from '@/game/config';
 import type { ShiftSummary } from '@/game/types';
 import { completedTasks } from '@/lib/tasks';
 
@@ -24,6 +24,8 @@ export interface Profile {
   riderGender: 'male' | 'female';
   riderJacket: string;
   riderHelmet: string;
+  riderOutfit: RiderOutfitId;
+  ownedRiderOutfits: RiderOutfitId[];
   upgrades: Record<UpgradeId, number>;
   bestScore: number;
 }
@@ -104,12 +106,19 @@ export function claimWeeklyChallenge(profile: Profile, week: string): Profile | 
   return { ...profile, wallet: profile.wallet + WEEKLY_CHALLENGE_REWARD, weeklyChallengeWeek: week, weeklyChallengeClaimed: true };
 }
 
+export function debitWallet(profile: Profile, amount: number): Profile | null {
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  const cost = Math.ceil(amount);
+  if (profile.wallet < cost) return null;
+  return { ...profile, wallet: profile.wallet - cost };
+}
+
 export function createProfile(): Profile {
   return {
     name: 'الراكب', wallet: STARTING_WALLET, xp: 0, totalDeliveries: 0, totalEarned: 0, reputation: 80, cleanDeliveries: 0,
     dailyDeliveries: 0, dailyChallengeDate: todayKey(), dailyChallengeClaimed: false,
     weeklyDeliveries: 0, weeklyChallengeWeek: weekKey(), weeklyChallengeClaimed: false,
-    dailyStreak: 0, lastDailyClaim: null, owned: ['classic'], vehicle: 'classic', paint: 'swift', riderGender: 'male', riderJacket: '#253b55', riderHelmet: '#f1f3f5',
+    dailyStreak: 0, lastDailyClaim: null, owned: ['classic'], vehicle: 'classic', paint: 'swift', riderGender: 'male', riderJacket: '#253b55', riderHelmet: '#f1f3f5', riderOutfit: 'custom', ownedRiderOutfits: ['custom'],
     upgrades: { engine: 0, handling: 0, helmet: 0 }, bestScore: 0,
   };
 }
@@ -120,6 +129,10 @@ function isVehicleId(value: unknown): value is VehicleId {
 
 function isPaintId(value: unknown): value is PaintId {
   return value === 'swift' || value === 'ocean' || value === 'graphite';
+}
+
+function isRiderOutfitId(value: unknown): value is RiderOutfitId {
+  return RIDER_OUTFITS.some((outfit) => outfit.id === value);
 }
 
 function finiteNonNegative(value: unknown, fallback: number): number {
@@ -134,6 +147,8 @@ export function loadProfile(): Profile {
     const parsed = JSON.parse(raw) as Partial<Profile>;
     const upgrades = parsed.upgrades ?? fallback.upgrades;
     const owned = Array.isArray(parsed.owned) ? parsed.owned.filter(isVehicleId) : fallback.owned;
+    const storedOutfits = Array.isArray(parsed.ownedRiderOutfits) ? parsed.ownedRiderOutfits.filter(isRiderOutfitId) : fallback.ownedRiderOutfits;
+    const ownedRiderOutfits = Array.from(new Set(['custom', ...storedOutfits])) as RiderOutfitId[];
     const today = todayKey();
     const challengeDate = typeof parsed.dailyChallengeDate === 'string' ? parsed.dailyChallengeDate : today;
     const week = weekKey();
@@ -160,6 +175,8 @@ export function loadProfile(): Profile {
       riderGender: parsed.riderGender === 'female' ? 'female' : 'male',
       riderJacket: typeof parsed.riderJacket === 'string' && /^#[0-9a-fA-F]{6}$/.test(parsed.riderJacket) ? parsed.riderJacket : fallback.riderJacket,
       riderHelmet: typeof parsed.riderHelmet === 'string' && /^#[0-9a-fA-F]{6}$/.test(parsed.riderHelmet) ? parsed.riderHelmet : fallback.riderHelmet,
+      riderOutfit: isRiderOutfitId(parsed.riderOutfit) && ownedRiderOutfits.includes(parsed.riderOutfit) ? parsed.riderOutfit : fallback.riderOutfit,
+      ownedRiderOutfits,
       upgrades: { engine: clampLevel(upgrades.engine, 'engine'), handling: clampLevel(upgrades.handling, 'handling'), helmet: clampLevel(upgrades.helmet, 'helmet') },
       bestScore: finiteNonNegative(parsed.bestScore, 0),
     };
@@ -193,6 +210,19 @@ export function selectPaint(profile: Profile, paint: PaintId): Profile {
   return { ...profile, paint };
 }
 
+export function selectRiderOutfit(profile: Profile, id: RiderOutfitId): Profile {
+  const outfit = RIDER_OUTFITS.find((item) => item.id === id);
+  if (!outfit || !profile.ownedRiderOutfits.includes(id)) return profile;
+  return { ...profile, riderOutfit: id, riderJacket: outfit.jacket, riderHelmet: outfit.helmet };
+}
+
+export function buyRiderOutfit(profile: Profile, id: RiderOutfitId): Profile | null {
+  const outfit = RIDER_OUTFITS.find((item) => item.id === id);
+  if (!outfit || profile.ownedRiderOutfits.includes(id) || profile.wallet < outfit.price || levelFor(profile.xp) < outfit.requiredLevel) return null;
+  const purchased = { ...profile, wallet: profile.wallet - outfit.price, ownedRiderOutfits: [...profile.ownedRiderOutfits, id] };
+  return selectRiderOutfit(purchased, id);
+}
+
 export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
   const def = UPGRADES.find((u) => u.id === id);
   const level = profile.upgrades[id];
@@ -200,13 +230,6 @@ export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
   const cost = def.costs[level];
   if (profile.wallet < cost) return null;
   return { ...profile, wallet: profile.wallet - cost, upgrades: { ...profile.upgrades, [id]: level + 1 } };
-}
-
-export function debitWallet(profile: Profile, amount: number): Profile | null {
-  if (!Number.isFinite(amount) || amount <= 0) return null;
-  const cost = Math.ceil(amount);
-  if (profile.wallet < cost) return null;
-  return { ...profile, wallet: profile.wallet - cost };
 }
 
 export function creditDelivery(profile: Profile, pay: number, onTime = true): Profile {
