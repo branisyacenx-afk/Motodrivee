@@ -1,5 +1,5 @@
 import { ChevronLeft, Coins, Flag, Gift, Store, Trophy, Target, CheckCircle2, CalendarDays } from 'lucide-react';
-import { careerRank, dailyRewardPreview, DAILY_CHALLENGE_REWARD, DAILY_DELIVERY_GOAL, WEEKLY_CHALLENGE_REWARD, WEEKLY_DELIVERY_GOAL, levelFor, levelProgress, todayKey, weekKey, type Profile } from '@/lib/profile';
+import { careerRank, dailyRewardPreview, dailyChallengeFor, weeklyChallengeFor, levelFor, levelProgress, todayKey, weekKey, type Profile } from '@/lib/profile';
 import { formatMoney } from '@/lib/money';
 import { VEHICLES } from '@/game/config';
 
@@ -18,14 +18,16 @@ const HERO_IMAGE = 'https://images.pexels.com/photos/16750771/pexels-photo-16750
 export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimDaily, onClaimChallenge, onClaimWeekly }: MenuScreenProps) {
   const today = todayKey();
   const week = weekKey();
+  const dailyChallenge = dailyChallengeFor(today);
+  const weeklyChallenge = weeklyChallengeFor(week);
   const weeklyDeliveries = profile.weeklyChallengeWeek === week ? profile.weeklyDeliveries : 0;
   const weeklyClaimed = profile.weeklyChallengeWeek === week && profile.weeklyChallengeClaimed;
-  const weeklyComplete = weeklyDeliveries >= WEEKLY_DELIVERY_GOAL;
+  const weeklyComplete = weeklyDeliveries >= weeklyChallenge.goal;
   const dailyClaimable = profile.lastDailyClaim !== today;
   const dailyReward = dailyRewardPreview(profile, today);
   const dailyDeliveries = profile.dailyChallengeDate === today ? profile.dailyDeliveries : 0;
   const challengeClaimed = profile.dailyChallengeDate === today && profile.dailyChallengeClaimed;
-  const challengeComplete = dailyDeliveries >= DAILY_DELIVERY_GOAL;
+  const challengeComplete = dailyDeliveries >= dailyChallenge.goal;
   const level = levelFor(profile.xp);
   const progress = levelProgress(profile.xp);
   const rank = careerRank(level);
@@ -61,19 +63,19 @@ export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimD
         </section>
         <section aria-label="تحدي اليوم" className="mt-4 max-w-xl rounded-2xl bg-slate-950/80 p-4 ring-1 ring-amber-300/30">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2"><Target className="h-5 w-5 text-amber-300" /><div><p className="text-sm font-extrabold">تحدي اليوم</p><p className="text-xs text-slate-300">أكمل {DAILY_DELIVERY_GOAL} توصيلات قبل نهاية اليوم</p></div></div>
-            <span className="text-sm font-extrabold text-amber-200">+{formatMoney(DAILY_CHALLENGE_REWARD)}</span>
+            <div className="flex items-center gap-2"><Target className="h-5 w-5 text-amber-300" /><div><p className="text-sm font-extrabold">تحدي اليوم</p><p className="text-xs text-slate-300">أكمل {dailyChallenge.goal} توصيلات قبل نهاية اليوم</p></div></div>
+            <span className="text-sm font-extrabold text-amber-200">+{formatMoney(dailyChallenge.reward)}</span>
           </div>
           <div className="mt-3 flex items-center gap-3">
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-amber-300" style={{ width: `${Math.min(100, dailyDeliveries / DAILY_DELIVERY_GOAL * 100)}%` }} /></div>
-            <span className="text-xs font-bold tabular-nums">{Math.min(dailyDeliveries, DAILY_DELIVERY_GOAL)}/{DAILY_DELIVERY_GOAL}</span>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-amber-300" style={{ width: `${Math.min(100, dailyDeliveries / dailyChallenge.goal * 100)}%` }} /></div>
+            <span className="text-xs font-bold tabular-nums">{Math.min(dailyDeliveries, dailyChallenge.goal)}/{dailyChallenge.goal}</span>
           </div>
           {challengeComplete && !challengeClaimed && <button type="button" onClick={onClaimChallenge} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-2.5 text-sm font-extrabold text-slate-950"><CheckCircle2 className="h-4 w-4" />استلم مكافأة التحدي</button>}
           {challengeClaimed && <p className="mt-3 text-center text-xs font-bold text-emerald-300">اكتمل التحدي واستلمت المكافأة</p>}
         </section>
         <section aria-label="التحدي الأسبوعي" className="mt-3 max-w-xl rounded-2xl bg-slate-950/80 p-4 ring-1 ring-sky-300/25">
-          <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-sky-300" /><div><p className="text-sm font-extrabold">تحدي الأسبوع</p><p className="text-xs text-slate-300">أكمل {WEEKLY_DELIVERY_GOAL} توصيلة من الاثنين إلى الأحد</p></div></div><span className="text-sm font-extrabold text-sky-200">{`+${formatMoney(WEEKLY_CHALLENGE_REWARD)}`}</span></div>
-          <div className="mt-3 flex items-center gap-3"><div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-sky-300" style={{ width: `${Math.min(100, weeklyDeliveries / WEEKLY_DELIVERY_GOAL * 100)}%` }} /></div><span className="text-xs font-bold tabular-nums">{Math.min(weeklyDeliveries, WEEKLY_DELIVERY_GOAL)}/{WEEKLY_DELIVERY_GOAL}</span></div>
+          <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-sky-300" /><div><p className="text-sm font-extrabold">تحدي الأسبوع</p><p className="text-xs text-slate-300">أكمل {weeklyChallenge.goal} توصيلة من الاثنين إلى الأحد</p></div></div><span className="text-sm font-extrabold text-sky-200">{`+${formatMoney(weeklyChallenge.reward)}`}</span></div>
+          <div className="mt-3 flex items-center gap-3"><div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-sky-300" style={{ width: `${Math.min(100, weeklyDeliveries / weeklyChallenge.goal * 100)}%` }} /></div><span className="text-xs font-bold tabular-nums">{Math.min(weeklyDeliveries, weeklyChallenge.goal)}/{weeklyChallenge.goal}</span></div>
           {weeklyComplete && !weeklyClaimed && <button type="button" onClick={onClaimWeekly} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-300 px-4 py-2.5 text-sm font-extrabold text-slate-950"><CheckCircle2 className="h-4 w-4" />استلم مكافأة الأسبوع</button>}
           {weeklyClaimed && <p className="mt-3 text-center text-xs font-bold text-emerald-300">اكتمل التحدي واستلمت المكافأة</p>}
         </section>

@@ -39,6 +39,25 @@ export const DAILY_CHALLENGE_REWARD = 1200;
 export const WEEKLY_DELIVERY_GOAL = 15;
 export const WEEKLY_CHALLENGE_REWARD = 6000;
 
+function challengeSeed(key: string, salt: string): number {
+  let hash = 2166136261;
+  for (const char of `${key}:${salt}`) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  return hash >>> 0;
+}
+
+// The same calendar period always produces the same challenge for every reload.
+export function dailyChallengeFor(today: string): { goal: number; reward: number } {
+  const goalSeed = challengeSeed(today, 'daily-goal');
+  const rewardSeed = challengeSeed(today, 'daily-reward');
+  return { goal: 2 + (goalSeed % 3), reward: 900 + (rewardSeed % 4) * 250 };
+}
+
+export function weeklyChallengeFor(week: string): { goal: number; reward: number } {
+  const goalSeed = challengeSeed(week, 'weekly-goal');
+  const rewardSeed = challengeSeed(week, 'weekly-reward');
+  return { goal: 12 + (goalSeed % 9), reward: 4500 + (rewardSeed % 5) * 1000 };
+}
+
 export function levelFor(xp: number): number {
   return 1 + Math.floor(xp / XP_PER_LEVEL);
 }
@@ -95,15 +114,17 @@ export function claimDaily(profile: Profile, today: string): Profile | null {
 export function claimDailyChallenge(profile: Profile, today: string): Profile | null {
   const deliveries = profile.dailyChallengeDate === today ? profile.dailyDeliveries : 0;
   const alreadyClaimed = profile.dailyChallengeDate === today && profile.dailyChallengeClaimed;
-  if (deliveries < DAILY_DELIVERY_GOAL || alreadyClaimed) return null;
-  return { ...profile, wallet: profile.wallet + DAILY_CHALLENGE_REWARD, dailyChallengeDate: today, dailyChallengeClaimed: true };
+  const challenge = dailyChallengeFor(today);
+  if (deliveries < challenge.goal || alreadyClaimed) return null;
+  return { ...profile, wallet: profile.wallet + challenge.reward, dailyChallengeDate: today, dailyChallengeClaimed: true };
 }
 
 export function claimWeeklyChallenge(profile: Profile, week: string): Profile | null {
   const deliveries = profile.weeklyChallengeWeek === week ? profile.weeklyDeliveries : 0;
   const alreadyClaimed = profile.weeklyChallengeWeek === week && profile.weeklyChallengeClaimed;
-  if (deliveries < WEEKLY_DELIVERY_GOAL || alreadyClaimed) return null;
-  return { ...profile, wallet: profile.wallet + WEEKLY_CHALLENGE_REWARD, weeklyChallengeWeek: week, weeklyChallengeClaimed: true };
+  const challenge = weeklyChallengeFor(week);
+  if (deliveries < challenge.goal || alreadyClaimed) return null;
+  return { ...profile, wallet: profile.wallet + challenge.reward, weeklyChallengeWeek: week, weeklyChallengeClaimed: true };
 }
 
 export function debitWallet(profile: Profile, amount: number): Profile | null {
