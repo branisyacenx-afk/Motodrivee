@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BASE_BIKE, CITY, FUEL_PRICE_PER_LITER, FUEL_TANK_LITERS, SHIFT_SECONDS, type BikeStats, type RiderOutfitId, type VehicleId } from '@/game/config';
+import { BASE_BIKE, CITY, FUEL_PRICE_PER_LITER, FUEL_TANK_LITERS, type BikeStats, type RiderOutfitId, type VehicleId } from '@/game/config';
 import { roadX, roadZ } from '@/game/city/layout';
 import { buildRoadRoute } from '@/game/city/route';
 import { createTraffic, updateTraffic, type Traffic } from '@/game/sim/traffic';
@@ -130,7 +130,6 @@ export class GameWorld {
   private lateDeliveries = 0;
   private health: number = BASE_BIKE.health;
   private fuel = 100;
-  private shiftLeft = SHIFT_SECONDS;
   private time = 0;
   private hudClock = 0;
   private lastFrame = 0;
@@ -400,12 +399,6 @@ export class GameWorld {
 
   private step(dt: number): void {
     this.time += dt;
-    this.shiftLeft = Math.max(0, this.shiftLeft - dt);
-    if (this.shiftLeft === 0) {
-      this.finishShift();
-      return;
-    }
-
     this.lastInput = this.options.readInput();
     if (this.interaction) {
       this.bike.speed = 0;
@@ -607,7 +600,6 @@ export class GameWorld {
       gameHour: Math.floor(this.environmentState.hour),
       gameMinute: Math.floor((this.environmentState.hour % 1) * 60),
       weather: this.environmentState.weather,
-      shiftLeft: Math.ceil(this.shiftLeft),
       score: this.score,
       earnings: round2(this.earnings),
       deliveries: this.deliveries,
