@@ -47,7 +47,6 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     scene.add(key);
     const bike = new THREE.Group();
     bikeRef.current = bike;
-    autoRotateRef.current = true;
     scene.add(bike);
     const body = new THREE.MeshStandardMaterial({ color: paint, metalness: 0.48, roughness: 0.3 });
     const dark = new THREE.MeshStandardMaterial({ color: 0x171d27, metalness: 0.35, roughness: 0.62 });
