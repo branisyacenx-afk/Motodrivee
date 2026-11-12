@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RIDER_OUTFITS, type RiderOutfitId } from '@/game/config';
 
@@ -22,6 +22,9 @@ function connect(scene: THREE.Group, a: THREE.Vector3, b: THREE.Vector3, radius:
 
 export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJacket, riderHelmet, riderOutfit }: BikePreviewProps) {
   const host = useRef<HTMLDivElement>(null);
+  const bikeRef = useRef<THREE.Group | null>(null);
+  const autoRotateRef = useRef(true);
+  const [autoRotate, setAutoRotate] = useState(true);
   useEffect(() => {
     const element = host.current;
     if (!element) return;
@@ -43,6 +46,8 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     key.position.set(3, 6, 4);
     scene.add(key);
     const bike = new THREE.Group();
+    bikeRef.current = bike;
+    autoRotateRef.current = true;
     scene.add(bike);
     const body = new THREE.MeshStandardMaterial({ color: paint, metalness: 0.48, roughness: 0.3 });
     const dark = new THREE.MeshStandardMaterial({ color: 0x171d27, metalness: 0.35, roughness: 0.62 });
@@ -242,7 +247,7 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     resize();
     let dragging = false;
     let lastX = 0;
-    const down = (event: PointerEvent) => { dragging = true; lastX = event.clientX; element.setPointerCapture(event.pointerId); };
+    const down = (event: PointerEvent) => { dragging = true; autoRotateRef.current = false; setAutoRotate(false); lastX = event.clientX; element.setPointerCapture(event.pointerId); };
     const move = (event: PointerEvent) => { if (!dragging) return; bike.rotation.y += (event.clientX - lastX) * 0.012; lastX = event.clientX; };
     const up = () => { dragging = false; };
     element.addEventListener('pointerdown', down);
@@ -250,10 +255,11 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     element.addEventListener('pointerup', up);
     element.addEventListener('pointercancel', up);
     let frame = 0;
-    const animate = () => { frame = requestAnimationFrame(animate); if (!dragging) bike.rotation.y += 0.0025; renderer.render(scene, camera); };
+    const animate = () => { frame = requestAnimationFrame(animate); if (!dragging && autoRotateRef.current) bike.rotation.y += 0.0025; renderer.render(scene, camera); };
     animate();
     return () => {
       cancelAnimationFrame(frame);
+      bikeRef.current = null;
       observer.disconnect();
       element.removeEventListener('pointerdown', down);
       element.removeEventListener('pointermove', move);
@@ -270,6 +276,40 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
       <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-300">360°</span>
     </div>
     <div ref={host} className="h-64 w-full touch-pan-y cursor-grab active:cursor-grabbing" aria-label="اسحب لتدوير الدراجة ثلاثية الأبعاد" />
-    <p className="px-4 pb-3 text-center text-xs text-slate-400">اسحب الدراجة بإصبعك لتدويرها ومشاهدة جميع الجهات</p>
+    <div className="flex flex-wrap items-center justify-center gap-2 px-4 pb-3" aria-label="زوايا معاينة الدراجة">
+      {[
+        { label: 'أمام', angle: 0 },
+        { label: 'جانب', angle: Math.PI / 2 },
+        { label: 'خلف', angle: Math.PI },
+        { label: 'الجانب الآخر', angle: -Math.PI / 2 },
+      ].map(({ label, angle }) => (
+        <button
+          key={label}
+          type="button"
+          onClick={() => {
+            if (!bikeRef.current) return;
+            bikeRef.current.rotation.y = angle;
+            autoRotateRef.current = false;
+            setAutoRotate(false);
+          }}
+          className="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold text-slate-200 ring-1 ring-white/15 transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+        >
+          {label}
+        </button>
+      ))}
+      <button
+        type="button"
+        aria-pressed={autoRotate}
+        onClick={() => {
+          const next = !autoRotateRef.current;
+          autoRotateRef.current = next;
+          setAutoRotate(next);
+        }}
+        className={`rounded-lg px-3 py-2 text-xs font-bold ring-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${autoRotate ? 'bg-brand-500/20 text-brand-200 ring-brand-400/40' : 'bg-white/10 text-slate-200 ring-white/15 hover:bg-white/20'}`}
+      >
+        {autoRotate ? 'إيقاف الدوران التلقائي' : 'تشغيل الدوران التلقائي'}
+      </button>
+    </div>
+    <p className="px-4 pb-3 text-center text-xs text-slate-400">اسحب الدراجة أو اختر زاوية جاهزة لمعاينتها من جميع الجهات</p>
   </section>;
 }
