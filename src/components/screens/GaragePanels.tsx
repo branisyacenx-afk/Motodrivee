@@ -34,12 +34,13 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
         const levelLocked = currentLevel < vehicle.requiredLevel;
         const canAfford = profile.wallet >= vehicle.price && !levelLocked;
         const stats = getBikeStats(vehicle.id, profile.upgrades);
-        const protection = Math.max(0, Math.round((1 - stats.damageFactor) * 100));
+        const protectionFactor = Math.max(0, 1 - stats.damageFactor);
+        const protection = Math.round(protectionFactor * 100);
         const statRows = [
           { label: 'السرعة', value: Math.round(stats.maxSpeed), percent: Math.round((stats.maxSpeed / maxSpeed) * 100) },
           { label: 'التسارع', value: `${Math.round(stats.accel * 10) / 10}`, percent: Math.round((stats.accel / maxAccel) * 100) },
           { label: 'المناورة', value: `${Math.round(stats.turnRate * 100) / 100}`, percent: Math.round((stats.turnRate / maxTurnRate) * 100) },
-          { label: 'الحماية', value: `${protection}%`, percent: maxProtection > 0 ? Math.round(((protection / 100) / maxProtection) * 100) : 0 },
+          { label: 'الحماية', value: `${protection}%`, percent: maxProtection > 0 ? Math.round((protectionFactor / maxProtection) * 100) : 0 },
         ];
         return (
           <li
