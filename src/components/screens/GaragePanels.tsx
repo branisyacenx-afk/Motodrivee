@@ -18,9 +18,15 @@ const SECONDARY_BUTTON =
 export function BikesPanel({ profile, onUpdate }: PanelProps) {
   const currentLevel = levelFor(profile.xp);
   const selectedBike = VEHICLES.find((vehicle) => vehicle.id === profile.vehicle) ?? VEHICLES[0];
+  const comparisonStats = VEHICLES.map((vehicle) => getBikeStats(vehicle.id, profile.upgrades));
+  const maxSpeed = Math.max(...comparisonStats.map((stats) => stats.maxSpeed));
+  const maxAccel = Math.max(...comparisonStats.map((stats) => stats.accel));
+  const maxTurnRate = Math.max(...comparisonStats.map((stats) => stats.turnRate));
+  const maxProtection = Math.max(0, ...comparisonStats.map((stats) => 1 - stats.damageFactor));
   return (
     <>
       <BikePreview paint={PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? '#d7262e'} vehicleId={selectedBike.id} vehicleName={selectedBike.name} riderGender={profile.riderGender} riderJacket={profile.riderJacket} riderHelmet={profile.riderHelmet} riderOutfit={profile.riderOutfit} />
+    <p className="mb-3 text-xs text-slate-400">المواصفات مقارنةً بأفضل دراجة في المجموعة، وتتأثر بتحسيناتك الحالية.</p>
     <ul className="grid gap-3">
       {VEHICLES.map((vehicle) => {
         const owned = profile.owned.includes(vehicle.id);
@@ -28,12 +34,13 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
         const levelLocked = currentLevel < vehicle.requiredLevel;
         const canAfford = profile.wallet >= vehicle.price && !levelLocked;
         const stats = getBikeStats(vehicle.id, profile.upgrades);
-        const protection = Math.round((1 - stats.damageFactor) * 100);
+        const protectionFactor = Math.max(0, 1 - stats.damageFactor);
+        const protection = Math.round(protectionFactor * 100);
         const statRows = [
-          { label: 'السرعة', value: Math.round(stats.maxSpeed), percent: Math.round((stats.maxSpeed / 30) * 100) },
-          { label: 'التسارع', value: `${Math.round(stats.accel * 10) / 10}`, percent: Math.round((stats.accel / 11) * 100) },
-          { label: 'المناورة', value: `${Math.round(stats.turnRate * 100) / 100}`, percent: Math.round((stats.turnRate / 2.1) * 100) },
-          { label: 'الحماية', value: `${protection}%`, percent: Math.round((protection / 45) * 100) },
+          { label: 'السرعة', value: Math.round(stats.maxSpeed), percent: Math.round((stats.maxSpeed / maxSpeed) * 100) },
+          { label: 'التسارع', value: `${Math.round(stats.accel * 10) / 10}`, percent: Math.round((stats.accel / maxAccel) * 100) },
+          { label: 'المناورة', value: `${Math.round(stats.turnRate * 100) / 100}`, percent: Math.round((stats.turnRate / maxTurnRate) * 100) },
+          { label: 'الحماية', value: `${protection}%`, percent: maxProtection > 0 ? Math.round((protectionFactor / maxProtection) * 100) : 0 },
         ];
         return (
           <li
@@ -45,6 +52,7 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
             <div>
               <p className="text-lg font-bold">{vehicle.name}</p>
               <p className="mt-0.5 text-sm text-slate-400">{vehicle.tagline}</p>
+              <p className="mt-1 text-xs font-bold text-brand-200">الميزة الخاصة: {vehicle.specialty}</p>
               <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:max-w-md">
                 {statRows.map((stat) => (
                   <div key={stat.label}>
