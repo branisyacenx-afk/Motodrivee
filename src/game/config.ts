@@ -46,7 +46,7 @@ export const RIDER_OUTFITS: readonly RiderOutfitDef[] = [
   { id: 'custom', name: 'ألواني الخاصة', description: 'ألوان السترة والخوذة التي تختارها بنفسك', price: 0, requiredLevel: 1, jacket: '#253b55', helmet: '#f1f3f5', trousers: '#20252d', boots: '#11151a', accent: null },
   { id: 'courier', name: 'زي سويفت الرسمي', description: 'سترة توصيل أنيقة مع شريط تعريفي واضح', price: 0, requiredLevel: 1, jacket: '#263d59', helmet: '#f2f4f7', trousers: '#20252d', boots: '#11151a', accent: '#e2b83d' },
   { id: 'night', name: 'زي الليل العاكس', description: 'ألوان عالية الوضوح وخطوط عاكسة للقيادة الليلية', price: 8500, requiredLevel: 4, jacket: '#b88a22', helmet: '#17202b', trousers: '#30343b', boots: '#101318', accent: '#fff0a8' },
-  { id: 'sport', name: 'بدلة رياضية', description: 'مظهر رياضي مع واقيات كتف بارزة', price: 16000, requiredLevel: 8, jacket: '#a92732', helmet: '#f2f2f2', trousers: '#171b23', boots: '#101318', accent: '#d8dbe0', handlingFactor: 1.08, damageFactor: 0.98, specialty: 'سرعة رياضية' },
+  { id: 'sport', name: 'بدلة رياضية', description: 'مظهر رياضي مع واقيات كتف بارزة', price: 16000, requiredLevel: 8, jacket: '#a92732', helmet: '#f2f2f2', trousers: '#171b23', boots: '#101318', accent: '#d8dbe0' },
   { id: 'desert', name: 'زي الرحلات', description: 'ألوان ترابية مناسبة للطرق المفتوحة', price: 26000, requiredLevel: 12, jacket: '#a87d50', helmet: '#405e4a', trousers: '#514738', boots: '#2a2118', accent: '#d6bd93' },
   { id: 'elite', name: 'زي النخبة', description: 'طقم مميز يفتح مع التقدم في المهنة', price: 48000, requiredLevel: 16, jacket: '#4a3671', helmet: '#d7d1c4', trousers: '#23212b', boots: '#11151a', accent: '#d7b85c' },
 ];
