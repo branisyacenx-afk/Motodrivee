@@ -79,6 +79,13 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+function getVisibilityHeadlightBlend(daylight: number, rain: number, fog: number): number {
+  const nightBlend = THREE.MathUtils.smoothstep(1 - daylight, 0.12, 0.48);
+  const rainBlend = THREE.MathUtils.clamp(rain, 0, 1) * 0.45;
+  const fogBlend = THREE.MathUtils.clamp(fog, 0, 1) * 0.68;
+  return Math.max(nightBlend, rainBlend, fogBlend);
+}
+
 export class GameWorld {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
@@ -676,10 +683,7 @@ export class GameWorld {
     this.bikeRig.group.visible = true;
     this.bikeRig.group.position.set(bike.x, 0, bike.z);
     this.bikeRig.group.rotation.y = bike.heading;
-    const bikeNightFactor = 1 - this.environmentState.daylight;
-    this.bikeRig.headlight.color.set('#514b3c').lerp(new THREE.Color('#fff1c4'), bikeNightFactor);
     this.bikeRig.brakeLight.color.set(this.lastInput.brake > 0.05 ? '#ff1717' : '#a31318');
-    this.bikeBeam.intensity = bikeNightFactor * 32;
     if (this.interaction) {
       const sideX = Math.cos(bike.heading) * 1.8;
       const sideZ = -Math.sin(bike.heading) * 1.8;
@@ -771,6 +775,11 @@ export class GameWorld {
     const conditions = this.environment.update(this.time, bike.x, bike.z, dt);
     this.environmentState = conditions;
     setCityRain(this.cityGroup, conditions.rain);
+
+    // Turn vehicle lamps on in poor daytime visibility as well as at night.
+    const visibilityHeadlights = getVisibilityHeadlightBlend(conditions.daylight, conditions.rain, conditions.fog);
+    this.bikeRig.headlight.color.set('#514b3c').lerp(new THREE.Color('#fff1c4'), visibilityHeadlights);
+    this.bikeBeam.intensity = visibilityHeadlights * 32;
     const night = 1 - conditions.daylight;
     const twilight = 1 - Math.abs(conditions.daylight - 0.5) * 2;
     const sky = new THREE.Color('#86c5e8').lerp(this.duskSkyColor, THREE.MathUtils.clamp(twilight, 0, 1) * 0.72);
@@ -796,8 +805,7 @@ export class GameWorld {
       stall.visible = isNear(venue.x, venue.z, bike.x, bike.z);
     });
 
-    const nightFactor = 1 - conditions.daylight;
-    const headlightBlend = THREE.MathUtils.smoothstep(nightFactor, 0.12, 0.48);
+    const headlightBlend = getVisibilityHeadlightBlend(conditions.daylight, conditions.rain, conditions.fog);
     const nightHeadlightColor = new THREE.Color('#fff4d6');
     this.traffic.cars.forEach((car, index) => {
       const mesh = this.carMeshes[index];
