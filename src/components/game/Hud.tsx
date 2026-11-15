@@ -43,6 +43,11 @@ const WEATHER_ICON = {
   wind: Wind,
 } as const;
 
+const WEATHER_ADVISORY: Partial<Record<HudSnapshot['weather'], string>> = {
+  rain: 'الطريق زلق · خفف السرعة',
+  fog: 'الرؤية منخفضة · انتبه للطريق',
+};
+
 const LINK_LABEL: Record<HudSnapshot['link'], string> = {
   connecting: 'جاري الاتصال',
   live: 'متصل',
@@ -56,6 +61,7 @@ export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepa
   const criticalFuel = hud.fuel <= 15;
   const WeatherIcon = WEATHER_ICON[hud.weather];
   const isNight = hud.gameHour < 6 || hud.gameHour >= 19;
+  const weatherAdvisory = WEATHER_ADVISORY[hud.weather];
   return (
     <div dir="rtl" className="pointer-events-none absolute inset-0 z-20 flex flex-col gap-2 p-2 sm:gap-3 sm:p-4 landscape:gap-2 landscape:p-3">
       <div className="flex flex-row-reverse items-center justify-between gap-3">
@@ -99,6 +105,12 @@ export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepa
           <WeatherIcon className="h-4 w-4 text-sky-600" />
           <span>{WEATHER_LABEL[hud.weather]}</span>
         </div>
+        {weatherAdvisory && (
+          <div className="flex items-center gap-2 border-t border-amber-200 pt-1 text-amber-800" role="status" aria-live="polite">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{weatherAdvisory}</span>
+          </div>
+        )}
         <div className="flex items-center gap-2 border-t border-slate-200 pt-1 text-emerald-700">
           <Wallet className="h-4 w-4" />
           <span className="tabular-nums">{formatMoney(wallet)}</span>
