@@ -42,6 +42,7 @@ export interface WorldOptions {
   riderGender: 'male' | 'female';
   riderJacket: string;
   riderHelmet: string;
+  riderTrousers: string;
   riderOutfit: RiderOutfitId;
   network: SharedCity;
   readInput: () => BikeInput;
@@ -216,7 +217,7 @@ export class GameWorld {
     const spawnZ = roadZ(2);
     const assets = createActorAssets();
     this.bike = createBike(spawnX, spawnZ, SPAWN_HEADING);
-    this.bikeRig = assets.bike(options.paintHex, options.vehicleId, { gender: options.riderGender, jacket: options.riderJacket, helmet: options.riderHelmet, outfit: options.riderOutfit });
+    this.bikeRig = assets.bike(options.paintHex, options.vehicleId, { gender: options.riderGender, jacket: options.riderJacket, helmet: options.riderHelmet, trousers: options.riderTrousers, outfit: options.riderOutfit });
     this.bikeRig.group.rotation.order = 'YXZ';
     this.bikeBeam = new THREE.SpotLight('#fff0c2', 0, 92, Math.PI / 6, 0.48, 1.25);
     this.bikeBeam.position.set(0, 1.0, 0.82);
