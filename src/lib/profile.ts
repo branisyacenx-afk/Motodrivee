@@ -24,6 +24,7 @@ export interface Profile {
   riderGender: 'male' | 'female';
   riderJacket: string;
   riderHelmet: string;
+  riderTrousers: string;
   riderOutfit: RiderOutfitId;
   ownedRiderOutfits: RiderOutfitId[];
   upgrades: Record<UpgradeId, number>;
@@ -139,7 +140,7 @@ export function createProfile(): Profile {
     name: 'الراكب', wallet: STARTING_WALLET, xp: 0, totalDeliveries: 0, totalEarned: 0, reputation: 80, cleanDeliveries: 0,
     dailyDeliveries: 0, dailyChallengeDate: todayKey(), dailyChallengeClaimed: false,
     weeklyDeliveries: 0, weeklyChallengeWeek: weekKey(), weeklyChallengeClaimed: false,
-    dailyStreak: 0, lastDailyClaim: null, owned: ['classic'], vehicle: 'classic', paint: 'swift', riderGender: 'male', riderJacket: '#253b55', riderHelmet: '#f1f3f5', riderOutfit: 'custom', ownedRiderOutfits: ['custom'],
+    dailyStreak: 0, lastDailyClaim: null, owned: ['classic'], vehicle: 'classic', paint: 'swift', riderGender: 'male', riderJacket: '#253b55', riderHelmet: '#f1f3f5', riderTrousers: '#20252d', riderOutfit: 'custom', ownedRiderOutfits: ['custom'],
     upgrades: { engine: 0, handling: 0, helmet: 0 }, bestScore: 0,
   };
 }
@@ -196,6 +197,7 @@ export function loadProfile(): Profile {
       riderGender: parsed.riderGender === 'female' ? 'female' : 'male',
       riderJacket: typeof parsed.riderJacket === 'string' && /^#[0-9a-fA-F]{6}$/.test(parsed.riderJacket) ? parsed.riderJacket : fallback.riderJacket,
       riderHelmet: typeof parsed.riderHelmet === 'string' && /^#[0-9a-fA-F]{6}$/.test(parsed.riderHelmet) ? parsed.riderHelmet : fallback.riderHelmet,
+      riderTrousers: typeof parsed.riderTrousers === 'string' && /^#[0-9a-fA-F]{6}$/.test(parsed.riderTrousers) ? parsed.riderTrousers : fallback.riderTrousers,
       riderOutfit: isRiderOutfitId(parsed.riderOutfit) && ownedRiderOutfits.includes(parsed.riderOutfit) ? parsed.riderOutfit : fallback.riderOutfit,
       ownedRiderOutfits,
       upgrades: { engine: clampLevel(upgrades.engine, 'engine'), handling: clampLevel(upgrades.handling, 'handling'), helmet: clampLevel(upgrades.helmet, 'helmet') },
@@ -234,7 +236,7 @@ export function selectPaint(profile: Profile, paint: PaintId): Profile {
 export function selectRiderOutfit(profile: Profile, id: RiderOutfitId): Profile {
   const outfit = RIDER_OUTFITS.find((item) => item.id === id);
   if (!outfit || !profile.ownedRiderOutfits.includes(id)) return profile;
-  return { ...profile, riderOutfit: id, riderJacket: outfit.jacket, riderHelmet: outfit.helmet };
+  return { ...profile, riderOutfit: id, riderJacket: outfit.jacket, riderHelmet: outfit.helmet, riderTrousers: id === 'custom' ? profile.riderTrousers : outfit.trousers };
 }
 
 export function buyRiderOutfit(profile: Profile, id: RiderOutfitId): Profile | null {

@@ -39,6 +39,7 @@ export function GameScreen({ profile, onFinish, onDelivery, onSpend }: GameScree
     riderGender: profile.riderGender,
     riderJacket: profile.riderJacket,
     riderHelmet: profile.riderHelmet,
+    riderTrousers: profile.riderTrousers,
     riderOutfit: profile.riderOutfit,
   }));
   const [hud, setHud] = useState<HudSnapshot | null>(null);
@@ -91,6 +92,7 @@ export function GameScreen({ profile, onFinish, onDelivery, onSpend }: GameScree
           riderGender: loadout.riderGender,
           riderJacket: loadout.riderJacket,
           riderHelmet: loadout.riderHelmet,
+          riderTrousers: loadout.riderTrousers,
           riderOutfit: loadout.riderOutfit,
           network,
           readInput: input.read,

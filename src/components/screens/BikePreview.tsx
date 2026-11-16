@@ -9,6 +9,7 @@ interface BikePreviewProps {
   riderGender: 'male' | 'female';
   riderJacket: string;
   riderHelmet: string;
+  riderTrousers: string;
   riderOutfit: RiderOutfitId;
 }
 
@@ -20,7 +21,7 @@ function connect(scene: THREE.Group, a: THREE.Vector3, b: THREE.Vector3, radius:
   scene.add(mesh);
 }
 
-export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJacket, riderHelmet, riderOutfit }: BikePreviewProps) {
+export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJacket, riderHelmet, riderTrousers, riderOutfit }: BikePreviewProps) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = host.current;
@@ -150,7 +151,7 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     const rider = new THREE.Group();
     const outfit = RIDER_OUTFITS.find((item) => item.id === riderOutfit) ?? RIDER_OUTFITS[0];
     const jacket = new THREE.MeshStandardMaterial({ color: riderJacket, roughness: 0.78 });
-    const trousers = new THREE.MeshStandardMaterial({ color: outfit.trousers, roughness: 0.85 });
+    const trousers = new THREE.MeshStandardMaterial({ color: riderTrousers, roughness: 0.85 });
     const skin = new THREE.MeshStandardMaterial({ color: 0xb9825d, roughness: 0.9 });
     const helmet = new THREE.MeshStandardMaterial({ color: riderHelmet, metalness: 0.18, roughness: 0.28 });
     const visor = new THREE.MeshStandardMaterial({ color: 0x152331, metalness: 0.45, roughness: 0.12 });
@@ -263,7 +264,7 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
       scene.traverse((object) => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; materials.forEach((material) => material.dispose()); } });
       renderer.domElement.remove();
     };
-  }, [paint, vehicleId, riderGender, riderJacket, riderHelmet, riderOutfit]);
+  }, [paint, vehicleId, riderGender, riderJacket, riderHelmet, riderTrousers, riderOutfit]);
   return <section className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-black ring-1 ring-white/10">
     <div className="flex items-center justify-between px-4 pt-4">
       <div><p className="text-xs font-bold uppercase tracking-widest text-slate-400">معاينة ثلاثية الأبعاد</p><p className="mt-1 font-bold text-white">{vehicleName}</p></div>
