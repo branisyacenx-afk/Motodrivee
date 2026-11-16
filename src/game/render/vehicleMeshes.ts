@@ -20,7 +20,7 @@ export interface PedestrianModel {
 }
 
 export interface ActorAssets {
-  bike(paintHex: string, vehicleId: VehicleId, rider?: { gender: 'male' | 'female'; jacket: string; helmet: string; outfit: RiderOutfitId }): BikeModel;
+  bike(paintHex: string, vehicleId: VehicleId, rider?: { gender: 'male' | 'female'; jacket: string; helmet: string; trousers: string; outfit: RiderOutfitId }): BikeModel;
   car(color: string): THREE.Group;
   pedestrian(shirt: string, skin: string, isChild?: boolean): PedestrianModel;
   cone(): THREE.Group;
@@ -206,11 +206,11 @@ export function createActorAssets(): ActorAssets {
   let pedParts: ReturnType<typeof buildPedestrianParts> | null = null;
 
   return {
-    bike(paintHex, vehicleId, rider = { gender: 'male', jacket: '#f3f3f0', helmet: '#f7f7f5', outfit: 'custom' }) {
+    bike(paintHex, vehicleId, rider = { gender: 'male', jacket: '#f3f3f0', helmet: '#f7f7f5', trousers: '#20252d', outfit: 'custom' }) {
       const outfit = RIDER_OUTFITS.find((item) => item.id === rider.outfit) ?? RIDER_OUTFITS[0];
       const riderJacketMat = materialFor(rider.jacket, 0.7, 0);
       const riderHelmetMat = materialFor(rider.helmet, 0.3, 0.1);
-      const riderPantsMat = materialFor(outfit.trousers, 0.8, 0);
+      const riderPantsMat = materialFor(rider.trousers, 0.8, 0);
       const riderBootMat = materialFor(outfit.boots, 0.55, 0);
       const riderAccentMat = outfit.accent ? materialFor(outfit.accent, 0.45, 0.05) : null;
       const group = new THREE.Group();
