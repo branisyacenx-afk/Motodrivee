@@ -20,7 +20,7 @@ export function BikesPanel({ profile, onUpdate }: PanelProps) {
   const selectedBike = VEHICLES.find((vehicle) => vehicle.id === profile.vehicle) ?? VEHICLES[0];
   return (
     <>
-      <BikePreview paint={PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? '#d7262e'} vehicleId={selectedBike.id} vehicleName={selectedBike.name} riderGender={profile.riderGender} riderJacket={profile.riderJacket} riderHelmet={profile.riderHelmet} riderOutfit={profile.riderOutfit} />
+      <BikePreview paint={PAINTS.find((paint) => paint.id === profile.paint)?.hex ?? '#d7262e'} vehicleId={selectedBike.id} vehicleName={selectedBike.name} riderGender={profile.riderGender} riderJacket={profile.riderJacket} riderHelmet={profile.riderHelmet} riderTrousers={profile.riderTrousers} riderOutfit={profile.riderOutfit} />
     <ul className="grid gap-3">
       {VEHICLES.map((vehicle) => {
         const owned = profile.owned.includes(vehicle.id);
@@ -110,13 +110,14 @@ export function RiderOutfitsPanel({ profile, onUpdate }: PanelProps) {
         const canAfford = profile.wallet >= outfit.price && !levelLocked;
         const jacketColor = outfit.id === 'custom' ? profile.riderJacket : outfit.jacket;
         const helmetColor = outfit.id === 'custom' ? profile.riderHelmet : outfit.helmet;
+        const trousersColor = outfit.id === 'custom' ? profile.riderTrousers : outfit.trousers;
         return (
           <li key={outfit.id} className={`${CARD} flex flex-col justify-between gap-4 ${selected ? 'ring-2 ring-brand-500' : 'ring-1 ring-white/10'}`}>
             <div className="flex items-start gap-3">
               <div className="flex shrink-0 flex-col gap-1 rounded-xl bg-black/25 p-2">
                 <span className="h-7 w-12 rounded-md" style={{ backgroundColor: jacketColor }} />
                 <span className="h-5 w-12 rounded-full border border-white/20" style={{ backgroundColor: helmetColor }} />
-                <span className="h-2 w-12 rounded-sm" style={{ backgroundColor: outfit.trousers }} />
+                <span className="h-2 w-12 rounded-sm" style={{ backgroundColor: trousersColor }} />
               </div>
               <div className="min-w-0">
                 <p className="font-bold">{outfit.name}</p>
@@ -164,9 +165,10 @@ export function PaintPanel({ profile, onUpdate }: PanelProps) {
               className={`rounded-lg px-3 py-2 text-sm font-bold ${profile.riderGender === option.id ? 'bg-brand-500 text-white' : 'bg-white/10 text-slate-300'}`}>{option.label}</button>
           ))}
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <label className="text-xs font-semibold text-slate-300">لون السترة<input aria-label="لون سترة السائق" type="color" value={profile.riderJacket} onChange={(event) => onUpdate({ ...profile, riderOutfit: 'custom', riderJacket: event.target.value })} className="mt-2 h-10 w-full cursor-pointer rounded-lg bg-transparent" /></label>
           <label className="text-xs font-semibold text-slate-300">لون الخوذة<input aria-label="لون خوذة السائق" type="color" value={profile.riderHelmet} onChange={(event) => onUpdate({ ...profile, riderOutfit: 'custom', riderHelmet: event.target.value })} className="mt-2 h-10 w-full cursor-pointer rounded-lg bg-transparent" /></label>
+          <label className="text-xs font-semibold text-slate-300">لون السروال<input aria-label="لون سروال السائق" type="color" value={profile.riderTrousers} onChange={(event) => onUpdate({ ...profile, riderOutfit: 'custom', riderTrousers: event.target.value })} className="mt-2 h-10 w-full cursor-pointer rounded-lg bg-transparent" /></label>
         </div>
         <p className="mt-2 text-xs text-slate-400">تُحفظ اختياراتك تلقائياً وتظهر على السائق أثناء اللعب.</p>
       </div>
