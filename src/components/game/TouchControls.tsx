@@ -80,7 +80,7 @@ export function TouchControls({ onControl }: TouchControlsProps) {
   );
 
   return (
-    <div dir="ltr" className="pointer-events-none absolute inset-x-0 bottom-2 z-40 flex items-end justify-between px-3 sm:bottom-2 sm:px-8 landscape:bottom-2 landscape:px-[max(1rem,3vw)]">
+    <div dir="ltr" className="game-touch-controls-safe-area pointer-events-none absolute inset-x-0 bottom-0 z-40 flex items-end justify-between">
       <div className="pointer-events-auto flex gap-2 sm:gap-5">{STEER_PADS.map(renderPad)}</div>
       <div className="pointer-events-auto flex items-end gap-2 sm:gap-5">{PEDAL_PADS.map(renderPad)}</div>
     </div>

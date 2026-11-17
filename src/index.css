@@ -14,3 +14,25 @@
     -webkit-tap-highlight-color: transparent;
   }
 }
+
+@layer components {
+  .game-touch-controls-safe-area {
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .game-touch-controls-safe-area {
+      padding-left: max(2rem, env(safe-area-inset-left, 0px));
+      padding-right: max(2rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  @media (orientation: landscape) {
+    .game-touch-controls-safe-area {
+      padding-left: max(1rem, 3vw, env(safe-area-inset-left, 0px));
+      padding-right: max(1rem, 3vw, env(safe-area-inset-right, 0px));
+    }
+  }
+}
