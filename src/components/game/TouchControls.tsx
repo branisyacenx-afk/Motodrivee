@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react';
-import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from 'react';
 import { ArrowLeft, ArrowRight, ArrowUp, Square } from 'lucide-react';
 import type { TouchControl } from '@/game/input';
 
@@ -26,42 +30,68 @@ const PEDAL_PADS: PadDef[] = [
 ];
 
 export function TouchControls({ onControl }: TouchControlsProps) {
-  const activePointers = useRef(new Map<TouchControl, Set<number>>());
+  const activeSources = useRef(new Map<TouchControl, Set<string>>());
   const onControlRef = useRef(onControl);
 
   useEffect(() => {
     onControlRef.current = onControl;
   }, [onControl]);
 
-  const releasePointer = (control: TouchControl, pointerId: number) => {
-    const pointers = activePointers.current.get(control);
-    if (!pointers?.delete(pointerId)) return;
-    if (pointers.size === 0) {
-      activePointers.current.delete(control);
+  const pressSource = (control: TouchControl, source: string) => {
+    let sources = activeSources.current.get(control);
+    if (!sources) {
+      sources = new Set<string>();
+      activeSources.current.set(control, sources);
+    }
+    if (sources.has(source)) return;
+    const wasInactive = sources.size === 0;
+    sources.add(source);
+    if (wasInactive) onControlRef.current(control, true);
+  };
+
+  const releaseSource = (control: TouchControl, source: string) => {
+    const sources = activeSources.current.get(control);
+    if (!sources?.delete(source)) return;
+    if (sources.size === 0) {
+      activeSources.current.delete(control);
       onControlRef.current(control, false);
     }
   };
 
+  const releaseKeyboardSources = (control: TouchControl) => {
+    const sources = activeSources.current.get(control);
+    if (!sources) return;
+    for (const source of Array.from(sources)) {
+      if (source.startsWith('keyboard:')) releaseSource(control, source);
+    }
+  };
+
   useEffect(() => () => {
-    for (const control of activePointers.current.keys()) onControlRef.current(control, false);
-    activePointers.current.clear();
+    for (const control of activeSources.current.keys()) onControlRef.current(control, false);
+    activeSources.current.clear();
   }, []);
 
   const bind = (control: TouchControl) => ({
     onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
-      let pointers = activePointers.current.get(control);
-      if (!pointers) {
-        pointers = new Set<number>();
-        activePointers.current.set(control, pointers);
-      }
-      if (pointers.size === 0) onControlRef.current(control, true);
-      pointers.add(event.pointerId);
+      pressSource(control, 'pointer:' + event.pointerId);
     },
-    onPointerUp: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
-    onPointerCancel: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
-    onLostPointerCapture: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
+    onPointerUp: (event: ReactPointerEvent<HTMLButtonElement>) => releaseSource(control, 'pointer:' + event.pointerId),
+    onPointerCancel: (event: ReactPointerEvent<HTMLButtonElement>) => releaseSource(control, 'pointer:' + event.pointerId),
+    onLostPointerCapture: (event: ReactPointerEvent<HTMLButtonElement>) => releaseSource(control, 'pointer:' + event.pointerId),
+    onKeyDown: (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (event.code !== 'Space' && event.code !== 'Enter') return;
+      event.preventDefault();
+      if (event.repeat) return;
+      pressSource(control, 'keyboard:' + event.code);
+    },
+    onKeyUp: (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (event.code !== 'Space' && event.code !== 'Enter') return;
+      event.preventDefault();
+      releaseSource(control, 'keyboard:' + event.code);
+    },
+    onBlur: () => releaseKeyboardSources(control),
     onContextMenu: (event: ReactMouseEvent) => event.preventDefault(),
   });
 
@@ -70,7 +100,8 @@ export function TouchControls({ onControl }: TouchControlsProps) {
       <button
         type="button"
         aria-label={label}
-        className={`${tone} ${size} flex touch-none select-none items-center justify-center rounded-full shadow-xl ring-1 ring-black/10 transition-transform active:scale-95 active:brightness-90`}
+        aria-keyshortcuts="Space Enter"
+        className={[tone, size, 'flex touch-none select-none items-center justify-center rounded-full shadow-xl ring-1 ring-black/10 transition-transform active:scale-95 active:brightness-90'].join(' ')}
         {...bind(control)}
       >
         <Icon className="h-9 w-9 sm:h-10 sm:w-10 landscape:h-10 landscape:w-10" strokeWidth={2.6} />
