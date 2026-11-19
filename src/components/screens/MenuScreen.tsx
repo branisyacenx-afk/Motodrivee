@@ -31,6 +31,8 @@ export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimD
   const level = levelFor(profile.xp);
   const progress = levelProgress(profile.xp);
   const rank = careerRank(level);
+  const reputation = Math.max(0, Math.min(100, profile.reputation));
+  const reputationLabel = reputation >= 90 ? 'ممتازة' : reputation >= 75 ? 'جيدة' : reputation >= 50 ? 'متوسطة' : reputation >= 25 ? 'ضعيفة' : 'بحاجة إلى تحسين';
 
   return (
     <div className="relative flex min-h-full flex-col overflow-hidden bg-slate-900 text-white">
@@ -57,8 +59,17 @@ export function MenuScreen({ profile, onStart, onGarage, onLeaderboard, onClaimD
             <div className="text-left"><p className="text-sm font-bold tabular-nums">{profile.xp} XP</p><p className="text-xs text-slate-300">{500 - (profile.xp % 500)} XP للمستوى التالي</p></div>
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/30"><div className="h-full rounded-full bg-emerald-400 transition-[width]" style={{ width: `${progress}%` }} /></div>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-200 sm:grid-cols-3">
-            <span>توصيلات: <b className="text-white">{profile.totalDeliveries}</b></span><span>إجمالي الأرباح: <b className="text-white">{formatMoney(profile.totalEarned)}</b></span><span>الدراجات المملوكة: <b className="text-white">{profile.owned.length}/{VEHICLES.length}</b></span>
+          <div className="mt-3 rounded-xl bg-black/20 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-3 text-xs">
+              <span className="font-semibold text-slate-300">سمعة السائق · {reputationLabel}</span>
+              <b className="tabular-nums text-white">{reputation}/100</b>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/30" role="progressbar" aria-label="سمعة السائق" aria-valuemin={0} aria-valuemax={100} aria-valuenow={reputation}>
+              <div className="h-full rounded-full bg-emerald-400 transition-[width]" style={{ width: `${reputation}%` }} />
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-200 sm:grid-cols-4">
+            <span>توصيلات: <b className="text-white">{profile.totalDeliveries}</b></span><span>توصيلات نظيفة: <b className="text-white">{profile.cleanDeliveries}</b></span><span>إجمالي الأرباح: <b className="text-white">{formatMoney(profile.totalEarned)}</b></span><span>الدراجات المملوكة: <b className="text-white">{profile.owned.length}/{VEHICLES.length}</b></span>
           </div>
         </section>
         <section aria-label="تحدي اليوم" className="mt-4 max-w-xl rounded-2xl bg-slate-950/80 p-4 ring-1 ring-amber-300/30">
