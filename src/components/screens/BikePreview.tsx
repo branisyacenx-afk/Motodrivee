@@ -23,8 +23,10 @@ function connect(scene: THREE.Group, a: THREE.Vector3, b: THREE.Vector3, radius:
 export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJacket, riderHelmet, riderOutfit }: BikePreviewProps) {
   const host = useRef<HTMLDivElement>(null);
   const bikeRef = useRef<THREE.Group | null>(null);
-  const autoRotateRef = useRef(true);
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const autoRotateRef = useRef(autoRotate);
+  const startAnimationRef = useRef<() => void>(() => {});
+  const stopAnimationRef = useRef<() => void>(() => {});
   useEffect(() => {
     const element = host.current;
     if (!element) return;
@@ -228,6 +230,7 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     const modelHeight = Math.max(size.y, 2.1);
     const modelLength = Math.max(size.z, 2.4);
     const fitRadius = Math.max(modelHeight, modelLength) * 0.62;
+    let frame = 0;
     const resize = () => {
       const width = Math.max(1, element.clientWidth);
       const height = Math.max(1, element.clientHeight);
@@ -240,24 +243,88 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
       camera.near = 0.1;
       camera.far = Math.max(50, distance * 4);
       camera.updateProjectionMatrix();
+      if (frame === 0) renderer.render(scene, camera);
     };
     const observer = new ResizeObserver(resize);
     observer.observe(element);
     resize();
     let dragging = false;
     let lastX = 0;
-    const down = (event: PointerEvent) => { dragging = true; autoRotateRef.current = false; setAutoRotate(false); lastX = event.clientX; element.setPointerCapture(event.pointerId); };
-    const move = (event: PointerEvent) => { if (!dragging) return; bike.rotation.y += (event.clientX - lastX) * 0.012; lastX = event.clientX; };
+    const down = (event: PointerEvent) => {
+      dragging = true;
+      autoRotateRef.current = false;
+      setAutoRotate(false);
+      stopAnimationRef.current();
+      lastX = event.clientX;
+      element.setPointerCapture(event.pointerId);
+    };
+    const move = (event: PointerEvent) => {
+      if (!dragging) return;
+      bike.rotation.y += (event.clientX - lastX) * 0.012;
+      lastX = event.clientX;
+      if (frame === 0) renderer.render(scene, camera);
+    };
     const up = () => { dragging = false; };
     element.addEventListener('pointerdown', down);
     element.addEventListener('pointermove', move);
     element.addEventListener('pointerup', up);
     element.addEventListener('pointercancel', up);
-    let frame = 0;
-    const animate = () => { frame = requestAnimationFrame(animate); if (!dragging && autoRotateRef.current) bike.rotation.y += 0.0025; renderer.render(scene, camera); };
-    animate();
+    let disposed = false;
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const renderOnce = () => {
+      if (!disposed) renderer.render(scene, camera);
+    };
+    const animate = () => {
+      if (disposed || document.visibilityState !== 'visible' || !autoRotateRef.current) {
+        frame = 0;
+        renderOnce();
+        return;
+      }
+      frame = requestAnimationFrame(animate);
+      if (!dragging) bike.rotation.y += 0.0025;
+      renderOnce();
+    };
+    const startAnimation = () => {
+      if (disposed || document.visibilityState !== 'visible' || !autoRotateRef.current) {
+        renderOnce();
+        return;
+      }
+      if (frame === 0) frame = requestAnimationFrame(animate);
+    };
+    const stopAnimation = () => {
+      if (frame !== 0) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+      }
+      renderOnce();
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        startAnimation();
+      } else {
+        if (frame !== 0) cancelAnimationFrame(frame);
+        frame = 0;
+      }
+    };
+    const onMotionPreferenceChange = (event: MediaQueryListEvent) => {
+      if (!event.matches || !autoRotateRef.current) return;
+      autoRotateRef.current = false;
+      setAutoRotate(false);
+      stopAnimation();
+    };
+    startAnimationRef.current = startAnimation;
+    stopAnimationRef.current = stopAnimation;
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    motionPreference.addEventListener('change', onMotionPreferenceChange);
+    startAnimation();
     return () => {
-      cancelAnimationFrame(frame);
+      disposed = true;
+      if (frame !== 0) cancelAnimationFrame(frame);
+      frame = 0;
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      motionPreference.removeEventListener('change', onMotionPreferenceChange);
+      startAnimationRef.current = () => {};
+      stopAnimationRef.current = () => {};
       bikeRef.current = null;
       observer.disconnect();
       element.removeEventListener('pointerdown', down);
@@ -290,6 +357,7 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
             bikeRef.current.rotation.y = angle;
             autoRotateRef.current = false;
             setAutoRotate(false);
+            stopAnimationRef.current();
           }}
           className="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold text-slate-200 ring-1 ring-white/15 transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
         >
@@ -303,6 +371,8 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
           const next = !autoRotateRef.current;
           autoRotateRef.current = next;
           setAutoRotate(next);
+          if (next) startAnimationRef.current();
+          else stopAnimationRef.current();
         }}
         className={`rounded-lg px-3 py-2 text-xs font-bold ring-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${autoRotate ? 'bg-brand-500/20 text-brand-200 ring-brand-400/40' : 'bg-white/10 text-slate-200 ring-white/15 hover:bg-white/20'}`}
       >
