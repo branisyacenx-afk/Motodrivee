@@ -212,6 +212,7 @@ export function createActorAssets(): ActorAssets {
       const riderHelmetMat = materialFor(rider.helmet, 0.3, 0.1);
       const riderPantsMat = materialFor(outfit.trousers, 0.8, 0);
       const riderBootMat = materialFor(outfit.boots, 0.55, 0);
+      const riderGloveMat = materialFor(outfit.gloves, 0.72, 0);
       const riderAccentMat = outfit.accent ? materialFor(outfit.accent, 0.45, 0.05) : null;
       const group = new THREE.Group();
       const paint = materialFor(paintHex, 0.35, 0.2);
@@ -260,9 +261,11 @@ export function createActorAssets(): ActorAssets {
       group.add(new THREE.Mesh(merge([
         box(0.12, 0.1, 0.24, -0.13, 0.34, 0.4),
         box(0.12, 0.1, 0.24, 0.13, 0.34, 0.4),
+      ]), riderBootMat));
+      group.add(new THREE.Mesh(merge([
         ball(0.065, -0.2, 1.06, 0.6),
         ball(0.065, 0.2, 1.06, 0.6),
-      ]), riderBootMat));
+      ]), riderGloveMat));
       group.add(new THREE.Mesh(merge([ball(0.165, 0, 1.6, 0.1) ]), riderHelmetMat));
       group.add(new THREE.Mesh(box(0.22, 0.1, 0.03, 0, 1.6, 0.27), visor));
       const bikeHeadlight = headlight.clone();
