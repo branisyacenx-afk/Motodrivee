@@ -116,7 +116,9 @@ export function RiderOutfitsPanel({ profile, onUpdate }: PanelProps) {
               <div className="flex shrink-0 flex-col gap-1 rounded-xl bg-black/25 p-2">
                 <span className="h-7 w-12 rounded-md" style={{ backgroundColor: jacketColor }} />
                 <span className="h-5 w-12 rounded-full border border-white/20" style={{ backgroundColor: helmetColor }} />
-                <span className="h-2 w-12 rounded-sm" style={{ backgroundColor: outfit.trousers }} />
+                <span className="h-2 w-12 rounded-sm" title="لون السروال" style={{ backgroundColor: outfit.trousers }} />
+                <span className="h-2 w-12 rounded-sm" title="لون القفازات" style={{ backgroundColor: outfit.gloves }} />
+                <span className="h-2 w-12 rounded-sm" title="لون الحذاء" style={{ backgroundColor: outfit.boots }} />
               </div>
               <div className="min-w-0">
                 <p className="font-bold">{outfit.name}</p>
