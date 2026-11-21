@@ -155,6 +155,7 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     const helmet = new THREE.MeshStandardMaterial({ color: riderHelmet, metalness: 0.18, roughness: 0.28 });
     const visor = new THREE.MeshStandardMaterial({ color: 0x152331, metalness: 0.45, roughness: 0.12 });
     const boot = new THREE.MeshStandardMaterial({ color: outfit.boots, roughness: 0.65 });
+    const glove = new THREE.MeshStandardMaterial({ color: outfit.gloves, roughness: 0.72 });
     const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.32, 5, 12), jacket);
     torso.position.set(0, 1.62, -0.25);
     torso.scale.x = riderGender === 'female' ? 0.88 : 1.08;
@@ -199,6 +200,12 @@ export function BikePreview({ paint, vehicleId, vehicleName, riderGender, riderJ
     connect(rider, new THREE.Vector3(0.16, 1.72, -0.2), new THREE.Vector3(0.25, 1.42, 0.55), 0.065, jacket);
     connect(rider, new THREE.Vector3(-0.25, 1.42, 0.55), new THREE.Vector3(-0.28, 1.35, 0.78), 0.045, skin);
     connect(rider, new THREE.Vector3(0.25, 1.42, 0.55), new THREE.Vector3(0.28, 1.35, 0.78), 0.045, skin);
+    const leftGlove = new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 12), glove);
+    leftGlove.position.set(-0.28, 1.35, 0.78);
+    rider.add(leftGlove);
+    const rightGlove = new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 12), glove);
+    rightGlove.position.set(0.28, 1.35, 0.78);
+    rider.add(rightGlove);
     connect(rider, new THREE.Vector3(-0.13, 1.43, -0.36), new THREE.Vector3(-0.2, 0.92, -0.05), 0.085, trousers);
     connect(rider, new THREE.Vector3(0.13, 1.43, -0.36), new THREE.Vector3(0.2, 0.92, -0.05), 0.085, trousers);
     connect(rider, new THREE.Vector3(-0.2, 0.92, -0.05), new THREE.Vector3(-0.25, 0.56, -0.3), 0.07, trousers);
