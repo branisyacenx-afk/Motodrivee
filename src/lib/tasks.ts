@@ -34,7 +34,8 @@ export const SHIFT_TASKS: readonly ShiftTask[] = [
     reward: 2000,
     target: 3,
     progress: (summary) => Math.max(0, summary.deliveries - summary.lateDeliveries),
-    passed: (summary) => summary.deliveries >= 3 && summary.lateDeliveries === 0,
+    // The task requires three on-time deliveries; an additional late delivery does not erase them.
+    passed: (summary) => Math.max(0, summary.deliveries - summary.lateDeliveries) >= 3,
   },
 ];
 
