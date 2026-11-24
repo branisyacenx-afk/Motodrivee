@@ -2,8 +2,8 @@ import { ArrowLeft, ArrowRight, ArrowUp, CalendarDays, Check, RotateCcw, Trophy,
 import { formatMoney } from '@/lib/money';
 import type { GameEvent, HudSnapshot, OfferHud, OrderHud } from '@/game/types';
 import type { ChallengeProgressItem } from '@/lib/challengeProgress';
+import { GLASS_CARD } from '@/components/game/hudStyles';
 
-export const GLASS_CARD = 'rounded-2xl bg-white/95 text-slate-900 shadow-xl ring-1 ring-black/5 backdrop-blur-md';
 
 export function formatDistance(meters: number): string {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} كم` : `${meters} م`;
