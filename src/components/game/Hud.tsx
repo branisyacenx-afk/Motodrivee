@@ -1,5 +1,6 @@
 import { Bike, Cloud, CloudFog, CloudRain, Gauge, Heart, Moon, Pause, Sun, Volume2, VolumeX, Wallet, Wind, ShieldAlert, AlertTriangle } from 'lucide-react';
-import { ChallengeProgressCard, OfferCard, OrderCard, Toasts, TurnCard, GLASS_CARD } from '@/components/game/HudCards';
+import { ChallengeProgressCard, OfferCard, OrderCard, Toasts, TurnCard } from '@/components/game/HudCards';
+import { GLASS_CARD } from '@/components/game/hudStyles';
 import { formatMoney } from '@/lib/money';
 import type { GameEvent, HudSnapshot } from '@/game/types';
 import type { ChallengeProgressSnapshot } from '@/lib/challengeProgress';
