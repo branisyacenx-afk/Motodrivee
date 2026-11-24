@@ -1,5 +1,5 @@
 import { Pause, Play, Flag } from 'lucide-react';
-import { GLASS_CARD } from '@/components/game/HudCards';
+import { GLASS_CARD } from '@/components/game/hudStyles';
 
 interface PauseMenuProps {
   onResume: () => void;
