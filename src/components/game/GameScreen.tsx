@@ -171,27 +171,16 @@ export function GameScreen({ profile, onFinish, onDelivery, onSpend }: GameScree
 
   const today = todayKey();
   const week = weekKey();
-  const challenges = useMemo(() => {
-    const daily = dailyChallengeFor(today);
-    const weekly = weeklyChallengeFor(week);
-    return buildChallengeProgress(profile, {
-      today,
-      week,
-      dailyGoal: daily.goal,
-      dailyReward: daily.reward,
-      weeklyGoal: weekly.goal,
-      weeklyReward: weekly.reward,
-    });
-  }, [
-    profile.dailyDeliveries,
-    profile.dailyChallengeDate,
-    profile.dailyChallengeClaimed,
-    profile.weeklyDeliveries,
-    profile.weeklyChallengeWeek,
-    profile.weeklyChallengeClaimed,
+  const dailyChallenge = dailyChallengeFor(today);
+  const weeklyChallenge = weeklyChallengeFor(week);
+  const challenges = buildChallengeProgress(profile, {
     today,
     week,
-  ]);
+    dailyGoal: dailyChallenge.goal,
+    dailyReward: dailyChallenge.reward,
+    weeklyGoal: weeklyChallenge.goal,
+    weeklyReward: weeklyChallenge.reward,
+  });
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-sky-200 select-none">
