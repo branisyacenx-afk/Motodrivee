@@ -10,7 +10,8 @@ import { createInputController, type TouchControl } from '@/game/input';
 import { GameWorld } from '@/game/world';
 import type { GameEvent, HudSnapshot, ShiftSummary } from '@/game/types';
 import { connectSharedCity, createRiderId } from '@/lib/sharedCity';
-import type { Profile } from '@/lib/profile';
+import { dailyChallengeFor, todayKey, weekKey, weeklyChallengeFor, type Profile } from '@/lib/profile';
+import { buildChallengeProgress } from '@/lib/challengeProgress';
 
 interface GameScreenProps {
   profile: Profile;
@@ -168,6 +169,30 @@ export function GameScreen({ profile, onFinish, onDelivery, onSpend }: GameScree
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
+  const today = todayKey();
+  const week = weekKey();
+  const challenges = useMemo(() => {
+    const daily = dailyChallengeFor(today);
+    const weekly = weeklyChallengeFor(week);
+    return buildChallengeProgress(profile, {
+      today,
+      week,
+      dailyGoal: daily.goal,
+      dailyReward: daily.reward,
+      weeklyGoal: weekly.goal,
+      weeklyReward: weekly.reward,
+    });
+  }, [
+    profile.dailyDeliveries,
+    profile.dailyChallengeDate,
+    profile.dailyChallengeClaimed,
+    profile.weeklyDeliveries,
+    profile.weeklyChallengeWeek,
+    profile.weeklyChallengeClaimed,
+    today,
+    week,
+  ]);
+
   return (
     <div className="fixed inset-0 overflow-hidden bg-sky-200 select-none">
       <div ref={containerRef} className="absolute inset-0" />
@@ -188,6 +213,7 @@ export function GameScreen({ profile, onFinish, onDelivery, onSpend }: GameScree
             hud={hud}
             toasts={toasts}
             wallet={profile.wallet}
+            challenges={challenges}
             onAccept={() => worldRef.current?.acceptOffer()}
             onDecline={() => worldRef.current?.declineOffer()}
             onRefuel={() => worldRef.current?.refuel()}
