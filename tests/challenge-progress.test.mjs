@@ -80,7 +80,7 @@ test('clamps malformed counters, goals, and rewards to safe display values', () 
     weeklyGoal: 0,
     weeklyReward: -100,
   });
-  assert.equal(result.daily.progress, 1);
+  assert.equal(result.daily.progress, 0);
   assert.equal(result.daily.goal, 1);
   assert.equal(result.daily.reward, 0);
   assert.equal(result.weekly.progress, 0);
