@@ -66,9 +66,29 @@ export function TouchControls({ onControl }: TouchControlsProps) {
     }
   };
 
-  useEffect(() => () => {
-    for (const control of activeSources.current.keys()) onControlRef.current(control, false);
-    activeSources.current.clear();
+  useEffect(() => {
+    // Mobile browsers may suspend a tab without delivering pointerup.
+    const releaseAllSources = () => {
+      for (const control of activeSources.current.keys()) {
+        onControlRef.current(control, false);
+      }
+      activeSources.current.clear();
+    };
+
+    const releaseWhenHidden = () => {
+      if (document.visibilityState === 'hidden') releaseAllSources();
+    };
+
+    window.addEventListener('blur', releaseAllSources);
+    window.addEventListener('pagehide', releaseAllSources);
+    document.addEventListener('visibilitychange', releaseWhenHidden);
+
+    return () => {
+      window.removeEventListener('blur', releaseAllSources);
+      window.removeEventListener('pagehide', releaseAllSources);
+      document.removeEventListener('visibilitychange', releaseWhenHidden);
+      releaseAllSources();
+    };
   }, []);
 
   const bind = (control: TouchControl) => ({
