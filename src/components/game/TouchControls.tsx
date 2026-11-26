@@ -1,6 +1,11 @@
 import { useEffect, useRef } from 'react';
-import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from 'react';
 import { ArrowLeft, ArrowRight, ArrowUp, Square } from 'lucide-react';
+import { createControlSourceTracker } from '@/game/controlSources.mjs';
 import type { TouchControl } from '@/game/input';
 
 interface TouchControlsProps {
@@ -26,42 +31,57 @@ const PEDAL_PADS: PadDef[] = [
 ];
 
 export function TouchControls({ onControl }: TouchControlsProps) {
-  const activePointers = useRef(new Map<TouchControl, Set<number>>());
   const onControlRef = useRef(onControl);
+  const trackerRef = useRef<ReturnType<typeof createControlSourceTracker> | null>(null);
+  const tracker = trackerRef.current ?? createControlSourceTracker(
+    (control, pressed) => onControlRef.current(control, pressed),
+  );
+  trackerRef.current = tracker;
 
   useEffect(() => {
     onControlRef.current = onControl;
   }, [onControl]);
 
-  const releasePointer = (control: TouchControl, pointerId: number) => {
-    const pointers = activePointers.current.get(control);
-    if (!pointers?.delete(pointerId)) return;
-    if (pointers.size === 0) {
-      activePointers.current.delete(control);
-      onControlRef.current(control, false);
-    }
-  };
+  useEffect(() => {
+    // Mobile browsers may suspend a tab without delivering pointerup.
+    const releaseAllSources = () => tracker.releaseAll();
+    const releaseWhenHidden = () => {
+      if (document.visibilityState === 'hidden') releaseAllSources();
+    };
 
-  useEffect(() => () => {
-    for (const control of activePointers.current.keys()) onControlRef.current(control, false);
-    activePointers.current.clear();
-  }, []);
+    window.addEventListener('blur', releaseAllSources);
+    window.addEventListener('pagehide', releaseAllSources);
+    document.addEventListener('visibilitychange', releaseWhenHidden);
+
+    return () => {
+      window.removeEventListener('blur', releaseAllSources);
+      window.removeEventListener('pagehide', releaseAllSources);
+      document.removeEventListener('visibilitychange', releaseWhenHidden);
+      releaseAllSources();
+    };
+  }, [tracker]);
 
   const bind = (control: TouchControl) => ({
     onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
-      let pointers = activePointers.current.get(control);
-      if (!pointers) {
-        pointers = new Set<number>();
-        activePointers.current.set(control, pointers);
-      }
-      if (pointers.size === 0) onControlRef.current(control, true);
-      pointers.add(event.pointerId);
+      tracker.press(control, 'pointer:' + event.pointerId);
     },
-    onPointerUp: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
-    onPointerCancel: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
-    onLostPointerCapture: (event: ReactPointerEvent<HTMLButtonElement>) => releasePointer(control, event.pointerId),
+    onPointerUp: (event: ReactPointerEvent<HTMLButtonElement>) => tracker.release(control, 'pointer:' + event.pointerId),
+    onPointerCancel: (event: ReactPointerEvent<HTMLButtonElement>) => tracker.release(control, 'pointer:' + event.pointerId),
+    onLostPointerCapture: (event: ReactPointerEvent<HTMLButtonElement>) => tracker.release(control, 'pointer:' + event.pointerId),
+    onKeyDown: (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (event.code !== 'Space' && event.code !== 'Enter') return;
+      event.preventDefault();
+      if (event.repeat) return;
+      tracker.press(control, 'keyboard:' + event.code);
+    },
+    onKeyUp: (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (event.code !== 'Space' && event.code !== 'Enter') return;
+      event.preventDefault();
+      tracker.release(control, 'keyboard:' + event.code);
+    },
+    onBlur: () => tracker.releaseKeyboard(control),
     onContextMenu: (event: ReactMouseEvent) => event.preventDefault(),
   });
 
@@ -70,7 +90,8 @@ export function TouchControls({ onControl }: TouchControlsProps) {
       <button
         type="button"
         aria-label={label}
-        className={`${tone} ${size} flex touch-none select-none items-center justify-center rounded-full shadow-xl ring-1 ring-black/10 transition-transform active:scale-95 active:brightness-90`}
+        aria-keyshortcuts="Space Enter"
+        className={[tone, size, 'flex touch-none select-none items-center justify-center rounded-full shadow-xl ring-1 ring-black/10 transition-transform active:scale-95 active:brightness-90'].join(' ')}
         {...bind(control)}
       >
         <Icon className="h-9 w-9 sm:h-10 sm:w-10 landscape:h-10 landscape:w-10" strokeWidth={2.6} />
