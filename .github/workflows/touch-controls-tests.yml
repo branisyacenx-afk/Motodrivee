@@ -1,0 +1,34 @@
+name: Touch control regression tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/components/game/TouchControls.tsx'
+      - 'src/game/controlSources.mjs'
+      - 'src/game/controlSources.d.mts'
+      - 'tests/control-sources.test.mjs'
+      - '.github/workflows/touch-controls-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/game/controlSources.mjs'
+      - 'tests/control-sources.test.mjs'
+      - '.github/workflows/touch-controls-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Multi-source touch control tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run control source regression tests
+        run: node --test tests/control-sources.test.mjs
