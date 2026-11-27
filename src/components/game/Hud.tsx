@@ -1,7 +1,9 @@
 import { Bike, Cloud, CloudFog, CloudRain, Gauge, Heart, Moon, Pause, Sun, Volume2, VolumeX, Wallet, Wind, ShieldAlert, AlertTriangle } from 'lucide-react';
-import { OfferCard, OrderCard, Toasts, TurnCard, GLASS_CARD } from '@/components/game/HudCards';
+import { ChallengeProgressCard, OfferCard, OrderCard, Toasts, TurnCard } from '@/components/game/HudCards';
+import { GLASS_CARD } from '@/components/game/hudStyles';
 import { formatMoney } from '@/lib/money';
 import type { GameEvent, HudSnapshot } from '@/game/types';
+import type { ChallengeProgressSnapshot } from '@/lib/challengeProgress';
 
 export interface ToastItem extends GameEvent {
   id: number;
@@ -11,6 +13,7 @@ interface HudProps {
   hud: HudSnapshot;
   toasts: ToastItem[];
   wallet: number;
+  challenges: ChallengeProgressSnapshot;
   onAccept: () => void;
   onDecline: () => void;
   onRefuel: () => void;
@@ -49,7 +52,7 @@ const LINK_LABEL: Record<HudSnapshot['link'], string> = {
   offline: 'بلا اتصال',
 };
 
-export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepair, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
+export function Hud({ hud, toasts, wallet, challenges, onAccept, onDecline, onRefuel, onRepair, onPause, onDismissToast, muted, onToggleMute }: HudProps) {
   const lowHealth = hud.health < 35;
   const criticalHealth = hud.health <= 25;
   const lowFuel = hud.fuel < 25;
@@ -124,6 +127,7 @@ export function Hud({ hud, toasts, wallet, onAccept, onDecline, onRefuel, onRepa
 
       <div className="pointer-events-auto mx-auto flex w-full max-w-[min(42rem,calc(100vw-1rem))] flex-col gap-2 sm:gap-3 landscape:absolute landscape:right-4 landscape:top-[18vh] landscape:bottom-auto landscape:mx-0 landscape:max-h-[66vh] landscape:w-[min(22rem,34vw)] landscape:max-w-none landscape:flex-col landscape:gap-2 landscape:overflow-y-auto landscape:overscroll-contain max-[600px]:absolute max-[600px]:right-2 max-[600px]:top-[6rem] max-[600px]:bottom-auto max-[600px]:mx-0 max-[600px]:w-[min(22rem,calc(100vw-10rem))] max-[600px]:max-w-none max-[600px]:gap-2 max-[600px]:overflow-visible max-[600px]:landscape:top-[18vh] max-[600px]:landscape:w-[min(22rem,42vw)]">
         <Toasts items={toasts.slice(-1)} onDismiss={onDismissToast} />
+        <ChallengeProgressCard daily={challenges.daily} weekly={challenges.weekly} />
         {hud.order && <TurnCard turn={hud.turn} order={hud.order} /> }
         <div className="flex min-w-0 flex-col gap-2">
           {hud.order && <OrderCard order={hud.order} /> }

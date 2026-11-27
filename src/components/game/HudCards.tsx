@@ -1,8 +1,9 @@
-import { ArrowLeft, ArrowRight, ArrowUp, Check, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, CalendarDays, Check, RotateCcw, Trophy, X } from 'lucide-react';
 import { formatMoney } from '@/lib/money';
 import type { GameEvent, HudSnapshot, OfferHud, OrderHud } from '@/game/types';
+import type { ChallengeProgressItem } from '@/lib/challengeProgress';
+import { GLASS_CARD } from '@/components/game/hudStyles';
 
-export const GLASS_CARD = 'rounded-2xl bg-white/95 text-slate-900 shadow-xl ring-1 ring-black/5 backdrop-blur-md';
 
 export function formatDistance(meters: number): string {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} كم` : `${meters} م`;
@@ -155,5 +156,63 @@ export function Toasts({ items, onDismiss }: ToastsProps) {
         </div>
       ))}
     </div>
+  );
+}
+
+
+interface ChallengeProgressCardProps {
+  daily: ChallengeProgressItem;
+  weekly: ChallengeProgressItem;
+}
+
+export function ChallengeProgressCard({ daily, weekly }: ChallengeProgressCardProps) {
+  const rows = [
+    { id: 'daily', label: 'تحدي اليوم', item: daily, Icon: CalendarDays },
+    { id: 'weekly', label: 'التحدي الأسبوعي', item: weekly, Icon: Trophy },
+  ];
+
+  return (
+    <section className={`${GLASS_CARD} pointer-events-none w-full p-2.5 sm:p-3`} aria-label="تقدم التحديات اليومية والأسبوعية">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-xs font-extrabold">تحديات السائق</span>
+        <span className="text-[10px] font-semibold text-slate-500">تحديث مباشر</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {rows.map(({ id, label, item, Icon }) => {
+          const percent = Math.round((item.progress / item.goal) * 100);
+          const status = item.claimed ? 'تم الاستلام' : item.claimReady ? 'جاهز للاستلام من القائمة' : 'قيد الإنجاز';
+          const statusTone = item.claimed ? 'text-emerald-700' : item.claimReady ? 'text-amber-700' : 'text-slate-500';
+
+          return (
+            <div key={id} className="min-w-0 rounded-xl bg-slate-100/90 p-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-slate-800">
+                <Icon className="h-3.5 w-3.5 shrink-0 text-brand-600" />
+                <span className="truncate">{label}</span>
+              </div>
+              <div
+                className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-300"
+                role="progressbar"
+                aria-label={label}
+                aria-valuemin={0}
+                aria-valuemax={item.goal}
+                aria-valuenow={item.progress}
+              >
+                <div className="h-full rounded-full bg-brand-500 transition-[width]" style={{ width: `${percent}%` }} />
+              </div>
+              <div
+                className="mt-1 flex items-center justify-between gap-1 text-[10px] font-bold tabular-nums"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                <span className="text-slate-700">{item.progress.toLocaleString('ar-DZ')} / {item.goal.toLocaleString('ar-DZ')}</span>
+                <span className={statusTone}>{status}</span>
+              </div>
+              <p className="mt-1 text-[10px] font-semibold text-emerald-700">مكافأة {formatMoney(item.reward)}</p>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

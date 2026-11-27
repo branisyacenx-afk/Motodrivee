@@ -1,6 +1,7 @@
 import { RIDER_OUTFITS, UPGRADES, VEHICLES, type PaintId, type RiderOutfitId, type UpgradeId, type VehicleId } from '@/game/config';
 import type { ShiftSummary } from '@/game/types';
 import { completedTasks } from '@/lib/tasks';
+import { normalizeDeliveryPay } from './deliveryPay';
 
 export interface Profile {
   name: string;
@@ -254,7 +255,7 @@ export function buyUpgrade(profile: Profile, id: UpgradeId): Profile | null {
 }
 
 export function creditDelivery(profile: Profile, pay: number, onTime = true): Profile {
-  const reward = Math.max(0, Math.round(pay));
+  const reward = normalizeDeliveryPay(pay);
   const today = todayKey();
   const week = weekKey();
   const dailyDeliveries = profile.dailyChallengeDate === today ? profile.dailyDeliveries : 0;
