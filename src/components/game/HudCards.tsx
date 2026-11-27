@@ -199,7 +199,12 @@ export function ChallengeProgressCard({ daily, weekly }: ChallengeProgressCardPr
               >
                 <div className="h-full rounded-full bg-brand-500 transition-[width]" style={{ width: `${percent}%` }} />
               </div>
-              <div className="mt-1 flex items-center justify-between gap-1 text-[10px] font-bold tabular-nums">
+              <div
+                className="mt-1 flex items-center justify-between gap-1 text-[10px] font-bold tabular-nums"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 <span className="text-slate-700">{item.progress.toLocaleString('ar-DZ')} / {item.goal.toLocaleString('ar-DZ')}</span>
                 <span className={statusTone}>{status}</span>
               </div>
