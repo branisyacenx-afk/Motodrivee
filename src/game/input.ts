@@ -1,3 +1,4 @@
+import { readGamepadInput } from '@/game/gamepadInput.mjs';
 import type { BikeInput } from '@/game/sim/bike';
 
 export type TouchControl = 'left' | 'right' | 'gas' | 'brake';
@@ -16,6 +17,21 @@ const KEY_BINDINGS = {
 } as const;
 
 const GAME_KEYS = new Set<string>(Object.values(KEY_BINDINGS).flat());
+const NEUTRAL_GAMEPAD_INPUT = { throttle: 0, brake: 0, steer: 0 };
+
+function readConnectedGamepad() {
+  if (typeof navigator === 'undefined' || typeof navigator.getGamepads !== 'function') {
+    return NEUTRAL_GAMEPAD_INPUT;
+  }
+
+  try {
+    return readGamepadInput(navigator.getGamepads());
+  } catch {
+    // Some browsers restrict gamepad access until a user gesture. Keep
+    // keyboard and touch input available when polling is unavailable.
+    return NEUTRAL_GAMEPAD_INPUT;
+  }
+}
 
 export function createInputController(): InputController {
   const keys = new Set<string>();
@@ -55,10 +71,14 @@ export function createInputController(): InputController {
 
   return {
     read() {
+      const gamepad = readConnectedGamepad();
+      const digitalSteer = (isActive('left') ? 1 : 0) - (isActive('right') ? 1 : 0);
       return {
-        throttle: isActive('gas') ? 1 : 0,
-        brake: isActive('brake') ? 1 : 0,
-        steer: (isActive('left') ? 1 : 0) - (isActive('right') ? 1 : 0),
+        throttle: Math.max(isActive('gas') ? 1 : 0, gamepad.throttle),
+        brake: Math.max(isActive('brake') ? 1 : 0, gamepad.brake),
+        // Digital steering remains immediate; analog input adds precision
+        // while the final clamp keeps the bike input within its normal range.
+        steer: Math.max(-1, Math.min(1, digitalSteer + gamepad.steer)),
       };
     },
     setTouch(control, pressed) {
