@@ -32,7 +32,7 @@ test('skips disconnected and non-standard controllers', () => {
   ]), neutral);
 });
 
-test('uses the left stick for steering with a radial-axis deadzone', () => {
+test('uses the left stick for steering with a per-axis deadzone', () => {
   assert.deepEqual(readGamepadInput([gamepad({ axes: [0.12, 0] })]), neutral);
   assert.deepEqual(readGamepadInput([gamepad({ axes: [-1, 0] })]), {
     throttle: 0,
@@ -60,6 +60,16 @@ test('supports vertical stick throttle and brake as a fallback', () => {
   assert.deepEqual(readGamepadInput([gamepad({ axes: [0, 1] })]), {
     throttle: 0,
     brake: 1,
+    steer: 0,
+  });
+});
+
+test('prefers trigger pedals over the vertical-stick fallback', () => {
+  assert.deepEqual(readGamepadInput([
+    gamepad({ axes: [0, 0.8], buttons: makeButtons({ 7: 0.75 }) }),
+  ]), {
+    throttle: 0.75,
+    brake: 0,
     steer: 0,
   });
 });
