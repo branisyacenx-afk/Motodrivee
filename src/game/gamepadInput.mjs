@@ -34,8 +34,8 @@ function readDpad(buttons) {
 /**
  * Read the first connected standard-mapped gamepad.
  * Left stick X steers, triggers control throttle/brake, and the D-pad
- * provides digital alternatives. The left stick Y is a fallback for
- * controllers whose triggers are not used.
+ * provides digital alternatives. Left stick Y is used for pedals only
+ * when no trigger or D-pad pedal is active.
  */
 export function readGamepadInput(gamepads) {
   if (!gamepads || !Number.isFinite(gamepads.length)) {
@@ -50,10 +50,14 @@ export function readGamepadInput(gamepads) {
     const buttons = gamepad.buttons;
     const vertical = readAxis(axes?.[1] ?? 0);
     const dpad = readDpad(buttons);
+    const triggerThrottle = readButton(buttons?.[7]);
+    const triggerBrake = readButton(buttons?.[6]);
+    const hasPedalButtonInput = triggerThrottle > 0.05 || triggerBrake > 0.05 ||
+      dpad.throttle > 0.05 || dpad.brake > 0.05;
 
     return {
-      throttle: Math.max(readButton(buttons?.[7]), Math.max(0, -vertical), dpad.throttle),
-      brake: Math.max(readButton(buttons?.[6]), Math.max(0, vertical), dpad.brake),
+      throttle: Math.max(triggerThrottle, dpad.throttle, hasPedalButtonInput ? 0 : Math.max(0, -vertical)),
+      brake: Math.max(triggerBrake, dpad.brake, hasPedalButtonInput ? 0 : Math.max(0, vertical)),
       steer: clamp(readAxis(axes?.[0] ?? 0) + dpad.steer, -1, 1),
     };
   }
